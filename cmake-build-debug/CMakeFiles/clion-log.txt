@@ -1,0 +1,8 @@
+"/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/CLion.app/Contents/bin/cmake/mac/bin/cmake" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/CLion.app/Contents/bin/ninja/mac/ninja" -G Ninja /Users/abuynits/CLionProjects/ffmpegTest5
+CMake Error at CMakeLists.txt:14 (message):
+  Can't find directory that contains avcodec.h
+
+
+-- Configuring incomplete, errors occurred!
+See also "/Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug/CMakeFiles/CMakeOutput.log".
+See also "/Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug/CMakeFiles/CMakeError.log".
