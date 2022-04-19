@@ -15,7 +15,10 @@
 ########################
 
 //Path to a file.
-AVCODEC_INCLUDE_DIR:PATH=AVCODEC_INCLUDE_DIR-NOTFOUND
+AVCODEC_INCLUDE_DIR:PATH=/Users/abuynits/CLionProjects/ffmpegTest5/ffmpeg
+
+//Path to a library.
+AVCODEC_LIB:FILEPATH=AVCODEC_LIB-NOTFOUND
 
 //Path to a library.
 AVCODEC_LIBRARY:FILEPATH=AVCODEC_LIBRARY-NOTFOUND
