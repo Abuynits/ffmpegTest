@@ -5,11 +5,11 @@ using namespace std;
 #include <stdlib.h>
 #include <string.h>
 
-
+#include <libavutil/frame.h>
 #include <libavutil/mem.h>
 
 #include <libavcodec/avcodec.h>
-#include <libavutil/frame.h>
+const static char* intputFileName = ""
 using namespace std;
 int main() {
     const char *outfilename, *filename;
