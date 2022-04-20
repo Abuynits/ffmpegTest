@@ -1,9 +1,5 @@
 "/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/CLion.app/Contents/bin/cmake/mac/bin/cmake" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/CLion.app/Contents/bin/ninja/mac/ninja" -G Ninja /Users/abuynits/CLionProjects/ffmpegTest5
-found path
-CMake Error at CMakeLists.txt:27 (message):
-  Can't find library AVCODEC_LIB
-
-
--- Configuring incomplete, errors occurred!
-See also "/Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug/CMakeFiles/CMakeOutput.log".
-See also "/Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug/CMakeFiles/CMakeError.log".
+-- Configuring done
+WARNING: Target "ffmpegTest5" requests linking to directory "/Users/abuynits/CLionProjects/ffmpegTest5/ffmpeg/".  Targets may link only to libraries.  CMake is dropping the item.
+-- Generating done
+-- Build files have been written to: /Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug

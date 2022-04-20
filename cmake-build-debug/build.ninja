@@ -75,6 +75,7 @@ build cmake_object_order_depends_target_ffmpegTest5: phony || CMakeFiles/ffmpegT
 build CMakeFiles/ffmpegTest5.dir/main.cpp.o: CXX_COMPILER__ffmpegTest5_Debug /Users/abuynits/CLionProjects/ffmpegTest5/main.cpp || cmake_object_order_depends_target_ffmpegTest5
   DEP_FILE = CMakeFiles/ffmpegTest5.dir/main.cpp.o.d
   FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -std=gnu++14
+  INCLUDES = -I/Users/abuynits/CLionProjects/ffmpegTest5/ffmpeg
   OBJECT_DIR = CMakeFiles/ffmpegTest5.dir
   OBJECT_FILE_DIR = CMakeFiles/ffmpegTest5.dir
 

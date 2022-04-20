@@ -11,7 +11,19 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "AVCODEC_INCLUDE_DIR-NOTFOUND"
+			"value" : "/Users/abuynits/CLionProjects/ffmpegTest5/ffmpeg"
+		},
+		{
+			"name" : "AVCODEC_LIB",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a library."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "AVCODEC_LIB-NOTFOUND"
 		},
 		{
 			"name" : "AVCODEC_LIBRARY",
@@ -24,6 +36,18 @@
 			],
 			"type" : "FILEPATH",
 			"value" : "AVCODEC_LIBRARY-NOTFOUND"
+		},
+		{
+			"name" : "CLP_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a file."
+				}
+			],
+			"type" : "PATH",
+			"value" : "CLP_DIR-NOTFOUND"
 		},
 		{
 			"name" : "CMAKE_ADDR2LINE",
@@ -1100,6 +1124,42 @@
 			],
 			"type" : "BOOL",
 			"value" : "FALSE"
+		},
+		{
+			"name" : "FFMPEG_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for FFMPEG."
+				}
+			],
+			"type" : "PATH",
+			"value" : "FFMPEG_DIR-NOTFOUND"
+		},
+		{
+			"name" : "FFMPEG_LIB",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a library."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "FFMPEG_LIB-NOTFOUND"
+		},
+		{
+			"name" : "FFmpeg_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for FFmpeg."
+				}
+			],
+			"type" : "PATH",
+			"value" : "FFmpeg_DIR-NOTFOUND"
 		},
 		{
 			"name" : "ffmpegTest5_BINARY_DIR",
