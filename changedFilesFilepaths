@@ -1,0 +1,7 @@
+ffmpeg/VERSION
+deleted random version number
+ffmpeg/libavutil/macros.h
+commented out a library
+ffmpeg/libavutil/pixfmt.h
+commented out a library
+ffmpeg/RELEASE
