@@ -225,6 +225,9 @@ FFMPEG_LIB:FILEPATH=FFMPEG_LIB-NOTFOUND
 //The directory containing a CMake configuration file for FFmpeg.
 FFmpeg_DIR:PATH=FFmpeg_DIR-NOTFOUND
 
+//pkg-config executable
+PKG_CONFIG_EXECUTABLE:FILEPATH=/usr/local/bin/pkg-config
+
 //Value Computed by CMake
 ffmpegTest5_BINARY_DIR:STATIC=/Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug
 
@@ -233,6 +236,27 @@ ffmpegTest5_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
 ffmpegTest5_SOURCE_DIR:STATIC=/Users/abuynits/CLionProjects/ffmpegTest5
+
+//Path to a library.
+pkgcfg_lib_LIBAV_avcodec:FILEPATH=/usr/local/Cellar/ffmpeg/5.0.1/lib/libavcodec.dylib
+
+//Path to a library.
+pkgcfg_lib_LIBAV_avdevice:FILEPATH=/usr/local/Cellar/ffmpeg/5.0.1/lib/libavdevice.dylib
+
+//Path to a library.
+pkgcfg_lib_LIBAV_avfilter:FILEPATH=/usr/local/Cellar/ffmpeg/5.0.1/lib/libavfilter.dylib
+
+//Path to a library.
+pkgcfg_lib_LIBAV_avformat:FILEPATH=/usr/local/Cellar/ffmpeg/5.0.1/lib/libavformat.dylib
+
+//Path to a library.
+pkgcfg_lib_LIBAV_avutil:FILEPATH=/usr/local/Cellar/ffmpeg/5.0.1/lib/libavutil.dylib
+
+//Path to a library.
+pkgcfg_lib_LIBAV_swresample:FILEPATH=/usr/local/Cellar/ffmpeg/5.0.1/lib/libswresample.dylib
+
+//Path to a library.
+pkgcfg_lib_LIBAV_swscale:FILEPATH=/usr/local/Cellar/ffmpeg/5.0.1/lib/libswscale.dylib
 
 
 ########################
@@ -370,4 +394,91 @@ CMAKE_STRIP-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Details about finding PkgConfig
+FIND_PACKAGE_MESSAGE_DETAILS_PkgConfig:INTERNAL=[/usr/local/bin/pkg-config][v0.29.2()]
+LIBAV_CFLAGS:INTERNAL=-I/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_CFLAGS_I:INTERNAL=
+LIBAV_CFLAGS_OTHER:INTERNAL=
+LIBAV_FOUND:INTERNAL=1
+LIBAV_INCLUDEDIR:INTERNAL=
+LIBAV_INCLUDE_DIRS:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_LDFLAGS:INTERNAL=-L/usr/local/Cellar/ffmpeg/5.0.1/lib;-lavdevice;-lavfilter;-lavformat;-lavcodec;-lswresample;-lswscale;-lavutil
+LIBAV_LDFLAGS_OTHER:INTERNAL=
+LIBAV_LIBDIR:INTERNAL=
+LIBAV_LIBRARIES:INTERNAL=avdevice;avfilter;avformat;avcodec;swresample;swscale;avutil
+LIBAV_LIBRARY_DIRS:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/lib
+LIBAV_LIBS:INTERNAL=
+LIBAV_LIBS_L:INTERNAL=
+LIBAV_LIBS_OTHER:INTERNAL=
+LIBAV_LIBS_PATHS:INTERNAL=
+LIBAV_MODULE_NAME:INTERNAL=
+LIBAV_PREFIX:INTERNAL=
+LIBAV_STATIC_CFLAGS:INTERNAL=-I/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_STATIC_CFLAGS_I:INTERNAL=
+LIBAV_STATIC_CFLAGS_OTHER:INTERNAL=
+LIBAV_STATIC_INCLUDE_DIRS:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_STATIC_LDFLAGS:INTERNAL=-L/usr/local/Cellar/ffmpeg/5.0.1/lib;-L/usr/local/Cellar/libxcb/1.14_2/lib;-L/usr/local/lib;-L/usr/local/Cellar/ffmpeg/5.0.1/lib;-L/usr/local/Cellar/rubberband/2.0.2/lib;-L/usr/local/Cellar/libvmaf/2.3.0_1/lib;-L/usr/local/Cellar/tesseract/5.1.0/lib;-L/usr/local/Cellar/libarchive/3.6.0/lib;-L/usr/local/Cellar/libass/0.15.2/lib;-L/usr/local/Cellar/libvidstab/1.1.0/lib;-L/usr/local/Cellar/zeromq/4.3.4/lib;-L/usr/local/Cellar/zimg/3.0.3/lib;-L/usr/local/opt/freetype/lib;-L/usr/local/Cellar/fontconfig/2.14.0/lib;-L/usr/local/opt/freetype/lib;-L/usr/local/Cellar/ffmpeg/5.0.1/lib;-L/usr/local/Cellar/libbluray/1.3.1/lib;-L/usr/local/Cellar/gnutls/3.7.4/lib;-L/usr/local/Cellar/librist/0.2.6_1/lib;-L/usr/local/Cellar/srt/1.4.4/lib;-L/usr/local/Cellar/zeromq/4.3.4/lib;-L/usr/local/Cellar/ffmpeg/5.0.1/lib;-L/usr/local/Cellar/libvpx/1.11.0/lib;-L/usr/local/Cellar/webp/1.2.2/lib;-L/usr/local/Cellar/dav1d/0.9.2/lib;-L/usr/local/Cellar/jpeg-xl/0.6.1/lib;-L/usr/local/Cellar/libvmaf/2.3.0_1/lib;-L/usr/local/Cellar/aom/3.3.0/lib;-L/usr/local/Cellar/openjpeg/2.4.0/lib;-L/usr/local/Cellar/opus/1.3.1/lib;-L/usr/local/Cellar/rav1e/0.5.1/lib;-L/usr/local/Cellar/speex/1.2.0/lib;-L/usr/local/Cellar/libvorbis/1.3.7/lib;-L/usr/local/Cellar/webp/1.2.2/lib;-L/usr/local/Cellar/x264/r3060/lib;-L/usr/local/Cellar/x265/3.5/lib;-L/usr/local/Cellar/ffmpeg/5.0.1/lib;-L/usr/local/Cellar/libx11/1.7.3.1/lib;-lavdevice;-framework;Foundation;-framework;AudioToolbox;-framework;CoreAudio;-lm;-framework;AVFoundation;-framework;CoreVideo;-framework;CoreMedia;-framework;CoreGraphics;-lxcb;-lxcb-shm;-lxcb-shape;-lxcb-xfixes;-framework;AudioToolbox;-pthread;-lSDL2;-lavfilter;-framework;OpenGL;-lm;-lrubberband;-framework;Accelerate;-lstdc++;-lvmaf;-pthread;-ltesseract;-larchive;-lcurl;-lass;-lvidstab;-lm;-framework;Metal;-framework;VideoToolbox;-lzmq;-lzimg;-framework;CoreImage;-framework;AppKit;-lfontconfig;-lfreetype;-framework;CoreFoundation;-framework;CoreMedia;-framework;CoreVideo;-framework;CoreServices;-lpostproc;-lm;-lavformat;-lm;-lxml2;-lbz2;-lbluray;-lz;-lgnutls;-lrist;-lsrt;-lzmq;-lavcodec;-lvpx;-lm;-lvpx;-lm;-lvpx;-lm;-lvpx;-lm;-lwebpmux;-lwebp;-liconv;-lm;-llzma;-ldav1d;-lopencore-amrwb;-lsnappy;-lstdc++;-lz;-framework;AudioToolbox;-laom;-lvmaf;-ljxl;-lmp3lame;-lm;-lopencore-amrnb;-lopenjp2;-lopus;-lrav1e;-lspeex;-ltheoraenc;-ltheoradec;-logg;-lvorbis;-lvorbisenc;-lwebp;-lx264;-lx265;-lxvidcore;-pthread;-framework;VideoToolbox;-framework;CoreFoundation;-framework;CoreMedia;-framework;CoreVideo;-framework;CoreServices;-lswresample;-lm;-lsoxr;-lswscale;-lm;-lavutil;-pthread;-lm;-framework;VideoToolbox;-lX11;-framework;CoreFoundation;-framework;CoreMedia;-framework;CoreVideo;-framework;CoreServices
+LIBAV_STATIC_LDFLAGS_OTHER:INTERNAL=-framework;Foundation;-framework;AudioToolbox;-framework;CoreAudio;-framework;AVFoundation;-framework;CoreVideo;-framework;CoreMedia;-framework;CoreGraphics;-framework;AudioToolbox;-pthread;-framework;OpenGL;-framework;Accelerate;-pthread;-framework;Metal;-framework;VideoToolbox;-framework;CoreImage;-framework;AppKit;-framework;CoreFoundation;-framework;CoreMedia;-framework;CoreVideo;-framework;CoreServices;-framework;AudioToolbox;-pthread;-framework;VideoToolbox;-framework;CoreFoundation;-framework;CoreMedia;-framework;CoreVideo;-framework;CoreServices;-pthread;-framework;VideoToolbox;-framework;CoreFoundation;-framework;CoreMedia;-framework;CoreVideo;-framework;CoreServices
+LIBAV_STATIC_LIBDIR:INTERNAL=
+LIBAV_STATIC_LIBRARIES:INTERNAL=avdevice;m;xcb;xcb-shm;xcb-shape;xcb-xfixes;SDL2;avfilter;m;rubberband;stdc++;vmaf;tesseract;archive;curl;ass;vidstab;m;zmq;zimg;fontconfig;freetype;postproc;m;avformat;m;xml2;bz2;bluray;z;gnutls;rist;srt;zmq;avcodec;vpx;m;vpx;m;vpx;m;vpx;m;webpmux;webp;iconv;m;lzma;dav1d;opencore-amrwb;snappy;stdc++;z;aom;vmaf;jxl;mp3lame;m;opencore-amrnb;openjp2;opus;rav1e;speex;theoraenc;theoradec;ogg;vorbis;vorbisenc;webp;x264;x265;xvidcore;swresample;m;soxr;swscale;m;avutil;m;X11
+LIBAV_STATIC_LIBRARY_DIRS:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/lib;/usr/local/Cellar/libxcb/1.14_2/lib;/usr/local/lib;/usr/local/Cellar/ffmpeg/5.0.1/lib;/usr/local/Cellar/rubberband/2.0.2/lib;/usr/local/Cellar/libvmaf/2.3.0_1/lib;/usr/local/Cellar/tesseract/5.1.0/lib;/usr/local/Cellar/libarchive/3.6.0/lib;/usr/local/Cellar/libass/0.15.2/lib;/usr/local/Cellar/libvidstab/1.1.0/lib;/usr/local/Cellar/zeromq/4.3.4/lib;/usr/local/Cellar/zimg/3.0.3/lib;/usr/local/opt/freetype/lib;/usr/local/Cellar/fontconfig/2.14.0/lib;/usr/local/opt/freetype/lib;/usr/local/Cellar/ffmpeg/5.0.1/lib;/usr/local/Cellar/libbluray/1.3.1/lib;/usr/local/Cellar/gnutls/3.7.4/lib;/usr/local/Cellar/librist/0.2.6_1/lib;/usr/local/Cellar/srt/1.4.4/lib;/usr/local/Cellar/zeromq/4.3.4/lib;/usr/local/Cellar/ffmpeg/5.0.1/lib;/usr/local/Cellar/libvpx/1.11.0/lib;/usr/local/Cellar/webp/1.2.2/lib;/usr/local/Cellar/dav1d/0.9.2/lib;/usr/local/Cellar/jpeg-xl/0.6.1/lib;/usr/local/Cellar/libvmaf/2.3.0_1/lib;/usr/local/Cellar/aom/3.3.0/lib;/usr/local/Cellar/openjpeg/2.4.0/lib;/usr/local/Cellar/opus/1.3.1/lib;/usr/local/Cellar/rav1e/0.5.1/lib;/usr/local/Cellar/speex/1.2.0/lib;/usr/local/Cellar/libvorbis/1.3.7/lib;/usr/local/Cellar/webp/1.2.2/lib;/usr/local/Cellar/x264/r3060/lib;/usr/local/Cellar/x265/3.5/lib;/usr/local/Cellar/ffmpeg/5.0.1/lib;/usr/local/Cellar/libx11/1.7.3.1/lib
+LIBAV_STATIC_LIBS:INTERNAL=
+LIBAV_STATIC_LIBS_L:INTERNAL=
+LIBAV_STATIC_LIBS_OTHER:INTERNAL=
+LIBAV_STATIC_LIBS_PATHS:INTERNAL=
+LIBAV_VERSION:INTERNAL=
+LIBAV_libavcodec_INCLUDEDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_libavcodec_LIBDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/lib
+LIBAV_libavcodec_MODULE_NAME:INTERNAL=libavcodec
+LIBAV_libavcodec_PREFIX:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1
+LIBAV_libavcodec_VERSION:INTERNAL=59.18.100
+LIBAV_libavdevice_INCLUDEDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_libavdevice_LIBDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/lib
+LIBAV_libavdevice_MODULE_NAME:INTERNAL=libavdevice
+LIBAV_libavdevice_PREFIX:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1
+LIBAV_libavdevice_VERSION:INTERNAL=59.4.100
+LIBAV_libavfilter_INCLUDEDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_libavfilter_LIBDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/lib
+LIBAV_libavfilter_MODULE_NAME:INTERNAL=libavfilter
+LIBAV_libavfilter_PREFIX:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1
+LIBAV_libavfilter_VERSION:INTERNAL=8.24.100
+LIBAV_libavformat_INCLUDEDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_libavformat_LIBDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/lib
+LIBAV_libavformat_MODULE_NAME:INTERNAL=libavformat
+LIBAV_libavformat_PREFIX:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1
+LIBAV_libavformat_VERSION:INTERNAL=59.16.100
+LIBAV_libavutil_INCLUDEDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_libavutil_LIBDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/lib
+LIBAV_libavutil_MODULE_NAME:INTERNAL=libavutil
+LIBAV_libavutil_PREFIX:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1
+LIBAV_libavutil_VERSION:INTERNAL=57.17.100
+LIBAV_libswresample_INCLUDEDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_libswresample_LIBDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/lib
+LIBAV_libswresample_MODULE_NAME:INTERNAL=libswresample
+LIBAV_libswresample_PREFIX:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1
+LIBAV_libswresample_VERSION:INTERNAL=4.3.100
+LIBAV_libswscale_INCLUDEDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/include
+LIBAV_libswscale_LIBDIR:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/lib
+LIBAV_libswscale_MODULE_NAME:INTERNAL=libswscale
+LIBAV_libswscale_PREFIX:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1
+LIBAV_libswscale_VERSION:INTERNAL=6.4.100
+//ADVANCED property for variable: PKG_CONFIG_EXECUTABLE
+PKG_CONFIG_EXECUTABLE-ADVANCED:INTERNAL=1
+__pkg_config_arguments_LIBAV:INTERNAL=REQUIRED;IMPORTED_TARGET;libavdevice;libavfilter;libavformat;libavcodec;libswresample;libswscale;libavutil
+__pkg_config_checked_LIBAV:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_LIBAV_avcodec
+pkgcfg_lib_LIBAV_avcodec-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_LIBAV_avdevice
+pkgcfg_lib_LIBAV_avdevice-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_LIBAV_avfilter
+pkgcfg_lib_LIBAV_avfilter-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_LIBAV_avformat
+pkgcfg_lib_LIBAV_avformat-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_LIBAV_avutil
+pkgcfg_lib_LIBAV_avutil-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_LIBAV_swresample
+pkgcfg_lib_LIBAV_swresample-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_LIBAV_swscale
+pkgcfg_lib_LIBAV_swscale-ADVANCED:INTERNAL=1
+prefix_result:INTERNAL=/usr/local/Cellar/ffmpeg/5.0.1/lib
 

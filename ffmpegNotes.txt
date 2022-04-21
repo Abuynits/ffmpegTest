@@ -1,0 +1,13 @@
+remuxing: convert from one container to another
+Transcoding: convert one streams (audio/video) from one CODEC to another
+Transmuxing: converts from one format (container) to another one
+Transrating: act of changing the bit rate or producing other renditions
+Transizing: Act of converting from one resolution to another-used with transrating
+
+process:
+1: load media file into componenet alled AVFormatContext- only loads the header portion
+then we can access the streams
+ie can have audio and video - split the streams. each one will be available in component called AVStream
+stream 1: audio encoded with aac codec
+stream 2: video encoded with h264 (avc) codec
+AVCodec will decode them into AVFrame and this will give uncompressed frame - same terminology/ process used in audio and video

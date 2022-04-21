@@ -4,9 +4,16 @@ project(ffmpegTest5)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(ffmpegTest5 main.cpp)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET
+        libavdevice
+        libavfilter
+        libavformat
+        libavcodec
+        libswresample
+        libswscale
+        libavutil
+        )
+add_executable (ffmpegTest5 "main.cpp")
+target_link_libraries(ffmpegTest5 PkgConfig::LIBAV)
 
-
-
-include_directories("/Users/abuynits/CLionProjects/ffmpegTest5/ffmpeg/")
-target_link_libraries(ffmpegTest5 "/Users/abuynits/CLionProjects/ffmpegTest5/ffmpeg/")
