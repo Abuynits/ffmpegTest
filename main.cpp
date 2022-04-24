@@ -46,6 +46,13 @@ int main() {
     //allocate memory for packet and frame readings
     AVPacket *pPacket = av_packet_alloc();
     AVFrame *pFrame = av_frame_alloc();
+    while (av_read_frame(pFormatContext, pPacket) >= 0) {
+        //send raw data to codec through codec context
+        avcodec_send_packet(pCodecContext, pPacket);
+
+        //recieve same raw data through codec context
+        avcodec_receive_frame(pCodecContext, pFrame);
+    }
 
     cout << "Hello, World!" << endl;
     return 0;
