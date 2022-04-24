@@ -11,7 +11,9 @@
 		"commands" : 
 		[
 			"add_executable",
-			"target_link_libraries"
+			"link_directories",
+			"target_link_libraries",
+			"include_directories"
 		],
 		"files" : 
 		[
@@ -25,13 +27,25 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 16,
+				"line" : 12,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 20,
+				"line" : 10,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 13,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 9,
 				"parent" : 0
 			}
 		]
@@ -51,8 +65,7 @@
 			"includes" : 
 			[
 				{
-					"backtrace" : 2,
-					"isSystem" : true,
+					"backtrace" : 4,
 					"path" : "/usr/local/Cellar/ffmpeg/5.0.1/include"
 				}
 			],
@@ -85,31 +98,27 @@
 				"role" : "flags"
 			},
 			{
-				"fragment" : "/usr/local/Cellar/ffmpeg/5.0.1/lib/libavdevice.dylib",
+				"backtrace" : 2,
+				"fragment" : "-L/usr/local/Cellar/ffmpeg/5.0.1/lib",
+				"role" : "libraryPath"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/usr/local/Cellar/ffmpeg/5.0.1/lib",
 				"role" : "libraries"
 			},
 			{
-				"fragment" : "/usr/local/Cellar/ffmpeg/5.0.1/lib/libavfilter.dylib",
+				"backtrace" : 3,
+				"fragment" : "-lavformat",
 				"role" : "libraries"
 			},
 			{
-				"fragment" : "/usr/local/Cellar/ffmpeg/5.0.1/lib/libavformat.dylib",
+				"backtrace" : 3,
+				"fragment" : "-lavcodec",
 				"role" : "libraries"
 			},
 			{
-				"fragment" : "/usr/local/Cellar/ffmpeg/5.0.1/lib/libavcodec.dylib",
-				"role" : "libraries"
-			},
-			{
-				"fragment" : "/usr/local/Cellar/ffmpeg/5.0.1/lib/libswresample.dylib",
-				"role" : "libraries"
-			},
-			{
-				"fragment" : "/usr/local/Cellar/ffmpeg/5.0.1/lib/libswscale.dylib",
-				"role" : "libraries"
-			},
-			{
-				"fragment" : "/usr/local/Cellar/ffmpeg/5.0.1/lib/libavutil.dylib",
+				"backtrace" : 3,
+				"fragment" : "-lavutil",
 				"role" : "libraries"
 			}
 		],

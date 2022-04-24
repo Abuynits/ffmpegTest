@@ -1,41 +1,42 @@
+#set(CMAKE_VERBOSE_MAKEFILE 1)
+set(CMAKE_VERBOSE_MAKEFILE on)
 cmake_minimum_required(VERSION 3.21)
 project(ffmpegTest5)
 
 set(CMAKE_CXX_STANDARD 14)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET
-        libavdevice
-        libavfilter
-        libavformat
-        libavcodec
-        libswresample
-        libswscale
-        libavutil
-        )
-add_executable(${PROJECT_NAME}
-        main.cpp
-        )
+set(FFMPEG_DIR /usr/local/Cellar/ffmpeg/5.0.1/)
+include_directories(${FFMPEG_DIR}/include)
+link_directories(${FFMPEG_DIR}/lib)
 
-target_link_libraries(${PROJECT_NAME}
-        PkgConfig::LIBAV
-        )
-
-#find_path(AVCODEC_INCLUDE_DIR libavcodec/avcodec.h)
-#find_library(AVCODEC_LIBRARY avcodec)
+add_executable(ffmpegTest5 main.cpp)
+target_link_libraries(ffmpegTest5 avformat avcodec avutil)
+# libbar.so is found in ${CMAKE_SOURCE_DIR}/lib
 #
-#find_path(AVFORMAT_INCLUDE_DIR libavformat/avformat.h)
-#find_library(AVFORMAT_LIBRARY avformat)
+#add_executable(ffmpegBrewTest main.cpp)
 #
-#find_path(AVUTIL_INCLUDE_DIR libavutil/avutil.h)
-#find_library(AVUTIL_LIBRARY avutil)
+#list(APPEND CMAKE_PREFIX_PATH "/usr/local/Cellar/ffmpeg/5.0.1")
 #
-#find_path(AVDEVICE_INCLUDE_DIR libavdevice/avdevice.h)
-#find_library(AVDEVICE_LIBRARY avdevice)
+##find_path(AVCODEC_INCLUDE_DIR libavcodec/avcodec.h)
+##find_library(AVCODEC_LIBRARY avcodec)
 #
-#add_executable (ffmpegTest5 "main.cpp")
-#target_include_directories(ffmpegTest5 PRIVATE ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR} ${AVUTIL_INCLUDE_DIR} ${AVDEVICE_INCLUDE_DIR})
-#target_link_libraries(ffmpegTest5 PRIVATE ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${AVDEVICE_LIBRARY})
+#find_path(AVFORMAT_INCLUDE_DIR libavformat/avformat.h
 #
+#        )
+#find_library(AVFORMAT_LIBRARY avformat
+#        )
+##
+##find_path(AVUTIL_INCLUDE_DIR libavutil/avutil.h)
+##find_library(AVUTIL_LIBRARY avutil)
+##
+##find_path(AVDEVICE_INCLUDE_DIR libavdevice/avdevice.h)
+##find_library(AVDEVICE_LIBRARY avdevice)
 #
-
+##include_directories(${AVCODEC_INCLUDE_DIR})
+#include_directories(${AVFORMAT_INCLUDE_DIR})
+##include_directories(${AVUTIL_INCLUDE_DIR})
+##include_directories(${AVDEVICE_INCLUDE_DIR})
+##link_libraries(${AVCODEC_LIBRARY})
+#link_libraries(${AVFORMAT_LIBRARY})
+##link_libraries(${AVUTIL_LIBRARY})
+##link_libraries(${AVDEVICE_LIBRARY})
