@@ -33,3 +33,9 @@ LD_LIBRARY_PATH=:/usr/local/Cellar/ffmpeg/5.0.1/lib
 can change specific fies
 
 can do enter a few times to add some lines
+
+static and dynamic libraries - dynamic = can be changed
+
+storage: c stored with __ before each library
+
+cpp stored wtih _ before each library path - add certain characters to the end to specify function overloading

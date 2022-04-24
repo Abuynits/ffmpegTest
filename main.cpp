@@ -7,12 +7,12 @@
 #include <string.h>
 
 
-extern "C" {
+
 #include <libavutil/frame.h>
 #include <libavutil/mem.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
-}
+
 
 void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut);
 
