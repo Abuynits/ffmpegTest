@@ -1,0 +1,35 @@
+Notes from debugging:
+
+add --verbose to show even more stuff
+./PROJECT_NAME = run the code in terminal
+hexdump -C /usr/local/Cellar/ffmpeg/5.0.1/lib/libavformat.a | less
+
+shows the bit content of the following file
+use "q" to exit specific windows
+can run specific error lines that you get in console in terminal to examine the error codes
+
+split each line on the - character
+"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld"
+ -search_paths_first
+  -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk
+   -o ffmpegBrewTest
+   -L/usr/local/Cellar/ffmpeg/5.0.1/lib
+   -lavformat CMakeFiles/ffmpegBrewTest.dir/main.cpp.o
+   -lc++
+    -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/lib/darwin/libclang_rt.osx.a
+
+rm = to remove a file
+
+-WL or LD = linker
+
+to specify a library, linker adds either lib or -l to the name - you dont need to specify this
+
+lipo -info /usr/local/Cellar/ffmpeg/5.0.1/lib/libavformat.a
+this is how you get the info of a file and how it is able to be run
+man c++
+can find how to manage c++ via the differnt commands
+set | grep LIB- this is how you get the library path of the directory
+LD_LIBRARY_PATH=:/usr/local/Cellar/ffmpeg/5.0.1/lib
+can change specific fies
+
+can do enter a few times to add some lines
