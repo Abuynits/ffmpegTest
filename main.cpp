@@ -55,8 +55,15 @@ int main() {
 //        //recieve same raw data through codec context
 //        avcodec_receive_frame(pCodecContext, pFrame);
 //    }
+    end:
+    fclose(inFile);
+    fclose(outFile);
 
-    cout << "Hello, World!" << endl;
+    avcodec_free_context(&pCodecContext);
+    av_parser_close(pParser);
+    av_frame_free(&pFrame);
+    av_packet_free(&pPacket);
+    cout << "succesfully exited program!" << endl;
     return 0;
 }
 
