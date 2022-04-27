@@ -1,7 +1,6 @@
 #include <iostream>
 
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,7 +16,9 @@ extern "C" {
 void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut);
 
 void initObjsForProcess(const AVCodec *pCodec, AVCodecParserContext *pParser, AVCodecContext *pCodecContext,
-                        enum AVCodecID *audio_id);
+                        const enum AVCodecID *audio_id);
+
+void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, AVCodecID audioId, const char *inputFilePath);
 
 using namespace std;
 
@@ -30,39 +31,70 @@ int main() {
     AVFormatContext *pFormatContext = avformat_alloc_context();//alloc information for format of file
 
     avformat_open_input(&pFormatContext, inputFP, nullptr, nullptr);
-    const char *fileFormat = pFormatContext->iformat->long_name;
-    int64_t duration = pFormatContext->duration;
-    cout << "format: " << fileFormat << " duration: " << duration << endl;
 
-    enum AVCodecID audio_id = pFormatContext->audio_codec_id;
+    AVCodecID audioId = AV_CODEC_ID_GSM_MS;
+    showDataGetCodecId(pFormatContext, true, audioId, inputFP);
 
-    cout << "audio_codec_id: " << audio_id << endl;
 
-    const AVCodec *pCodec;
-    AVCodecParserContext *pParser;
-    AVCodecContext *pCodecContext;
-
-    initObjsForProcess(pCodec, pParser, pCodecContext, &audio_id);
+    const AVCodec *pCodec = nullptr;
+    AVCodecParserContext *pParser = nullptr;
+    AVCodecContext *pCodecContext = nullptr;
 
     openFiles(inputFP, outputFP, inFile, outFile);
+    initObjsForProcess(pCodec, pParser, pCodecContext, &audioId);
+
+
 
     //allocate memory for packet and frame readings
     AVPacket *pPacket = av_packet_alloc();
     AVFrame *pFrame = av_frame_alloc();
-    while (av_read_frame(pFormatContext, pPacket) >= 0) {
-        //send raw data to codec through codec context
-        avcodec_send_packet(pCodecContext, pPacket);
-
-        //recieve same raw data through codec context
-        avcodec_receive_frame(pCodecContext, pFrame);
-    }
+//    while (av_read_frame(pFormatContext, pPacket) >= 0) {
+//        //send raw data to codec through codec context
+//        avcodec_send_packet(pCodecContext, pPacket);
+//
+//        //recieve same raw data through codec context
+//        avcodec_receive_frame(pCodecContext, pFrame);
+//    }
 
     cout << "Hello, World!" << endl;
     return 0;
 }
 
+void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, AVCodecID audioId, const char *inputFilePath) {
+    const char *fileFormat = pContext->iformat->long_name;
+    int64_t duration = pContext->duration;
+    audioId = pContext->audio_codec_id;
+
+
+    if (audioId == AV_CODEC_ID_NONE) {
+        string path = (string) (inputFilePath);
+        int loc = path.find('.');
+
+        if (loc == -1) {
+            cout << stderr << "ERROR: invalid file type" << endl;
+            exit(1);
+        }
+        string ending = path.substr(loc);
+
+        if (ending == ".wav") {
+            audioId = AV_CODEC_ID_GSM_MS;
+        } else if (ending == ".mp3") {
+            audioId = AV_CODEC_ID_MP3;
+        } else {
+            cout << stderr << "ERROR: not found audio ending" << endl;
+            exit(1);
+        }
+    }
+    if (printInfo) {
+        cout << "format: " << fileFormat << " duration: " << duration << endl;
+        cout << "audio_codec_id: " << audioId << endl;
+    }
+
+
+}
+
 void initObjsForProcess(const AVCodec *pCodec, AVCodecParserContext *pParser, AVCodecContext *pCodecContext,
-                        enum AVCodecID *audio_id) {
+                        const AVCodecID *audio_id) {
 //codec = device able to decode or encode data
     pCodec = avcodec_find_decoder(*audio_id);
     //check if can open pCodec

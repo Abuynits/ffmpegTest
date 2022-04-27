@@ -5,9 +5,9 @@ project(ffmpegTest5)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(FFMPEG_DIR /usr/local/Cellar/ffmpeg/5.0.1/)
-include_directories(${FFMPEG_DIR}/include)
-link_directories(${FFMPEG_DIR}/lib)
+set(FFMPEG_DIR /usr/local/Cellar/ffmpeg/5.0.1)
+include_directories(${FFMPEG_DIR}/include/)
+link_directories(${FFMPEG_DIR}/lib/)
 
 add_executable(ffmpegTest5 main.cpp)
 target_link_libraries(ffmpegTest5 avformat avcodec avutil)
