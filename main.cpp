@@ -15,9 +15,6 @@ extern "C" {
 
 void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut);
 
-void initObjsForProcess(const AVCodec *pCodec, AVCodecParserContext *pParser, AVCodecContext *pCodecContext,
-                        const enum AVCodecID *audio_id);
-
 void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, AVCodecID audioId, const char *inputFilePath);
 
 int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData, FILE *outfile);
@@ -41,21 +38,45 @@ int main() {
     AVCodecContext *pCodecContext = nullptr;
 
     openFiles(inputFP, outputFP, inFile, outFile);
-    initObjsForProcess(pCodec, pParser, pCodecContext, &audioId);
 
+    //codec = device able to decode or encode data
+    pCodec = avcodec_find_decoder(audioId);
+    //check if can open pCodec
+    if (!pCodec) {
+        cout << stderr << "ERROR: could not open pCodec" << endl;
+        exit(1);
+    }
+    //try to open pParser -for parsing frames
+    pParser = av_parser_init(pCodec->id);
+    if (pParser== nullptr) {
+        cout << stderr << "Parser not found" << endl;
+        exit(1);
+    }
+    //get the context of the audio pCodec- hold info for encode/decode process
+    pCodecContext = avcodec_alloc_context3(pCodec);
+    if (pCodecContext== nullptr) {
+        cout << stderr << "Could not allocate audio pCodec context" << endl;
+        exit(1);
+    }
+    //open the actual pCodec:
+    if (avcodec_open2(pCodecContext, pCodec, nullptr) < 0) {
+        cout << stderr << "Could not open pCodec" << endl;
+        exit(1);
+    }
     //allocate memory for packet and frame readings
     AVPacket *pPacket = av_packet_alloc();
     AVFrame *pFrame = av_frame_alloc();
-    //TODO: all is allocated, now just need to fix while loop to loop over frames and perform edits on them
     /*
      * edits process:
      * 1: check if human voice detected -> if not, dont write the frame
      * need to think about removing frames from the start and end of the file - still need to think
      * 2: if not removing this current frame, need to clean up the audio in it
      */
+
     while (av_read_frame(pFormatContext, pPacket) >= 0) {
-        //TODO: BUG: pCodecContext is NULL
+
         int response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
+
         if (response < 0) {
             cout << stderr << "ERROR: broken processor, return value: " << response << endl;
             exit(1);
@@ -154,41 +175,6 @@ void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, AVCodecID aud
 
 }
 
-/**
- * initializes all of the background objects for ffmpeg library
- * breaks if cannot initialize a certain object
- * @param pCodec
- * @param pParser
- * @param pCodecContext
- * @param audio_id
- */
-void initObjsForProcess(const AVCodec *pCodec, AVCodecParserContext *pParser, AVCodecContext *pCodecContext,
-                        const AVCodecID *audio_id) {
-//codec = device able to decode or encode data
-    pCodec = avcodec_find_decoder(*audio_id);
-    //check if can open pCodec
-    if (!pCodec) {
-        cout << stderr << "ERROR: could not open pCodec" << endl;
-        exit(1);
-    }
-    //try to open pParser -for parsing frames
-    pParser = av_parser_init(pCodec->id);
-    if (pParser== nullptr) {
-        cout << stderr << "Parser not found" << endl;
-        exit(1);
-    }
-    //get the context of the audio pCodec- hold info for encode/decode process
-    pCodecContext = avcodec_alloc_context3(pCodec);
-    if (pCodecContext== nullptr) {
-        cout << stderr << "Could not allocate audio pCodec context" << endl;
-        exit(1);
-    }
-    //open the actual pCodec:
-    if (avcodec_open2(pCodecContext, pCodec, nullptr) < 0) {
-        cout << stderr << "Could not open pCodec" << endl;
-        exit(1);
-    }
-}
 
 /**
  * creates file objects for the input and output files
