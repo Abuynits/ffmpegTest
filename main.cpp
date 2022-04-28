@@ -20,6 +20,8 @@ void initObjsForProcess(const AVCodec *pCodec, AVCodecParserContext *pParser, AV
 
 void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, AVCodecID audioId, const char *inputFilePath);
 
+int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData, FILE *outfile);
+
 using namespace std;
 
 int main() {
@@ -52,12 +54,16 @@ int main() {
      * 2: if not removing this current frame, need to clean up the audio in it
      */
     while (av_read_frame(pFormatContext, pPacket) >= 0) {
-        //send raw data to codec through codec context
-        // avcodec_send_packet(pCodecContext, pPacket);
 
-        //recieve same raw data through codec context
-        // avcodec_receive_frame(pCodecContext, pFrame);
+        int response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
+        if (response < 0) {
+            cout << stderr << "ERROR: broken processor, return value: " << response << endl;
+            exit(1);
+        }
+        //clear the packet after each frame
+        av_packet_unref(pPacket);
     }
+
     end:
     fclose(inFile);
     fclose(outFile);
@@ -68,6 +74,44 @@ int main() {
     av_packet_free(&pPacket);
     cout << "succesfully exited program!" << endl;
     return 0;
+}
+
+int
+processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData, FILE *outfile) {
+    //send raw data packed to decoder
+    int resp = avcodec_send_packet(pContext, pPacket);
+    if (resp < 0) {
+        //check if error while sending packet to decoder
+        return resp;
+    }
+    while (resp >= 0) {
+        resp = avcodec_receive_frame(pContext, pFrame);
+        //if have an error code while getting a frame from a packet, break
+        if (resp == AVERROR(EAGAIN)) {
+            break;
+        } else if (resp < 0) {
+            cout << stderr << " Error while getting frame from codec: %s" << av_err2str(resp) << endl;
+            return resp;
+        }
+        if (printFrameData) {
+            cout << "frame number: " << pContext->frame_number
+                 << ", Pkt_Size: " << pFrame->pkt_size
+                 << ", Pkt_pts: " << pFrame->pts
+                 << ", Pkt_keyFrame: " << pFrame->key_frame << endl;
+
+        }
+        resp = av_get_bytes_per_sample(pContext->sample_fmt);
+
+        if (resp < 0) {
+            cout << stderr << " ERROR: cannot get data size" << endl;
+        }
+        //TODO: HAVE THE DECODED DATA, NOW NEED TO PROCESS THE WHOLE THING
+        for (int i = 0; i < pFrame->nb_samples; i++)
+//            for (int ch = 0; ch < pContext->ch_layout.nb_channels; ch++)//NOTE: original line
+            for (int ch = 0; ch < pContext->channel_layout; ch++)
+                fwrite(pFrame->data[ch] + resp * i, 1, reinterpret_cast<size_t>(pFrame), outfile);
+
+    }
 }
 
 /**
