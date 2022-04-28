@@ -76,7 +76,7 @@ int main() {
     while (av_read_frame(pFormatContext, pPacket) >= 0) {
 
         int response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
-
+        //TODO: bug here which is breaking
         if (response < 0) {
             cout << stderr << "ERROR: broken processor, return value: " << response << endl;
             exit(1);
