@@ -54,7 +54,7 @@ int main() {
      * 2: if not removing this current frame, need to clean up the audio in it
      */
     while (av_read_frame(pFormatContext, pPacket) >= 0) {
-
+        //TODO: BUG: pCodecContext is NULL
         int response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
         if (response < 0) {
             cout << stderr << "ERROR: broken processor, return value: " << response << endl;
@@ -173,13 +173,13 @@ void initObjsForProcess(const AVCodec *pCodec, AVCodecParserContext *pParser, AV
     }
     //try to open pParser -for parsing frames
     pParser = av_parser_init(pCodec->id);
-    if (!pParser) {
+    if (pParser== nullptr) {
         cout << stderr << "Parser not found" << endl;
         exit(1);
     }
     //get the context of the audio pCodec- hold info for encode/decode process
     pCodecContext = avcodec_alloc_context3(pCodec);
-    if (!pCodecContext) {
+    if (pCodecContext== nullptr) {
         cout << stderr << "Could not allocate audio pCodec context" << endl;
         exit(1);
     }
