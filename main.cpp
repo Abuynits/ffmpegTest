@@ -15,7 +15,7 @@ extern "C" {
 
 void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut);
 
-void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, AVCodecID audioId, const char *inputFilePath);
+AVCodecID showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *inputFilePath);
 
 int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData, FILE *outfile);
 
@@ -31,11 +31,12 @@ int main() {
     avformat_open_input(&pFormatContext, inputFP, nullptr, nullptr);
 
     AVCodecID audioId;
-    showDataGetCodecId(pFormatContext, true, audioId, inputFP);
+    audioId = showDataGetCodecId(pFormatContext, true, inputFP);
 
     const AVCodec *pCodec = nullptr;
     AVCodecParserContext *pParser = nullptr;
     AVCodecContext *pCodecContext = nullptr;
+    AVCodecParameters *pCodecParam = nullptr;
 
     openFiles(inputFP, outputFP, inFile, outFile);
 
@@ -46,43 +47,80 @@ int main() {
         cout << stderr << "ERROR: could not open pCodec" << endl;
         exit(1);
     }
-    //try to open pParser -for parsing frames
-    pParser = av_parser_init(pCodec->id);
-    if (pParser == nullptr) {
-        cout << stderr << "Parser not found" << endl;
-        exit(1);
-    }
+
     //get the context of the audio pCodec- hold info for encode/decode process
     pCodecContext = avcodec_alloc_context3(pCodec);
     if (pCodecContext == nullptr) {
         cout << stderr << "Could not allocate audio pCodec context" << endl;
         exit(1);
     }
+
+    pCodecParam = pFormatContext->streams[0]->codecpar;
+    // Fill the codec context based on the values from the supplied codec parameters
+    // https://ffmpeg.org/doxygen/trunk/group__lavc__core.html#gac7b282f51540ca7a99416a3ba6ee0d16
+    if (avcodec_parameters_to_context(pCodecContext, pCodecParam) < 0) {
+        cout << stderr << "failed to copy codec params to codec context";
+        return -1;
+    }
+    //try to open pParser -for parsing frames
+    pParser = av_parser_init(pCodec->id);
+    if (pParser == nullptr) {
+        cout << stderr << "Parser not found" << endl;
+        exit(1);
+    }
+
     //open the actual pCodec:
     if (avcodec_open2(pCodecContext, pCodec, nullptr) < 0) {
         cout << stderr << "Could not open pCodec" << endl;
         exit(1);
     }
     //allocate memory for packet and frame readings
+    // https://ffmpeg.org/doxygen/trunk/structAVFrame.html
     AVPacket *pPacket = av_packet_alloc();
-    AVFrame *pFrame = av_frame_alloc();
-    /*
-     * edits process:
-     * 1: check if human voice detected -> if not, dont write the frame
-     * need to think about removing frames from the start and end of the file - still need to think
-     * 2: if not removing this current frame, need to clean up the audio in it
-     */
-
-    while (av_read_frame(pFormatContext, pPacket) >= 0) {
-
-        int response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
-        if (response < 0) {
-            cout << stderr << "ERROR: broken processor, return value: " << response << endl;
-            exit(1);
-        }
-        //clear the packet after each frame
-        av_packet_unref(pPacket);
+    if (!pPacket) {
+        cout << stderr << "Could not open packet" << endl;
+        exit(1);
     }
+    //allocate memory for frame from readings
+    // https://ffmpeg.org/doxygen/trunk/structAVPacket.html
+    AVFrame *pFrame = av_frame_alloc();
+    if (!pFrame) {
+        cout << stderr << "Could not open frame" << endl;
+        exit(1);
+    }
+    int response = 0;
+    int how_many_packets_to_process = 8;
+
+    // fill the Packet with data from the Stream
+    // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga4fdb3084415a82e3810de6ee60e46a61
+    while (av_read_frame(pFormatContext, pPacket) >= 0) {
+        response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
+        if (response < 0)
+            break;
+        // stop it, otherwise we'll be saving hundreds of frames
+        if (--how_many_packets_to_process <= 0) break;
+    }
+    // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
+    av_packet_unref(pPacket);
+//
+//
+//    /*
+//     * edits process:
+//     * 1: check if human voice detected -> if not, dont write the frame
+//     * need to think about removing frames from the start and end of the file - still need to think
+//     * 2: if not removing this current frame, need to clean up the audio in it
+//     */
+//
+//    while (av_read_frame(pFormatContext, pPacket) >= 0) {
+//
+//        int response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
+//        if (response < 0) {
+//            cout << stderr << "ERROR: broken processor, return value: " << response << endl;
+//            exit(1);
+//        }
+//        //clear the packet after each frame
+//        av_packet_unref(pPacket);
+//    }
 
     end:
     fclose(inFile);
@@ -105,32 +143,14 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
         return resp;
     }
     while (resp >= 0) {
-        int counter = 0;
-        getAFrame:
+        // Return decoded output data (into a frame) from a decoder
+        // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
         resp = avcodec_receive_frame(pContext, pFrame);
-        //if have an error code while getting a frame from a packet, break
-        //TODO: getting AVERROR(EAGAIN)
-        /*
-         * FIX:
-         * When you call avcodec_receive_frame and get EAGAIN error that means your decoder does not get enough data to decode
-         * (e.x you send a B-frame in video).
-         * So each time you get that error you should ignore it and go to next avcodec_send_packet
-         * https://stackoverflow.com/questions/55354120/ffmpeg-avcodec-receive-frame-returns-averroreagain
-         */
-        if (resp == AVERROR(EAGAIN)) {
-            counter++;
-            cout << "Not enough data in frame, skipping to next packet, counter:" << counter << endl;
-            //decoded not have enough data to process frame
-            //not error unless reached end of the stream - pass more packets untill have enough to produce frame
-            av_frame_unref(pFrame);
-            av_freep(pFrame);
-            //getting another packet
-            return 0;
+        if (resp == AVERROR(EAGAIN) || resp == AVERROR_EOF) {
+            cout << "Not enough data in frame, skipping to next packet" << endl;
+            break;
         } else if (resp < 0) {
-            // Failed to get a frame from the decoder
-            av_frame_unref(pFrame);
-            av_freep(pFrame);
-            cout << stderr << " Error while getting frame from codec: %s" << av_err2str(resp) << endl;
+            cout << "Error while receiving a frame from the decoder: " << av_err2str(resp) << endl;
             return resp;
         }
         cout << "enough data to process!" << endl;
@@ -141,16 +161,7 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
                  << ", Pkt_keyFrame: " << pFrame->key_frame << endl;
 
         }
-        resp = av_get_bytes_per_sample(pContext->sample_fmt);
-
-        if (resp < 0) {
-            cout << stderr << " ERROR: cannot get data size" << endl;
-        }
-        //TODO: HAVE THE DECODED DATA, NOW NEED TO PROCESS THE WHOLE THING
-        for (int i = 0; i < pFrame->nb_samples; i++)
-//            for (int ch = 0; ch < pContext->ch_layout.nb_channels; ch++)//NOTE: original line
-            for (int ch = 0; ch < pContext->channel_layout; ch++)
-                fwrite(pFrame->data[ch] + resp * i, 1, reinterpret_cast<size_t>(pFrame), outfile);
+        //TODO: only focussing on reading the files
     }
 
 
@@ -163,15 +174,16 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
  * @param audioId the returning audio_codec_id
  * @param inputFilePath the input file path of the input file
  */
-void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, AVCodecID audioId, const char *inputFilePath) {
+AVCodecID showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *inputFilePath) {
     const char *fileFormat = pContext->iformat->long_name;
     int64_t duration = pContext->duration;
     //TODO: need to check wether the lenght of streams is >0- if it is, show error, but continue the run- want only 1 audio stream
-    if( pContext->nb_streams>1){
-        cout<<"CAUTION: detected more than 1 streams \t using streams[0]"<<endl;
+    if (pContext->nb_streams > 1) {
+        cout << "CAUTION: detected more than 1 streams \t using streams[0]" << endl;
     }
     AVCodecParameters *param = pContext->streams[0]->codecpar;
 
+    param->codec_id = AV_CODEC_ID_NONE;
     if (param->codec_id == AV_CODEC_ID_NONE) {
         string path = (string) (inputFilePath);
         int loc = path.find('.');
@@ -183,9 +195,9 @@ void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, AVCodecID aud
         string ending = path.substr(loc);
 
         if (ending == ".wav") {
-            audioId = AV_CODEC_ID_GSM_MS;
+            param->codec_id = AV_CODEC_ID_GSM_MS;
         } else if (ending == ".mp3") {
-            audioId = AV_CODEC_ID_MP3;
+            param->codec_id = AV_CODEC_ID_MP3;
         } else {
             cout << stderr << "ERROR: not found audio ending" << endl;
             exit(1);
@@ -193,12 +205,12 @@ void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, AVCodecID aud
     }
     if (printInfo) {
         cout << "format: " << fileFormat << " duration: " << duration << endl;
-        cout << "audio_codec_id: " << audioId << endl;
+        cout << "audio_codec_id: " << param->codec_id << endl;
     }
+    return param->codec_id;
 
 
 }
-
 
 /**
  * creates file objects for the input and output files
