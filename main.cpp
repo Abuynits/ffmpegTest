@@ -48,13 +48,13 @@ int main() {
     }
     //try to open pParser -for parsing frames
     pParser = av_parser_init(pCodec->id);
-    if (pParser== nullptr) {
+    if (pParser == nullptr) {
         cout << stderr << "Parser not found" << endl;
         exit(1);
     }
     //get the context of the audio pCodec- hold info for encode/decode process
     pCodecContext = avcodec_alloc_context3(pCodec);
-    if (pCodecContext== nullptr) {
+    if (pCodecContext == nullptr) {
         cout << stderr << "Could not allocate audio pCodec context" << endl;
         exit(1);
     }
@@ -105,6 +105,8 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
         return resp;
     }
     while (resp >= 0) {
+        int counter = 0;
+        getAFrame:
         resp = avcodec_receive_frame(pContext, pFrame);
         //if have an error code while getting a frame from a packet, break
         //TODO: getting AVERROR(EAGAIN)
@@ -116,11 +118,22 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
          * https://stackoverflow.com/questions/55354120/ffmpeg-avcodec-receive-frame-returns-averroreagain
          */
         if (resp == AVERROR(EAGAIN)) {
-            break;
+            counter++;
+            cout << "Not enough data in frame, skipping to next packet, counter:" << counter << endl;
+            //decoded not have enough data to process frame
+            //not error unless reached end of the stream - pass more packets untill have enough to produce frame
+            av_frame_unref(pFrame);
+            av_freep(pFrame);
+            //getting another packet
+            return 0;
         } else if (resp < 0) {
+            // Failed to get a frame from the decoder
+            av_frame_unref(pFrame);
+            av_freep(pFrame);
             cout << stderr << " Error while getting frame from codec: %s" << av_err2str(resp) << endl;
             return resp;
         }
+        cout << "enough data to process!" << endl;
         if (printFrameData) {
             cout << "frame number: " << pContext->frame_number
                  << ", Pkt_Size: " << pFrame->pkt_size
@@ -138,8 +151,9 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
 //            for (int ch = 0; ch < pContext->ch_layout.nb_channels; ch++)//NOTE: original line
             for (int ch = 0; ch < pContext->channel_layout; ch++)
                 fwrite(pFrame->data[ch] + resp * i, 1, reinterpret_cast<size_t>(pFrame), outfile);
-
     }
+
+
 }
 
 /**
@@ -152,10 +166,13 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
 void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, AVCodecID audioId, const char *inputFilePath) {
     const char *fileFormat = pContext->iformat->long_name;
     int64_t duration = pContext->duration;
-    audioId = pContext->audio_codec_id;
+    //TODO: need to check wether the lenght of streams is >0- if it is, show error, but continue the run- want only 1 audio stream
+    if( pContext->nb_streams>1){
+        cout<<"CAUTION: detected more than 1 streams \t using streams[0]"<<endl;
+    }
+    AVCodecParameters *param = pContext->streams[0]->codecpar;
 
-
-    if (audioId == AV_CODEC_ID_NONE) {
+    if (param->codec_id == AV_CODEC_ID_NONE) {
         string path = (string) (inputFilePath);
         int loc = path.find('.');
 
