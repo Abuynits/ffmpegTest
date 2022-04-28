@@ -76,7 +76,6 @@ int main() {
     while (av_read_frame(pFormatContext, pPacket) >= 0) {
 
         int response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
-        //TODO: bug here which is breaking
         if (response < 0) {
             cout << stderr << "ERROR: broken processor, return value: " << response << endl;
             exit(1);
@@ -108,6 +107,14 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
     while (resp >= 0) {
         resp = avcodec_receive_frame(pContext, pFrame);
         //if have an error code while getting a frame from a packet, break
+        //TODO: getting AVERROR(EAGAIN)
+        /*
+         * FIX:
+         * When you call avcodec_receive_frame and get EAGAIN error that means your decoder does not get enough data to decode
+         * (e.x you send a B-frame in video).
+         * So each time you get that error you should ignore it and go to next avcodec_send_packet
+         * https://stackoverflow.com/questions/55354120/ffmpeg-avcodec-receive-frame-returns-averroreagain
+         */
         if (resp == AVERROR(EAGAIN)) {
             break;
         } else if (resp < 0) {
