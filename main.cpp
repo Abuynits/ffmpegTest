@@ -54,19 +54,43 @@ int main() {
         cout << stderr << " ERROR could not get the stream info" << endl;
         exit(1);
     }
-    AVCodec *pCodec = nullptr;
+    const AVCodec *pCodec = nullptr;
     AVCodecParserContext *pParser = nullptr;
     AVCodecContext *pCodecContext = nullptr;
     AVCodecParameters *pCodecParam = nullptr;
-    showDataGetCodecId(pFormatContext, true, inputFP, pCodec, pCodecParam);
+//    showDataGetCodecId(pFormatContext, true, inputFP, pCodec, pCodecParam);
+    //-----------------------------
+    if (pFormatContext->nb_streams > 1) {
+        cout << "CAUTION: detected more than 1 streams \t using streams[0]" << endl;
+    }
 
+    pCodecParam = pFormatContext->streams[0]->codecpar;
+    // finds the registered decoder for a codec ID
+    // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga19a0ca553277f019dd5b0fec6e1f9dca
+    pCodec = avcodec_find_decoder(pCodecParam->codec_id);
+
+    if (pCodec == nullptr) {
+        pCodecParam = nullptr;
+        cout << stderr << " ERROR unsupported codec!" << endl;
+        // In this example if the codec is not found we just skip it
+    }
+    bool printInfo =true;
+    if (printInfo) {
+        const char *fileFormat = pFormatContext->iformat->long_name;
+        int64_t duration = pFormatContext->duration;
+
+        cout << "format: " << fileFormat << " duration: " << duration << endl;
+        cout << "audio_codec_id: " << pCodecParam->codec_id << endl;
+    }
+
+    //--------------------
 
     openFiles(inputFP, outputFP, inFile, outFile);
-    AVCodecID temp = pCodecContext->codec_id;
+    //    AVCodecID temp = pCodecContext->codec_id;
     //codec = device able to decode or encode data
     // pCodec = avcodec_find_decoder(temp);
     //check if can open pCodec
-    if (!pCodec) {
+    if (pCodec== nullptr) {
         cout << stderr << " ERROR: could not find pCodec ";
         exit(1);
     }
@@ -78,26 +102,17 @@ int main() {
         exit(1);
     }
 
-
-    //open the actual pCodec:
-    if (avcodec_open2(pCodecContext, pCodec, nullptr) < 0) {
-        cout << stderr << "Could not open pCodec" << endl;
-        exit(1);
-    }
-    pCodecParam = pFormatContext->streams[0]->codecpar;
     // Fill the codec context based on the values from the supplied codec parameters
     // https://ffmpeg.org/doxygen/trunk/group__lavc__core.html#gac7b282f51540ca7a99416a3ba6ee0d16
     if (avcodec_parameters_to_context(pCodecContext, pCodecParam) < 0) {
         cout << stderr << "failed to copy codec params to codec context";
         return -1;
     }
-    //try to open pParser -for parsing fra mes
-    pParser = av_parser_init(pCodec->id);
-    if (pParser == nullptr) {
-        cout << stderr << "Parser not found" << endl;
+    //open the actual pCodec:
+    if (avcodec_open2(pCodecContext, pCodec, nullptr) < 0) {
+        cout << stderr << "Could not open pCodec" << endl;
         exit(1);
     }
-
 
     //allocate memory for packet and frame readings
     // https://ffmpeg.org/doxygen/trunk/structAVFrame.html
@@ -124,6 +139,7 @@ int main() {
             break;
         // stop it, otherwise we'll be saving hundreds of frames
         if (--how_many_packets_to_process <= 0) break;
+
     }
     // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
     av_packet_unref(pPacket);
@@ -189,7 +205,7 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
         //TODO: only focussing on reading the files
     }
 
-
+    return 0;
 }
 
 /**
@@ -206,29 +222,23 @@ void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *i
         cout << "CAUTION: detected more than 1 streams \t using streams[0]" << endl;
     }
 
-    pCodecParameters = pContext->streams[0]->codecpar;
+    *pCodecParameters = *pContext->streams[0]->codecpar;
     // finds the registered decoder for a codec ID
     // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga19a0ca553277f019dd5b0fec6e1f9dca
     pCodec = avcodec_find_decoder(pCodecParameters->codec_id);
 
     if (pCodec == nullptr) {
-        pCodec = nullptr;
         pCodecParameters = nullptr;
         cout << stderr << " ERROR unsupported codec!" << endl;
         // In this example if the codec is not found we just skip it
     }
-//
-//    pLocalCodec->codec_id = AV_CODEC_ID_NONE;
-//
-//
-//    if (param->codec_id == AV_CODEC_ID_NONE) {
-//        string path = (string) (inputFilePath);
-//        int loc = path.find('.');
-//
-//        if (loc == -1) {
-//            cout << stderr << "ERROR: invalid file type" << endl;
-//            exit(1);
-//        }
+    if (printInfo) {
+        const char *fileFormat = pContext->iformat->long_name;
+        int64_t duration = pContext->duration;
+
+        cout << "format: " << fileFormat << " duration: " << duration << endl;
+        cout << "audio_codec_id: " << pCodecParameters->codec_id << endl;
+    }
 //        string ending = path.substr(loc);
 //
 //        if (ending == ".wav") {
@@ -248,8 +258,6 @@ void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *i
 //        cout << "audio_codec_id: " << param->codec_id << endl;
 //    }
 //    return param->codec_id;
-
-
 }
 
 /**
