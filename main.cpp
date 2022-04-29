@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "AudioDecoder.h"
 
 
 extern "C" {
@@ -22,6 +23,10 @@ using namespace std;
 int main() {
     const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
     const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
+    AudioDecoder decoder(inputFP,outputFP);
+    decoder.initializeAllObjects();
+
+
     //TODO: check if I need to use pParser with guides
     FILE *inFile = nullptr, *outFile = nullptr;
     //hold the header information from the format (file)

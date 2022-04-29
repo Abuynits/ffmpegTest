@@ -4,7 +4,7 @@
 
 #include "AudioDecoder.h"
 
-AudioDecoder::AudioDecoder(char *inFilePath, char *outFilePath) {
+AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath) {
 
     this->inFilePath = inFilePath;
     this->outFilePath = outFilePath;
@@ -211,21 +211,12 @@ void AudioDecoder::initializeAllObjects() {
     }
 }
 
-void AudioDecoder::processData() {
-    //allocate memory for packet and frame readings
-    // https://ffmpeg.org/doxygen/trunk/structAVFrame.html
-    AVPacket *pPacket = av_packet_alloc();
-    if (!pPacket) {
-        cout << stderr << "Could not open packet" << endl;
-        exit(1);
-    }
-    //allocate memory for frame from readings
-    // https://ffmpeg.org/doxygen/trunk/structAVPacket.html
-    AVFrame *pFrame = av_frame_alloc();
-    if (!pFrame) {
-        cout << stderr << "Could not open frame" << endl;
-        exit(1);
-    }
-    //now that all necessary parts have been initialized, we will loop over the packets
-    loopOverPackets();
+void AudioDecoder::closeAllObjects() {
+    fclose(inFile);
+    fclose(outFile);
+
+    avcodec_free_context(&pCodecContext);
+    av_parser_close(pParser);
+    av_frame_free(&pFrame);
+    av_packet_free(&pPacket);
 }

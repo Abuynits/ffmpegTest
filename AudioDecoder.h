@@ -19,7 +19,7 @@ extern "C" {
 
 class AudioDecoder {
 public:
-    char *inFilePath, *outFilePath;
+    const char *inFilePath, *outFilePath;
     FILE *inFile = nullptr, *outFile = nullptr;
     AVFormatContext *pFormatContext;
     const AVCodec *pCodec;
@@ -29,7 +29,7 @@ public:
     AVPacket *pPacket;
     AVFrame *pFrame;
 
-    AudioDecoder(char *inFilePath, char *ptrOutFilePath);
+    AudioDecoder(const char *inFilePath, const char *ptrOutFilePath);
 
     void initializeAllObjects();
 
@@ -45,6 +45,8 @@ private:
                       FILE *outfile);
 
     void showDataGetCodec(bool printInfo);
+
+    void closeAllObjects();
 
 };
 
