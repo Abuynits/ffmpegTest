@@ -9,7 +9,7 @@ set(FFMPEG_DIR /usr/local/Cellar/ffmpeg/5.0.1)
 include_directories(${FFMPEG_DIR}/include/)
 link_directories(${FFMPEG_DIR}/lib/)
 
-add_executable(ffmpegTest5 main.cpp)
+add_executable(ffmpegTest5 main.cpp AudioDecoder.cpp AudioDecoder.h)
 target_link_libraries(ffmpegTest5 avformat avcodec avutil)
 # libbar.so is found in ${CMAKE_SOURCE_DIR}/lib
 #
