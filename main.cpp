@@ -15,7 +15,8 @@ extern "C" {
 
 void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut);
 
-void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *inputFilePath,AVCodec* pCodec,AVCodecParameters *pCodecParameters);
+void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *inputFilePath, const AVCodec *pCodec,
+                        AVCodecParameters *pCodecParameters);
 
 int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData, FILE *outfile);
 
@@ -57,13 +58,13 @@ int main() {
     AVCodecParserContext *pParser = nullptr;
     AVCodecContext *pCodecContext = nullptr;
     AVCodecParameters *pCodecParam = nullptr;
-    showDataGetCodecId(pFormatContext, true, inputFP,pCodec,pCodecParam);
+    showDataGetCodecId(pFormatContext, true, inputFP, pCodec, pCodecParam);
 
 
     openFiles(inputFP, outputFP, inFile, outFile);
     AVCodecID temp = pCodecContext->codec_id;
     //codec = device able to decode or encode data
-   // pCodec = avcodec_find_decoder(temp);
+    // pCodec = avcodec_find_decoder(temp);
     //check if can open pCodec
     if (!pCodec) {
         cout << stderr << " ERROR: could not find pCodec ";
@@ -198,23 +199,23 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
  * @param audioId the returning audio_codec_id
  * @param inputFilePath the input file path of the input file
  */
-void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *inputFilePath,const AVCodec* pCodec,AVCodecParameters *pCodecParameters) {
+void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *inputFilePath, const AVCodec *pCodec,
+                        AVCodecParameters *pCodecParameters) {
 
     if (pContext->nb_streams > 1) {
         cout << "CAUTION: detected more than 1 streams \t using streams[0]" << endl;
     }
 
-    AVCodecParameters *localParam = pContext->streams[1]->codecpar;
+    pCodecParameters = pContext->streams[0]->codecpar;
     // finds the registered decoder for a codec ID
     // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga19a0ca553277f019dd5b0fec6e1f9dca
-    const AVCodec *pLocalCodec = avcodec_find_decoder(localParam->codec_id);
+    pCodec = avcodec_find_decoder(pCodecParameters->codec_id);
 
-    if (pLocalCodec== nullptr) {
-        cout<<stderr<<" ERROR unsupported codec!"<<endl;
+    if (pCodec == nullptr) {
+        pCodec = nullptr;
+        pCodecParameters = nullptr;
+        cout << stderr << " ERROR unsupported codec!" << endl;
         // In this example if the codec is not found we just skip it
-    }else{
-        pCodec = pLocalCodec;
-        pCodecParameters = localParam;
     }
 //
 //    pLocalCodec->codec_id = AV_CODEC_ID_NONE;
