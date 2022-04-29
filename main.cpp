@@ -51,7 +51,7 @@ int main() {
 
     decoder.closeAllObjects();
     cout << "succesfully exited program!" << endl;
-
+    //TODO: all works, need to figure out how to write to a file
     return 0;
 }
 
