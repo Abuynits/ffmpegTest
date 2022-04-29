@@ -1,0 +1,4 @@
+main code doc:
+https://github.com/leandromoreira/ffmpeg-libav-tutorial/blob/master/0_hello_world.c
+secondary code doc:
+https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/decode_audio.c
