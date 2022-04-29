@@ -12,9 +12,28 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-void loopOverPackets(AVFormatContext *pFormatContext, AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame,
-                     bool printFrameData, FILE *outFile);
-
+/**
+ * loops over the frames in an audio stream
+ * @param pFormatContext the context of the file
+ * @param pPacket the packet used to process the audio file
+ * @param pCodecContext the context of the codec
+ * @param pFrame the frame used to process the auido file
+ * @param printFrameData whether you want to print data
+ * true = print, false = dont print
+ * @param outFile the output file to which you want to write data
+ */
+void loopOverFrames(AVFormatContext *pFormatContext, AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame,
+                    bool printFrameData, FILE *outFile);
+/**
+ * loops over the packets within a frame
+ * @param pPacket the packet used to loop over the frame
+ * @param pContext the context of the audio stream
+ * @param pFrame the frame object used to loop over the packet
+ * @param printFrameData whether you want to print data
+ * true = print data, false = not print data
+ * @param outfile the output file to which you want to write to
+ * @return
+ */
 int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData, FILE *outfile);
 
 using namespace std;
@@ -27,18 +46,18 @@ int main() {
 
     decoder.initializeAllObjects();
 
-    loopOverPackets(decoder.pFormatContext, decoder.pPacket, decoder.pCodecContext, decoder.pFrame, true,
-                    decoder.outFile);
+    loopOverFrames(decoder.pFormatContext, decoder.pPacket, decoder.pCodecContext, decoder.pFrame, true,
+                   decoder.outFile);
 
     decoder.closeAllObjects();
     cout << "succesfully exited program!" << endl;
-    
+
     return 0;
 }
 
 
-void loopOverPackets(AVFormatContext *pFormatContext, AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame,
-                     bool printFrameData, FILE *outFile) {
+void loopOverFrames(AVFormatContext *pFormatContext, AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame,
+                    bool printFrameData, FILE *outFile) {
 
     int response = 0;
     int how_many_packets_to_process = 8;

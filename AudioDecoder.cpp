@@ -11,13 +11,7 @@ AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath) {
 
 }
 
-/**
- * creates file objects for the input and output files
- * @param fpIn input filepath
- * @param fpOut output filepath
- * @param fileIn input file object
- * @param fileOut output file object
- */
+
 void AudioDecoder::openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut) {
     fileIn = fopen(fpIn, "rb");
     fileOut = fopen(fpOut, "wb");
@@ -53,25 +47,6 @@ void AudioDecoder::showDataGetCodec(bool printInfo) {
         cout << "format: " << fileFormat << " duration: " << duration << endl;
         cout << "audio_codec_id: " << pCodecParam->codec_id << endl;
     }
-//        string ending = path.substr(loc);
-//
-//        if (ending == ".wav") {
-//            param->codec_id = AV_CODEC_ID_GSM_MS;
-//        } else if (ending == ".mp3") {
-//            param->codec_id = AV_CODEC_ID_MP3;
-//        } else {
-//            cout << stderr << "ERROR: not found audio ending" << endl;
-//            exit(1);
-//        }
-//    }
-//    if (printInfo) {
-//        const char *fileFormat = pContext->iformat->long_name;
-//        int64_t duration = pContext->duration;
-//
-//        cout << "format: " << fileFormat << " duration: " << duration << endl;
-//        cout << "audio_codec_id: " << param->codec_id << endl;
-//    }
-//    return param->codec_id;
 
 }
 
@@ -150,6 +125,7 @@ void AudioDecoder::initializeAllObjects() {
 }
 
 void AudioDecoder::closeAllObjects() {
+
     fclose(inFile);
     fclose(outFile);
 
