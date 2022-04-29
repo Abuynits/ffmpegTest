@@ -17,6 +17,8 @@ void loopOverPackets(AVFormatContext *pFormatContext, AVPacket *pPacket, AVCodec
 
 int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData, FILE *outfile);
 
+void saveAudioFrame(unsigned char *buf, int wrap, int xSize, int ySize, FILE *outFile);
+
 using namespace std;
 
 int main() {
@@ -32,7 +34,7 @@ int main() {
 
     decoder.closeAllObjects();
     cout << "succesfully exited program!" << endl;
-    
+
     return 0;
 }
 
@@ -40,7 +42,7 @@ int main() {
 void loopOverPackets(AVFormatContext *pFormatContext, AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame,
                      bool printFrameData, FILE *outFile) {
 
-    int response = 0;
+    int response;
     int how_many_packets_to_process = 8;
 
     // fill the Packet with data from the Stream
@@ -50,11 +52,15 @@ void loopOverPackets(AVFormatContext *pFormatContext, AVPacket *pPacket, AVCodec
         if (response < 0)
             break;
         // stop it, otherwise we'll be saving hundreds of frames
-        if (--how_many_packets_to_process <= 0) break;
+        if (--how_many_packets_to_process <= 0) {
+            cout<<"breaking loop"<<endl;
+            break;
 
+        }
+        // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
+        av_packet_unref(pPacket);
     }
-    // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
-    av_packet_unref(pPacket);
+
 }
 
 int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData,
@@ -62,7 +68,7 @@ int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFra
     //send raw data packed to decoder
     int resp = avcodec_send_packet(pContext, pPacket);
     if (resp < 0) {
-        //check if error while sending packet to decoder
+        cout<<"Error while receiving a frame from the decoder: "<< av_err2str(resp)<<endl;
         return resp;
     }
     while (resp >= 0) {
@@ -94,8 +100,19 @@ int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFra
                  << ", Pkt_keyFrame: " << pFrame->key_frame << endl;
 
         }
-        //TODO: only focussing on reading the files
+
+        //TODO: process files here
+
+       saveAudioFrame(pFrame->data[0],pFrame->linesize[0],pFrame->width,pFrame->height,outfile);
     }
 
     return 0;
+}
+
+void saveAudioFrame(unsigned char *buf, int wrap, int xSize, int ySize, FILE *outFile) {
+    cout<<"writing to file"<<endl;
+    for(int i=0; i<ySize;i++){
+        fwrite(buf+i*wrap,1,xSize,outFile);
+    }
+    fclose(outFile);
 }
