@@ -12,12 +12,20 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-void loopOverPackets(AVFormatContext *pFormatContext, AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame,
-                     bool printFrameData, FILE *outFile);
+/**
+ * loops over the packets of a audio stream
+ * @param ad the audiodecoder which holds all of the data
+ * @param showData specifies whether you want to show data (true = yes)
+ */
+void loopOverPackets(AudioDecoder *ad, bool showData);
 
-int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData, FILE *outfile);
-
-void saveAudioFrame(unsigned char *buf, int wrap, int xSize, int ySize, FILE *outFile);
+/**
+ * loops over the frames present in an individual audio packet
+ * @param ad audiodecoder which contains all of the important objects
+ * @param showData specifies whether you want to show data (true = yes)
+ * @return value of whether you have a successful transfer, 0= success, <0= pain....
+ */
+int processAudioPacket(AudioDecoder *ad, bool showData);
 
 using namespace std;
 
@@ -29,59 +37,54 @@ int main() {
 
     decoder.initializeAllObjects();
 
-    loopOverPackets(decoder.pFormatContext, decoder.pPacket, decoder.pCodecContext, decoder.pFrame, true,
-                    decoder.outFile);
+    loopOverPackets(&decoder, true);
 
     decoder.closeAllObjects();
-    cout << "succesfully exited program!" << endl;
+    cout << "succesfully converted file!" << endl;
 
     return 0;
 }
 
-
-void loopOverPackets(AVFormatContext *pFormatContext, AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame,
-                     bool printFrameData, FILE *outFile) {
-
+void loopOverPackets(AudioDecoder *ad, bool showData) {
     int response;
     int how_many_packets_to_process = 8;
 
     // fill the Packet with data from the Stream
     // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga4fdb3084415a82e3810de6ee60e46a61
-    while (av_read_frame(pFormatContext, pPacket) >= 0) {
-        response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
+    while (av_read_frame(ad->pFormatContext, ad->pPacket) >= 0) {
+        response = processAudioPacket(ad, showData);
         if (response < 0)
             break;
         // stop it, otherwise we'll be saving hundreds of frames
         if (--how_many_packets_to_process <= 0) {
-            cout<<"breaking loop"<<endl;
+            cout << "reach end of file" << endl;
             break;
 
         }
         // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
-        av_packet_unref(pPacket);
+        av_packet_unref(ad->pPacket);
     }
 
 }
 
-int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData,
-                      FILE *outfile) {
+int processAudioPacket(AudioDecoder *ad, bool showData) {
     //send raw data packed to decoder
-    int resp = avcodec_send_packet(pContext, pPacket);
+    int resp = avcodec_send_packet(ad->pCodecContext, ad->pPacket);
     if (resp < 0) {
-        cout<<"Error while receiving a frame from the decoder: "<< av_err2str(resp)<<endl;
+        cout << "Error while receiving a frame from the decoder: " << av_err2str(resp) << endl;
         return resp;
     }
     while (resp >= 0) {
         // Return decoded output data (into a frame) from a decoder
         // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
-        resp = avcodec_receive_frame(pContext, pFrame);
+        resp = avcodec_receive_frame(ad->pCodecContext, ad->pFrame);
         if (resp == AVERROR(EAGAIN)) {
             cout << "Not enough data in frame, skipping to next packet" << endl;
             //decoded not have enough data to process frame
             //not error unless reached end of the stream - pass more packets untill have enough to produce frame
             clearFrames:
-            av_frame_unref(pFrame);
-            av_freep(pFrame);
+            av_frame_unref(ad->pFrame);
+            av_freep(ad->pFrame);
             break;
         } else if (resp == AVERROR_EOF) {
             cout << "Reached end of file" << endl;
@@ -89,30 +92,22 @@ int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFra
         } else if (resp < 0) {
             cout << "Error while receiving a frame from the decoder: " << av_err2str(resp) << endl;
             // Failed to get a frame from the decoder
-            av_frame_unref(pFrame);
-            av_freep(pFrame);
+            av_frame_unref(ad->pFrame);
+            av_freep(ad->pFrame);
             return resp;
         }
-        if (printFrameData) {
-            cout << "frame number: " << pContext->frame_number
-                 << ", Pkt_Size: " << pFrame->pkt_size
-                 << ", Pkt_pts: " << pFrame->pts
-                 << ", Pkt_keyFrame: " << pFrame->key_frame << endl;
+        if (showData) {
+            cout << "frame number: " << ad->pCodecContext->frame_number
+                 << ", Pkt_Size: " << ad->pFrame->pkt_size
+                 << ", Pkt_pts: " << ad->pFrame->pts
+                 << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
 
         }
 
-        //TODO: process files here
+        //TODO: process files here through filters and more!
 
-       saveAudioFrame(pFrame->data[0],pFrame->linesize[0],pFrame->width,pFrame->height,outfile);
+        ad->saveAudioFrame();
     }
 
     return 0;
-}
-
-void saveAudioFrame(unsigned char *buf, int wrap, int xSize, int ySize, FILE *outFile) {
-    cout<<"writing to file"<<endl;
-    for(int i=0; i<ySize;i++){
-        fwrite(buf+i*wrap,1,xSize,outFile);
-    }
-    fclose(outFile);
 }

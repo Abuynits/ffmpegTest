@@ -32,13 +32,44 @@ public:
 
     AudioDecoder(const char *inFilePath, const char *ptrOutFilePath);
 
+/**
+ * intializes:
+ *  AVFormatContext *pFormatContext
+    const AVCodec *pCodec
+    AVCodecParserContext *pParser
+    AVCodecContext *pCodecContext
+    AVCodecParameters *pCodecParam
+    AVPacket *pPacket
+    AVFrame *pFrame
+ */
     void initializeAllObjects();
 
+/**
+ * closes the input and output files
+ * frees the codec, parser, frame, packet
+ */
     void closeAllObjects();
 
+/**
+ * saves the audio using the first channel provided
+ */
+    void saveAudioFrame();
+
 private:
+/**
+ * creates file objects for the input and output files
+ * @param fpIn input filepath
+ * @param fpOut output filepath
+ * @param fileIn input file object
+ * @param fileOut output file object
+ */
     void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut);
 
+    /**
+     * inidializes the codec and its format and paramters
+     * shows general info of the file
+     * @param printInfo specify whether you want to show info of the file
+     */
     void showDataGetCodec(bool printInfo);
 
 
