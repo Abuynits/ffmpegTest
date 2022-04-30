@@ -30,3 +30,7 @@ https://rodic.fr/blog/libavcodec-tutorial-decode-audio-file/
 https://www.gamedev.net/forums/topic/624876-how-to-read-an-audio-file-with-ffmpeg-in-c/
 https://riptutorial.com/ffmpeg/example/30962/decode-frames
 https://ffmpeg.org/doxygen/trunk/structAVCodecParameters.html
+
+FILTER NOTES:
+ffmpeg filters: https://ffmpeg.org/ffmpeg-filters.html
+https://www.reddit.com/r/ffmpeg/comments/l9xduf/filter_for_videoparts_with_human_voice/

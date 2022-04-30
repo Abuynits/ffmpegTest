@@ -13,6 +13,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include "AudioDecoder.h"
 
 using namespace std;
 extern "C" {
@@ -31,20 +32,23 @@ public:
     AVFilterGraph *filterGraph;
     //used to pass in the initial frame (the first 'filter' in the graph)
     AVFilterContext *aFilterContext;
-    AVFilter *aFilter;
+    const AVFilter *aFilter;
 
     //vad filter
     AVFilterContext *vadFilterContext;
-    AVFilter *vadFilter;
+    const AVFilter *vadFilter;
 
     //lp=low pass
     AVFilterContext *lpFilterContext;
-    AVFilter *lpFilter;
+    const AVFilter *lpFilter;
 
     //hp = high pass
-    AVFilterContext  *hpFilterContext;
-    AVFilter *hpFilter;
+    AVFilterContext *hpFilterContext;
+    const AVFilter *hpFilter;
 
+    //the end point of the filter - this is how you specify what to write
+    AVFilterContext *aSinkFilterContext;
+    AVFilter *aSinkFilter;
 
 
     AudioFilter();
