@@ -14,3 +14,19 @@ AVCodec will decode them into AVFrame and this will give uncompressed frame - sa
 Good Resources:
 Main: https://github.com/leandromoreira/ffmpeg-libav-tutorial/blob/master/0_hello_world.c
 secondary: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/decode_audio.c
+
+
+https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/filter_audio.c
+https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/filter_audio.c
+https://github.com/leandromoreira/ffmpeg-libav-tutorial/blob/master/0_hello_world.c
+http://unick-soft.ru/article.php?id=14
+https://github.com/leandromoreira/ffmpeg-libav-tutorial/blob/master/0_hello_world.c
+https://ffmpeg.org/developer.html
+https://libav.org/documentation/doxygen/master/structAVFormatContext.html
+https://www.ffmpeg.org/doxygen/2.3/group__lswr.html#details
+https://libav.org/documentation/doxygen/master/structAVFormatContext.html
+https://ffmpeg.org/doxygen/2.1/group__lavc__parsing.html
+https://rodic.fr/blog/libavcodec-tutorial-decode-audio-file/
+https://www.gamedev.net/forums/topic/624876-how-to-read-an-audio-file-with-ffmpeg-in-c/
+https://riptutorial.com/ffmpeg/example/30962/decode-frames
+https://ffmpeg.org/doxygen/trunk/structAVCodecParameters.html
