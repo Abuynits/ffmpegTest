@@ -4,7 +4,7 @@
 
 #include "AudioFilter.h"
 
-int AudioFilter::initializeAllObjets() {
+int AudioFilter::initializeAllObjets(AudioDecoder ad, int audio_stream_index) {
     //filtergraph houses all of our filters that we will use
     filterGraph = avfilter_graph_alloc();
     if (filterGraph == nullptr) {
@@ -12,28 +12,44 @@ int AudioFilter::initializeAllObjets() {
         return AVERROR(ENOMEM);
     }
     //create aBuffer filter, used for inputing data to filtergraph
-    aFilter = avfilter_get_by_name("abuffer");
-    if (aFilter == nullptr) {
+    srcFilter = avfilter_get_by_name("abuffer");
+    if (srcFilter == nullptr) {
         cout << "ERROR: Could not find the abuffer filter" << endl;
 
         return AVERROR_FILTER_NOT_FOUND;
     }
-    aFilterContext = avfilter_graph_alloc_filter(filterGraph, aFilter, "src");
-    if (aFilter == nullptr) {
+    srcFilterContext = avfilter_graph_alloc_filter(filterGraph, srcFilter, "src");
+    if (srcFilterContext == nullptr) {
         cout << "Could not allocate the inputFiler instance" << endl;
         return AVERROR(ENOMEM);
     }
-    /* Set the filter options through the AVOptions API. */
-    av_channel_layout_describe(&INPUT_CHANNEL_LAYOUT, ch_layout, sizeof(ch_layout));
-    av_opt_set(aFilterContext, "channel_layout", ch_layout, AV_OPT_SEARCH_CHILDREN);
-    av_opt_set(aFilterContext, "sample_fmt", av_get_sample_fmt_name(INPUT_FORMAT), AV_OPT_SEARCH_CHILDREN);
-    av_opt_set_q(aFilterContext, "time_base", (AVRational) {1, INPUT_SAMPLERATE}, AV_OPT_SEARCH_CHILDREN);
-    /* Now initialize the filter; we pass NULL options, since we have already
- * set all the options above. */
-    err = avfilter_init_str(aFilterContext, NULL);
-    if (err < 0) {
-        fprintf(stderr, "Could not initialize the abuffer filter.\n");
-        return err;
+
+    inputs = avfilter_inout_alloc();
+    outputs = avfilter_inout_alloc();
+
+    //check if have channel layout:
+    if (!ad.pCodecContext->channel_layout) {
+        cout << "warning: channel context not intialied... intializing" << endl;
+        ad.pCodecContext->channel_layout = av_get_default_channel_layout(ad.pCodecContext->channel_layout);
     }
+
+    AVRational time_base = ad.pFormatContext->streams[audio_stream_index]->time_base;
+    //store the value in args as if you were going to print.
+    snprintf(args, sizeof(args),
+             "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"
+    PRIx64,
+            time_base.num, time_base.den, ad.pCodecContext->sample_rate,
+            av_get_sample_fmt_name(ad.pCodecContext->sample_fmt), ad.pCodecContext->channel_layout);
+    int resp = avfilter_graph_create_filter(&srcFilterContext, srcFilter, "in",
+                                            args, NULL, filterGraph);
+    if (resp < 0) {
+        cout << "ERROR: creating srcFilter: " << av_err2str(resp) << endl;
+        return resp;
+    }
+
+
+}
+
+AudioFilter::AudioFilter() {
 
 }

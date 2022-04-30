@@ -17,43 +17,38 @@
 
 using namespace std;
 extern "C" {
-#include "libavutil/channel_layout.h"
-#include "libavutil/md5.h"
-#include "libavutil/mem.h"
-#include "libavutil/opt.h"
-#include "libavutil/samplefmt.h"
-#include "libavfilter/avfilter.h"
-#include "libavfilter/buffersink.h"
-#include "libavfilter/buffersrc.h"
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/opt.h>
 }
 
 class AudioFilter {
 public:
     AVFilterGraph *filterGraph;
     //used to pass in the initial frame (the first 'filter' in the graph)
-    AVFilterContext *aFilterContext;
-    const AVFilter *aFilter;
+    AVFilterContext *srcFilterContext;
+    const AVFilter *srcFilter;
 
     //vad filter
-    AVFilterContext *vadFilterContext;
-    const AVFilter *vadFilter;
-
-    //lp=low pass
-    AVFilterContext *lpFilterContext;
-    const AVFilter *lpFilter;
-
-    //hp = high pass
-    AVFilterContext *hpFilterContext;
-    const AVFilter *hpFilter;
+    AVFilterContext *volumeFilterContext = nullptr;
+    const AVFilter *volumeFilter = nullptr;
 
     //the end point of the filter - this is how you specify what to write
-    AVFilterContext *aSinkFilterContext;
-    AVFilter *aSinkFilter;
+    AVFilterContext *sinkFilterContext = nullptr;
+    AVFilter *sinkFilter = nullptr;
+
+    AVFilterInOut *inputs = nullptr;
+    AVFilterInOut *outputs = nullptr;
+//hold arguements for the filter creation
+    char args[512];
 
 
     AudioFilter();
 
-    int initializeAllObjets();
+    int initializeAllObjets(AudioDecoder ad, int audio_stream_index = 0);
 
 private:
 };
