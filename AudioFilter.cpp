@@ -29,8 +29,8 @@ int AudioFilter::initializeAllObjets(AudioDecoder ad, int audio_stream_index) {
 
     //check if have channel layout:
     if (!ad.pCodecContext->channel_layout) {
-        cout << "warning: channel context not intialied... intializing" << endl;
-        ad.pCodecContext->channel_layout = av_get_default_channel_layout(ad.pCodecContext->channel_layout);
+        cout << "warning: channel context not initialized... initializing" << endl;
+        ad.pCodecContext->channel_layout = av_get_default_channel_layout(ad.pCodecContext->channels);
     }
 
     AVRational time_base = ad.pFormatContext->streams[audio_stream_index]->time_base;
