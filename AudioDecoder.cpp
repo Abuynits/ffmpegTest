@@ -134,3 +134,16 @@ void AudioDecoder::closeAllObjects() {
     av_frame_free(&pFrame);
     av_packet_free(&pPacket);
 }
+
+void AudioDecoder::saveAudioFrame() {
+    unsigned char *buf = pFrame->data[0];
+    int wrap = pFrame->linesize[0];
+    int xSize = pFrame->width;
+    int ySize = pFrame->height;
+
+    cout << "writing to file" << endl;
+    for (int i = 0; i < ySize; i++) {
+        fwrite(buf + i * wrap, 1, xSize, outFile);
+    }
+    fclose(outFile);
+}

@@ -11,3 +11,6 @@ ie can have audio and video - split the streams. each one will be available in c
 stream 1: audio encoded with aac codec
 stream 2: video encoded with h264 (avc) codec
 AVCodec will decode them into AVFrame and this will give uncompressed frame - same terminology/ process used in audio and video
+Good Resources:
+Main: https://github.com/leandromoreira/ffmpeg-libav-tutorial/blob/master/0_hello_world.c
+secondary: https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/decode_audio.c

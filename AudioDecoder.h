@@ -29,35 +29,31 @@ public:
     AVPacket *pPacket = nullptr;
     AVFrame *pFrame = nullptr;
 
-/**
- * constructor adds file paths to the object
- * @param inFilePath input file path
- * @param ptrOutFilePath output file path
- */
+
     AudioDecoder(const char *inFilePath, const char *ptrOutFilePath);
 
 /**
- *  initializes the following objects:
- * out and in files
- * AVFormatContext
- * AVCodec
- * AVCodecParserContext
- * AVCodecContext
- * AVCondecPArameters
- * AVPacket
- * AVFrame
+ * intializes:
+ *  AVFormatContext *pFormatContext
+    const AVCodec *pCodec
+    AVCodecParserContext *pParser
+    AVCodecContext *pCodecContext
+    AVCodecParameters *pCodecParam
+    AVPacket *pPacket
+    AVFrame *pFrame
  */
     void initializeAllObjects();
 
 /**
- * closes all of the objects which include:
- * both files
- * av parser
- * av frame
- * av packet
- * av codec
+ * closes the input and output files
+ * frees the codec, parser, frame, packet
  */
     void closeAllObjects();
+
+/**
+ * saves the audio using the first channel provided
+ */
+    void saveAudioFrame();
 
 private:
 /**
@@ -69,11 +65,13 @@ private:
  */
     void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut);
 
-    /*
-     * instantiates the avcodec, its parameters, and context
-     * helper function
+    /**
+     * inidializes the codec and its format and paramters
+     * shows general info of the file
+     * @param printInfo specify whether you want to show info of the file
      */
     void showDataGetCodec(bool printInfo);
+
 
 };
 
