@@ -40,6 +40,7 @@ int main() {
     loopOverPackets(&decoder, true);
 
     decoder.closeAllObjects();
+
     cout << "succesfully converted file!" << endl;
 
     return 0;
