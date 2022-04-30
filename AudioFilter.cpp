@@ -11,7 +11,7 @@ int AudioFilter::initializeAllObjets(AudioDecoder ad, int audio_stream_index) {
         cout << "ERROR: Unable to create filterGraph" << endl;
         return AVERROR(ENOMEM);
     }
-    //create aBuffer filter, used for inputing data to filtergraph
+    //create aBuffer filter, used for inputing data to filtergraph -> recieves frames from the decoder
     srcFilter = avfilter_get_by_name("abuffer");
     if (srcFilter == nullptr) {
         cout << "ERROR: Could not find the abuffer filter" << endl;
@@ -42,6 +42,9 @@ int AudioFilter::initializeAllObjets(AudioDecoder ad, int audio_stream_index) {
             av_get_sample_fmt_name(ad.pCodecContext->sample_fmt), ad.pCodecContext->channel_layout);
     int resp = avfilter_graph_create_filter(&srcFilterContext, srcFilter, "in",
                                             args, NULL, filterGraph);
+
+
+
     if (resp < 0) {
         cout << "ERROR: creating srcFilter: " << av_err2str(resp) << endl;
         return resp;
