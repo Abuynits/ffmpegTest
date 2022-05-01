@@ -12,44 +12,9 @@ int AudioFilter::initializeAllObjets(AudioDecoder *ad, int audio_stream_index) {
         return AVERROR(ENOMEM);
     }
 //create aBuffer filter, used for inputing data to filtergraph -> recieves frames from the decoder
-    srcFilter = avfilter_get_by_name("abuffer");
-    if (srcFilter == nullptr) {
-        cout << "ERROR: Could not find the abuffer filter" << endl;
-
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-    srcFilterContext = avfilter_graph_alloc_filter(filterGraph, srcFilter, "src");
-    if (srcFilterContext == nullptr) {
-        cout << "Could not allocate the inputFilter context" << endl;
-        return AVERROR(ENOMEM);
-    }
-
-
-
-
-//check if have channel layout:
-    if (!ad->pCodecContext->channel_layout) {
-        cout << "warning: channel context not initialized... initializing" << endl;
-        ad->pCodecContext->channel_layout = av_get_default_channel_layout(ad->pCodecContext->channels);
-    }
-
-    AVRational time_base = ad->pFormatContext->streams[audio_stream_index]->time_base;
-//store the value in args as if you were going to print.
-    snprintf(args, sizeof(args),
-             "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"
-             PRIx64,
-             time_base.num, time_base.den, ad->pCodecContext->sample_rate,
-             av_get_sample_fmt_name(ad->pCodecContext->sample_fmt), ad->pCodecContext->channel_layout);
-
-    int resp = avfilter_graph_create_filter(&srcFilterContext, srcFilter, "in",
-                                            args, nullptr, filterGraph);
-
-    if (resp < 0) {
-        cout << "ERROR: creating srcFilter: " << av_err2str(resp) << endl;
-        return resp;
-    }
-
+    if (initInputFilter(ad, audio_stream_index) < 0) return -1;
     //----------------SINK FILTER CREATION----------------
+    int resp = 0;
 
     sinkFilter = avfilter_get_by_name("abuffersink");
     if (srcFilter == nullptr) {
@@ -71,7 +36,7 @@ int AudioFilter::initializeAllObjets(AudioDecoder *ad, int audio_stream_index) {
         return resp;
     }
 
-    const enum AVSampleFormat out_sample_fmts[] = {ad->pCodecContext->sample_fmt,AV_SAMPLE_FMT_NONE};
+    const enum AVSampleFormat out_sample_fmts[] = {ad->pCodecContext->sample_fmt, AV_SAMPLE_FMT_NONE};
     resp = av_opt_set_int_list((void *) sinkFilter, "sample_fmts", out_sample_fmts, -1,
                                AV_OPT_SEARCH_CHILDREN);
     if (resp < 0) {
@@ -133,4 +98,41 @@ int AudioFilter::initializeAllObjets(AudioDecoder *ad, int audio_stream_index) {
 
 AudioFilter::AudioFilter() {
 
+}
+
+int AudioFilter::initInputFilter(AudioDecoder *ad, int audio_stream_index) {
+    srcFilter = avfilter_get_by_name("abuffer");
+    if (srcFilter == nullptr) {
+        cout << "ERROR: Could not find the abuffer filter" << endl;
+
+        return AVERROR_FILTER_NOT_FOUND;
+    }
+    srcFilterContext = avfilter_graph_alloc_filter(filterGraph, srcFilter, "src");
+    if (srcFilterContext == nullptr) {
+        cout << "Could not allocate the inputFilter context" << endl;
+        return AVERROR(ENOMEM);
+    }
+
+//check if have channel layout:
+    if (!ad->pCodecContext->channel_layout) {
+        cout << "warning: channel context not initialized... initializing" << endl;
+        ad->pCodecContext->channel_layout = av_get_default_channel_layout(ad->pCodecContext->channels);
+    }
+
+    AVRational time_base = ad->pFormatContext->streams[audio_stream_index]->time_base;
+//store the value in args as if you were going to print.
+    snprintf(args, sizeof(args),
+             "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"
+             PRIx64,
+             time_base.num, time_base.den, ad->pCodecContext->sample_rate,
+             av_get_sample_fmt_name(ad->pCodecContext->sample_fmt), ad->pCodecContext->channel_layout);
+
+    int resp = avfilter_graph_create_filter(&srcFilterContext, srcFilter, "in",
+                                            args, nullptr, filterGraph);
+
+    if (resp < 0) {
+        cout << "ERROR: creating srcFilter: " << av_err2str(resp) << endl;
+        return resp;
+    }
+    return 0;
 }

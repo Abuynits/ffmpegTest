@@ -53,6 +53,7 @@ public:
     int initializeAllObjets(AudioDecoder *ad, int audio_stream_index = 0);
 
 private:
+    int initInputFilter(AudioDecoder *ad, int audio_stream_index = 0);
 };
 
 
