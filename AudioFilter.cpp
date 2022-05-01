@@ -14,28 +14,12 @@ int AudioFilter::initializeAllObjets(AudioDecoder *ad, int audio_stream_index) {
         cout << "ERROR: Unable to create filterGraph" << endl;
         return AVERROR(ENOMEM);
     }
-//create aBuffer filter, used for inputing data to filtergraph -> recieves frames from the decoder
-    if (initInputFilter(ad, audio_stream_index) < 0) return -1;
+    //----------------SRC FILTER CREATION----------------
+    if (initSrcFilter(ad) < 0) return -1;
     //----------------SINK FILTER CREATION----------------
+    if (initSinkFilter() < 0) return -1;
+
     int resp = 0;
-
-    sinkFilter = avfilter_get_by_name("abuffersink");
-    if (srcFilter == nullptr) {
-        cout << "ERROR: Could not find the abuffersink filter" << endl;
-
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-    sinkFilterContext = avfilter_graph_alloc_filter(filterGraph, sinkFilter, "sink");
-    if (sinkFilterContext == nullptr) {
-        cout << "Could not allocate the outputFilter context" << endl;
-        return AVERROR(ENOMEM);
-    }
-//create sink filter - used for the output of the data
-    resp = avfilter_init_str(sinkFilterContext, nullptr);
-    if (resp < 0) {
-        cout << "ERROR: creating sinkFilter: " << av_err2str(resp) << endl;
-        return resp;
-    }
 
     const enum AVSampleFormat out_sample_fmts[] = {ad->pCodecContext->sample_fmt, AV_SAMPLE_FMT_NONE};
     resp = av_opt_set_int_list((void *) sinkFilter, "sample_fmts", out_sample_fmts, -1,
@@ -99,7 +83,8 @@ AudioFilter::AudioFilter() {
 
 }
 
-int AudioFilter::initInputFilter(AudioDecoder *ad, int audio_stream_index) {
+int AudioFilter::initSrcFilter(AudioDecoder *ad) {
+    //create aBuffer filter, used for inputing data to filtergraph -> recieves frames from the decoder
     srcFilter = avfilter_get_by_name("abuffer");
     if (srcFilter == nullptr) {
         cout << "ERROR: Could not find the abuffer filter" << endl;
@@ -147,5 +132,30 @@ int AudioFilter::initInputFilter(AudioDecoder *ad, int audio_stream_index) {
         return resp;
     }
     cout << "created srcFilter!" << endl;
+    return 0;
+}
+
+int AudioFilter::initSinkFilter() {
+
+    int resp = 0;
+
+    sinkFilter = avfilter_get_by_name("abuffersink");
+    if (srcFilter == nullptr) {
+        cout << "ERROR: Could not find the abuffersink filter" << endl;
+
+        return AVERROR_FILTER_NOT_FOUND;
+    }
+    sinkFilterContext = avfilter_graph_alloc_filter(filterGraph, sinkFilter, "sink");
+    if (sinkFilterContext == nullptr) {
+        cout << "Could not allocate the outputFilter context" << endl;
+        return AVERROR(ENOMEM);
+    }
+//create sink filter - used for the output of the data
+    resp = avfilter_init_str(sinkFilterContext, nullptr);
+    if (resp < 0) {
+        cout << "ERROR: creating sinkFilter: " << av_err2str(resp) << endl;
+        return resp;
+    }
+    cout << "Created sink Filter!" << endl;
     return 0;
 }
