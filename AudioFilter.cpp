@@ -7,6 +7,9 @@
 int AudioFilter::initializeAllObjets(AudioDecoder *ad, int audio_stream_index) {
 //filtergraph houses all of our filters that we will use
     filterGraph = avfilter_graph_alloc();
+    inputs = avfilter_inout_alloc();
+    outputs = avfilter_inout_alloc();
+
     if (filterGraph == nullptr) {
         cout << "ERROR: Unable to create filterGraph" << endl;
         return AVERROR(ENOMEM);
@@ -28,9 +31,7 @@ int AudioFilter::initializeAllObjets(AudioDecoder *ad, int audio_stream_index) {
         return AVERROR(ENOMEM);
     }
 //create sink filter - used for the output of the data
-    resp = avfilter_graph_create_filter(&sinkFilterContext, sinkFilter, "out",
-                                        args, nullptr, filterGraph);
-
+    resp = avfilter_init_str(sinkFilterContext, nullptr);
     if (resp < 0) {
         cout << "ERROR: creating sinkFilter: " << av_err2str(resp) << endl;
         return resp;
@@ -64,8 +65,6 @@ int AudioFilter::initializeAllObjets(AudioDecoder *ad, int audio_stream_index) {
     }
 
 //set the endpoints for the inputs and outputs of the filter
-    inputs = avfilter_inout_alloc();
-    outputs = avfilter_inout_alloc();
 
     outputs->name = av_strdup("in");
     outputs->filter_ctx = srcFilterContext;
@@ -119,20 +118,34 @@ int AudioFilter::initInputFilter(AudioDecoder *ad, int audio_stream_index) {
         ad->pCodecContext->channel_layout = av_get_default_channel_layout(ad->pCodecContext->channels);
     }
 
-    AVRational time_base = ad->pFormatContext->streams[audio_stream_index]->time_base;
-//store the value in args as if you were going to print.
-    snprintf(args, sizeof(args),
-             "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"
-             PRIx64,
-             time_base.num, time_base.den, ad->pCodecContext->sample_rate,
-             av_get_sample_fmt_name(ad->pCodecContext->sample_fmt), ad->pCodecContext->channel_layout);
+    //   AVRational time_base = ad->pFormatContext->streams[audio_stream_index]->time_base;
+////store the value in args as if you were going to print.
+//    snprintf(args, sizeof(args),
+//             "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=",
+//             time_base.num, time_base.den, ad->pCodecContext->sample_rate,
+//             av_get_sample_fmt_name(ad->pCodecContext->sample_fmt));
+//    snprintf(args, sizeof(args),
+//             "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"
+//             PRIx64,
+//             time_base.num, time_base.den, ad->pCodecContext->sample_rate,
+//             av_get_sample_fmt_name(ad->pCodecContext->sample_fmt), ad->pCodecContext->channel_layout);
 
-    int resp = avfilter_graph_create_filter(&srcFilterContext, srcFilter, "in",
-                                            args, nullptr, filterGraph);
+    /* Set the filter options through the AVOptions API. */
+
+    char ch_layout[64];
+    av_get_channel_layout_string(ch_layout, sizeof(ch_layout), 0, ad->pCodecContext->channel_layout);
+    av_opt_set(srcFilterContext, "channel_layout", ch_layout, AV_OPT_SEARCH_CHILDREN);
+    av_opt_set(srcFilterContext, "sample_fmt", av_get_sample_fmt_name(ad->pCodecContext->sample_fmt),
+               AV_OPT_SEARCH_CHILDREN);
+    av_opt_set_q(srcFilterContext, "time_base", (AVRational) {1, ad->pCodecContext->sample_rate},
+                 AV_OPT_SEARCH_CHILDREN);
+    av_opt_set_int(srcFilterContext, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
+    int resp = avfilter_init_str(srcFilterContext, nullptr);
 
     if (resp < 0) {
         cout << "ERROR: creating srcFilter: " << av_err2str(resp) << endl;
         return resp;
     }
+    cout << "created srcFilter!" << endl;
     return 0;
 }
