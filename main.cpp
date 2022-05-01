@@ -38,7 +38,7 @@ int main() {
     decoder.initializeAllObjects();
     AudioFilter av;
 
-    av.initializeAllObjets(decoder);
+    av.initializeAllObjets(decoder, nullptr);
 //
 //    loopOverPackets(&decoder, true);
 //

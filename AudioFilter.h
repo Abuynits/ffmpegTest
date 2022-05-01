@@ -44,11 +44,13 @@ public:
     AVFilterInOut *outputs = nullptr;
 //hold arguements for the filter creation
     char args[512];
+    //link to the AVfilter
+    const AVFilterLink *outlink = nullptr;
 
 
     AudioFilter();
 
-    int initializeAllObjets(AudioDecoder ad, int audio_stream_index = 0);
+    int initializeAllObjets(AudioDecoder ad, char *filterDescription, int audio_stream_index = 0);
 
 private:
 };
