@@ -27,17 +27,18 @@ extern "C" {
 
 class AudioFilter {
 public:
+    AudioDecoder *ad;
     AVFilterGraph *filterGraph;
     //used to pass in the initial frame (the first 'filter' in the graph)
-    AVFilterContext *srcFilterContext= nullptr;
-    const AVFilter *srcFilter= nullptr;
+    AVFilterContext *srcFilterContext = nullptr;
+    const AVFilter *srcFilter = nullptr;
 
     //vad filter
     AVFilterContext *volumeFilterContext = nullptr;
     const AVFilter *volumeFilter = nullptr;
 
     //the end point of the filter - this is how you specify what to write
-    AVFilterContext *sinkFilterContext= nullptr;
+    AVFilterContext *sinkFilterContext = nullptr;
     const AVFilter *sinkFilter = nullptr;
 
     AVFilterInOut *inputs = nullptr;
@@ -48,13 +49,16 @@ public:
     const AVFilterLink *outlink = nullptr;
 
 
-    AudioFilter();
+    AudioFilter(AudioDecoder *ad);
 
-    int initializeAllObjets(AudioDecoder *ad, int audio_stream_index = 0);
+    int initializeAllObjets();
 
 private:
-    int initSrcFilter(AudioDecoder *ad);
+    int initSrcFilter();
+
     int initSinkFilter();
+
+    int initVolumeFilter();
 };
 
 

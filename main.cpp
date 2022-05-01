@@ -36,11 +36,11 @@ int main() {
     AudioDecoder decoder(inputFP, outputFP);
 
     decoder.initializeAllObjects();
-    AudioFilter av;
+    AudioFilter av(&decoder);
 
-    int resp = av.initializeAllObjets(&decoder);
-    if(resp<0){
-        cout<<"error: counld not initialize filters"<<endl;
+    int resp = av.initializeAllObjets();
+    if (resp < 0) {
+        cout << "error: counld not initialize filters" << endl;
         return 1;
     }
 //
