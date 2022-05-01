@@ -41,13 +41,6 @@ public:
     AVFilterContext *sinkFilterContext = nullptr;
     const AVFilter *sinkFilter = nullptr;
 
-    AVFilterInOut *inputs = nullptr;
-    AVFilterInOut *outputs = nullptr;
-//hold arguements for the filter creation
-    char args[512];
-    //link to the AVfilter
-    const AVFilterLink *outlink = nullptr;
-
 
     AudioFilter(AudioDecoder *ad);
 

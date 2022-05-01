@@ -87,7 +87,13 @@ int AudioFilter::initializeAllObjets() {
 
 //    outlink = sinkFilterContext->inputs[0];
 //    av_get_channel_layout_string(args, sizeof(args), -1, outlink->channel_layout);
-
+    resp = avfilter_graph_config(filterGraph, nullptr);
+    if (resp < 0) {
+        cout<<"Error configuring the filter graph: "<<av_err2str(resp);
+        return resp;
+    }
+    cout<<"configured graph!"<<endl;
+    
 //    av_log(nullptr, AV_LOG_INFO, "Output: srate:%dHz fmt:%s chlayout:%s\n",
 //           (int) outlink->sample_rate,
 //           (char *) av_x_if_null(av_get_sample_fmt_name(static_cast<AVSampleFormat>(outlink->format)), "?"),
