@@ -38,7 +38,7 @@ int main() {
     decoder.initializeAllObjects();
     AudioFilter av;
 
-    av.initializeAllObjets(decoder, nullptr);
+    av.initializeAllObjets(&decoder );
 //
 //    loopOverPackets(&decoder, true);
 //
@@ -46,7 +46,7 @@ int main() {
 //
 
 
-    cout << "succesfully converted file!" << endl;
+    cout << "successfully converted file!" << endl;
 
     return 0;
 }
