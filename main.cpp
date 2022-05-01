@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include "AudioDecoder.h"
-
+#include "AudioFilter.h"
 
 extern "C" {
 #include <libavutil/frame.h>
@@ -36,10 +36,15 @@ int main() {
     AudioDecoder decoder(inputFP, outputFP);
 
     decoder.initializeAllObjects();
+    AudioFilter av;
 
-    loopOverPackets(&decoder, true);
+    av.initializeAllObjets(decoder, nullptr);
+//
+//    loopOverPackets(&decoder, true);
+//
+//    decoder.closeAllObjects();
+//
 
-    decoder.closeAllObjects();
 
     cout << "succesfully converted file!" << endl;
 
