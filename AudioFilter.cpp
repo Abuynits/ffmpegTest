@@ -80,7 +80,7 @@ int AudioFilter::initializeAllObjets() {
         cout << "Error connecting filters: " << av_err2str(resp) << endl;
         return resp;
     }
-    cout<<"linked filters!"<<endl;
+    cout << "linked filters!" << endl;
 
     resp = avfilter_graph_config(filterGraph, nullptr);
     if (resp < 0) {
@@ -91,12 +91,7 @@ int AudioFilter::initializeAllObjets() {
 
 //    outlink = sinkFilterContext->inputs[0];
 //    av_get_channel_layout_string(args, sizeof(args), -1, outlink->channel_layout);
-    resp = avfilter_graph_config(filterGraph, nullptr);
-    if (resp < 0) {
-        cout << "Error configuring the filter graph: " << av_err2str(resp);
-        return resp;
-    }
-    cout << "configured graph!" << endl;
+
 
 //    av_log(nullptr, AV_LOG_INFO, "Output: srate:%dHz fmt:%s chlayout:%s\n",
 //           (int) outlink->sample_rate,
@@ -226,11 +221,24 @@ int AudioFilter::initVolumeFilter() {
     av_opt_set_int(volumeFilterContext, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
 
     avfilter_init_str(volumeFilterContext, nullptr);
-
     if (resp < 0) {
-        cout << "Could not initialize the volume filter: " << av_err2str(resp) << endl;
+        cout << "Could not initialize the volume filter (1):" << av_err2str(resp) << endl;
+        return resp;
+    }
+
+
+    AVDictionary *options_dict = nullptr;
+    av_dict_set(&options_dict, "volume", AV_STRINGIFY(50), 0);
+    resp = avfilter_init_dict(volumeFilterContext, &options_dict);
+    av_dict_free(&options_dict);
+    if (resp < 0) {
+        cout << "Could not initialize the volume filter (2): " << av_err2str(resp) << endl;
         return resp;
     }
     cout << "created volume Filter!" << endl;
     return 0;
+}
+
+void AudioFilter::closeAllObjects() {
+    avfilter_graph_free(&filterGraph);
 }

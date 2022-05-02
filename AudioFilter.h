@@ -48,6 +48,8 @@ public:
 
     int initializeAllObjets();
 
+    void closeAllObjects();
+
 private:
     int initSrcFilter();
 

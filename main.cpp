@@ -17,7 +17,7 @@ extern "C" {
  * @param ad the audiodecoder which holds all of the data
  * @param showData specifies whether you want to show data (true = yes)
  */
-void loopOverPackets(AudioDecoder *ad, bool showData);
+void loopOverPackets(AudioDecoder *ad, AudioFilter *av, bool showData);
 
 /**
  * loops over the frames present in an individual audio packet
@@ -25,7 +25,9 @@ void loopOverPackets(AudioDecoder *ad, bool showData);
  * @param showData specifies whether you want to show data (true = yes)
  * @return value of whether you have a successful transfer, 0= success, <0= pain....
  */
-int processAudioPacket(AudioDecoder *ad, bool showData);
+int processAudioPacket(AudioDecoder *ad, AudioFilter *av, bool showData);
+
+int filterAudioFrame(AVFrame *pFrame, AudioFilter *av);
 
 using namespace std;
 
@@ -36,17 +38,19 @@ int main() {
     AudioDecoder decoder(inputFP, outputFP);
 
     decoder.initializeAllObjects();
+
     AudioFilter av(&decoder);
 
     int resp = av.initializeAllObjets();
     if (resp < 0) {
-        cout << "error: counld not initialize filters" << endl;
+        cout << "error: could not initialize filters" << endl;
         return 1;
     }
 //
-//    loopOverPackets(&decoder, true);
+    loopOverPackets(&decoder, &av, true);
 //
-//    decoder.closeAllObjects();
+    decoder.closeAllObjects();
+    av.closeAllObjects();
 //
 
 
@@ -55,14 +59,14 @@ int main() {
     return 0;
 }
 
-void loopOverPackets(AudioDecoder *ad, bool showData) {
+void loopOverPackets(AudioDecoder *ad, AudioFilter *av, bool showData) {
     int response;
     int how_many_packets_to_process = 8;
 
     // fill the Packet with data from the Stream
     // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga4fdb3084415a82e3810de6ee60e46a61
     while (av_read_frame(ad->pFormatContext, ad->pPacket) >= 0) {
-        response = processAudioPacket(ad, showData);
+        response = processAudioPacket(ad, av, showData);
         if (response < 0)
             break;
         // stop it, otherwise we'll be saving hundreds of frames
@@ -77,7 +81,7 @@ void loopOverPackets(AudioDecoder *ad, bool showData) {
 
 }
 
-int processAudioPacket(AudioDecoder *ad, bool showData) {
+int processAudioPacket(AudioDecoder *ad, AudioFilter *av, bool showData) {
     //send raw data packed to decoder
     int resp = avcodec_send_packet(ad->pCodecContext, ad->pPacket);
     if (resp < 0) {
@@ -114,10 +118,36 @@ int processAudioPacket(AudioDecoder *ad, bool showData) {
 
         }
 
-        //TODO: process files here through filters and more!
+        //TODO: process files here through filters!
+        if (filterAudioFrame(ad->pFrame, av) < 0) {
+            cout << "error in filtering" << endl;
+
+        }
+
 
         ad->saveAudioFrame();
     }
 
     return 0;
+}
+
+int filterAudioFrame(AVFrame *pFrame, AudioFilter *av) {
+    //add to source frame:
+    int resp = av_buffersrc_add_frame(av->srcFilterContext, pFrame);
+    if (resp < 0) {
+        av_frame_unref(pFrame);
+        cout << "Error: cannot send to graph: " << av_err2str(resp) << endl;
+        breakFilter:
+        av_frame_unref(pFrame);
+        return resp;
+    }
+    //get back the filtered data:
+    resp = av_buffersink_get_frame(av->sinkFilterContext, pFrame);
+    if (resp < 0) {
+        av_frame_unref(pFrame);
+        cout << "Error filtering data " << av_err2str(resp) << endl;
+        goto breakFilter;
+    }
+    return 0;
+
 }
