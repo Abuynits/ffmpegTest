@@ -27,7 +27,7 @@ void loopOverPackets(AudioDecoder *ad, AudioFilter *av, bool showData);
  */
 int processAudioPacket(AudioDecoder *ad, AudioFilter *av, bool showData);
 
-int filterAudioFrame(AVFrame *pFrame, AudioFilter *av);
+int filterAudioFrame(AVFrame *pFrame, AudioFilter *av, AudioDecoder *ad);
 
 using namespace std;
 
@@ -119,19 +119,18 @@ int processAudioPacket(AudioDecoder *ad, AudioFilter *av, bool showData) {
         }
 
         //TODO: process files here through filters!
-        if (filterAudioFrame(ad->pFrame, av) < 0) {
+        if (filterAudioFrame(ad->pFrame, av, ad) < 0) {
             cout << "error in filtering" << endl;
 
         }
 
 
-        ad->saveAudioFrame();
     }
 
     return 0;
 }
 
-int filterAudioFrame(AVFrame *pFrame, AudioFilter *av) {
+int filterAudioFrame(AVFrame *pFrame, AudioFilter *av, AudioDecoder *ad) {
     //add to source frame:
     int resp = av_buffersrc_add_frame(av->srcFilterContext, pFrame);
     if (resp < 0) {
@@ -142,11 +141,15 @@ int filterAudioFrame(AVFrame *pFrame, AudioFilter *av) {
         return resp;
     }
     //get back the filtered data:
-    resp = av_buffersink_get_frame(av->sinkFilterContext, pFrame);
-    if (resp < 0) {
+    while ((resp = av_buffersink_get_frame(av->sinkFilterContext, pFrame)) >= 0) {
+
+        if (resp < 0) {
+            av_frame_unref(pFrame);
+            cout << "Error filtering data " << av_err2str(resp) << endl;
+            goto breakFilter;
+        }
+        ad->saveAudioFrame();
         av_frame_unref(pFrame);
-        cout << "Error filtering data " << av_err2str(resp) << endl;
-        goto breakFilter;
     }
     return 0;
 

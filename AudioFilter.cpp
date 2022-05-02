@@ -220,21 +220,24 @@ int AudioFilter::initVolumeFilter() {
                  AV_OPT_SEARCH_CHILDREN);
     av_opt_set_int(volumeFilterContext, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
 
-    avfilter_init_str(volumeFilterContext, nullptr);
+    av_opt_set(volumeFilterContext, "volume", "0.5", AV_OPT_SEARCH_CHILDREN);
+
+
+    resp = avfilter_init_str(volumeFilterContext, nullptr);
     if (resp < 0) {
         cout << "Could not initialize the volume filter (1):" << av_err2str(resp) << endl;
         return resp;
     }
 
 
-    AVDictionary *options_dict = nullptr;
-    av_dict_set(&options_dict, "volume", AV_STRINGIFY(50), 0);
-    resp = avfilter_init_dict(volumeFilterContext, &options_dict);
-    av_dict_free(&options_dict);
-    if (resp < 0) {
-        cout << "Could not initialize the volume filter (2): " << av_err2str(resp) << endl;
-        return resp;
-    }
+//    AVDictionary *options_dict = nullptr;
+//    av_dict_set(&options_dict, "volume", AV_STRINGIFY(0.5), 0);
+//    resp = avfilter_init_dict(volumeFilterContext, &options_dict);
+//    av_dict_free(&options_dict);
+//    if (resp < 0) {
+//        cout << "Could not initialize the volume filter (2): " << av_err2str(resp) << endl;
+//        return resp;
+//    }
     cout << "created volume Filter!" << endl;
     return 0;
 }
