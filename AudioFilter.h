@@ -41,6 +41,8 @@ public:
     AVFilterContext *sinkFilterContext = nullptr;
     const AVFilter *sinkFilter = nullptr;
 
+    char args[512];
+
 
     AudioFilter(AudioDecoder *ad);
 
