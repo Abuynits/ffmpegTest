@@ -220,7 +220,7 @@ int AudioFilter::initVolumeFilter() {
                  AV_OPT_SEARCH_CHILDREN);
     av_opt_set_int(volumeFilterContext, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
 
-    av_opt_set(volumeFilterContext, "volume", "0.5", AV_OPT_SEARCH_CHILDREN);
+    av_opt_set(volumeFilterContext, "volume", AV_STRINGIFY(0.5), AV_OPT_SEARCH_CHILDREN);
 
 
     resp = avfilter_init_str(volumeFilterContext, nullptr);

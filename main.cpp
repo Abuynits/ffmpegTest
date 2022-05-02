@@ -132,9 +132,19 @@ int processAudioPacket(AudioDecoder *ad, AudioFilter *av, bool showData) {
 
 int filterAudioFrame(AVFrame *pFrame, AudioFilter *av, AudioDecoder *ad) {
     //add to source frame:
-    int resp = av_buffersrc_add_frame(av->srcFilterContext, pFrame);
+    int resp = av_buffersrc_write_frame(av->srcFilterContext, pFrame);
+    //TODO:START
+    //look at to fix/ adjust bug: https://stackoverflow.com/questions/61871719/ffmpeg-c-volume-filter
+    //potentially do avfilter_graph_create_filter vs allocate context
+    //maybe try to change how give input to volume filter:
+    /*
+     *
+    snprintf(args, sizeof(args),"%f",2.0f);
+     is all I need??
+
+     */
+    //TODO:END
     if (resp < 0) {
-        av_frame_unref(pFrame);
         cout << "Error: cannot send to graph: " << av_err2str(resp) << endl;
         breakFilter:
         av_frame_unref(pFrame);
