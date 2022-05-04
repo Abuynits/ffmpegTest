@@ -53,7 +53,6 @@ int main() {
     av.closeAllObjects();
 
 
-
     cout << "successfully converted file!" << endl;
 
     return 0;
