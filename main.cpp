@@ -33,7 +33,7 @@ using namespace std;
 
 int main() {
     const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
-    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
+    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.mp4";
 
     AudioDecoder decoder(inputFP, outputFP);
 
@@ -46,12 +46,12 @@ int main() {
         cout << "error: could not initialize filters" << endl;
         return 1;
     }
-//
+
     loopOverPackets(&decoder, &av, true);
-//
+
     decoder.closeAllObjects();
     av.closeAllObjects();
-//
+
 
 
     cout << "successfully converted file!" << endl;
@@ -119,10 +119,12 @@ int processAudioPacket(AudioDecoder *ad, AudioFilter *av, bool showData) {
         }
 
         //TODO: process files here through filters!
-        if (filterAudioFrame(ad->pFrame, av, ad) < 0) {
-            cout << "error in filtering" << endl;
-
-        }
+        //TODO: problem with saving the audio.... not uploading for some reason
+        ad->saveAudioFrame();
+//        if (filterAudioFrame(ad->pFrame, av, ad) < 0) {
+//            cout << "error in filtering" << endl;
+//
+//        }
 
 
     }
@@ -157,6 +159,7 @@ int filterAudioFrame(AVFrame *pFrame, AudioFilter *av, AudioDecoder *ad) {
             cout << "Error filtering data " << av_err2str(resp) << endl;
             goto breakFilter;
         }
+        //TODO: unreference all audio information - lose object and write NOTHING - bug here!!
         ad->saveAudioFrame();
         av_frame_unref(pFrame);
     }
