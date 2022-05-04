@@ -124,6 +124,8 @@ int processAudioPacket(AudioDecoder *ad, AudioFilter *av, bool showData) {
 //            cout << "error in filtering" << endl;
 //
 //        }
+//        av_frame_unref(ad->pFrame);
+//        av_freep(ad->pFrame);
 
 
     }

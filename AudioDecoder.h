@@ -23,7 +23,7 @@ public:
     FILE *inFile = nullptr, *outFile = nullptr;
     AVFormatContext *pFormatContext = nullptr;
     const AVCodec *pCodec = nullptr;
-    AVCodecParserContext *pParser = nullptr;
+    //AVCodecParserContext *pParser = nullptr;
     AVCodecContext *pCodecContext = nullptr;
     AVCodecParameters *pCodecParam = nullptr;
     AVPacket *pPacket = nullptr;
@@ -63,7 +63,7 @@ private:
  * @param fileIn input file object
  * @param fileOut output file object
  */
-    void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut);
+    void openFiles();
 
     /**
      * inidializes the codec and its format and paramters

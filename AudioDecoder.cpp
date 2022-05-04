@@ -12,14 +12,14 @@ AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath) {
 }
 
 
-void AudioDecoder::openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut) {
-    fileIn = fopen(fpIn, "rb");
-    fileOut = fopen(fpOut, "wb");
+void AudioDecoder::openFiles() {
+    inFile = fopen(inFilePath, "rb");
+    outFile = fopen(outFilePath, "wb");
 
-    if (fileIn == nullptr || fileOut == nullptr) {
+    if (inFilePath == nullptr || outFilePath == nullptr) {
         cout << stderr << "ERROR: could not open files" << endl;
-        fclose(fileIn);
-        fclose(fileOut);
+        fclose(inFile);
+        fclose(outFile);
         exit(1);
     }
 }
@@ -51,9 +51,15 @@ void AudioDecoder::showDataGetCodec(bool printInfo) {
 }
 
 void AudioDecoder::initializeAllObjects() {
+    //open all files
+    openFiles();
+
     //hold the header information from the format (file)
+
+
     // http://ffmpeg.org/doxygen/trunk/structAVFormatContext.html
     pFormatContext = avformat_alloc_context();//alloc information for format of file
+
     if (!pFormatContext) {
         cout << stderr << "ERROR could not allocate memory for Format Context" << endl;
         exit(1);
@@ -82,7 +88,8 @@ void AudioDecoder::initializeAllObjects() {
 
     showDataGetCodec(true);
 
-    openFiles(inFilePath, outFilePath, inFile, outFile);
+//TODO: THIS WAS A BUG PAIN PAIN PAIN PAIN PAIN PAIN
+//    openFiles(inFilePath, outFilePath, inFile, outFile);
 
     if (pCodec == nullptr) {
         cout << stderr << " ERROR: could not find pCodec ";
@@ -130,7 +137,7 @@ void AudioDecoder::closeAllObjects() {
     fclose(outFile);
 
     avcodec_free_context(&pCodecContext);
-    av_parser_close(pParser);
+   // av_parser_close(pParser);
     av_frame_free(&pFrame);
     av_packet_free(&pPacket);
 }
@@ -145,5 +152,5 @@ void AudioDecoder::saveAudioFrame() {
     for (int i = 0; i < ySize; i++) {
         fwrite(buf + i * wrap, 1, xSize, outFile);
     }
-    fclose(outFile);
+//    fclose(outFile);
 }
