@@ -145,5 +145,4 @@ void AudioDecoder::saveAudioFrame() {
     for (int i = 0; i < ySize; i++) {
         fwrite(buf + i * wrap, 1, xSize, outFile);
     }
-    fclose(outFile);
 }
