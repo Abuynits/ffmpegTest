@@ -141,7 +141,6 @@ int filterAudioFrame(AVFrame *pFrame, AudioFilter *av, AudioDecoder *ad) {
      *
     snprintf(args, sizeof(args),"%f",2.0f);
      is all I need??
-
      */
     //TODO:END
     if (resp < 0) {

@@ -14,11 +14,12 @@ int AudioFilter::initializeAllObjets() {
     }
     //----------------SRC FILTER CREATION----------------
     if (initSrcFilter() < 0) return -1;
-    //----------------SINK FILTER CREATION----------------
-    if (initSinkFilter() < 0) return -1;
     //----------------Volume FILTER CREATION----------------
     if (initVolumeFilter() < 0) return -1;
-
+    //----------------Volume FILTER CREATION----------------
+    if (initFormatFilter() < 0) return -1;
+    //----------------SINK FILTER CREATION----------------
+    if (initSinkFilter() < 0) return -1;
     //------------------------------------------
 
 
@@ -74,7 +75,10 @@ int AudioFilter::initializeAllObjets() {
     int resp;
     resp = avfilter_link(srcFilterContext, 0, volumeFilterContext, 0);
     if (resp >= 0) {
-        resp = avfilter_link(volumeFilterContext, 0, sinkFilterContext, 0);
+        resp = avfilter_link(volumeFilterContext, 0, aFormatContext, 0);
+    }
+    if (resp >= 0) {
+        resp = avfilter_link(aFormatContext, 0, sinkFilterContext, 0);
     }
     if (resp < 0) {
         cout << "Error connecting filters: " << av_err2str(resp) << endl;
@@ -196,13 +200,7 @@ int AudioFilter::initVolumeFilter() {
     }
     /* A different way of passing the options is as key/value pairs in a
      * dictionary. */
-    int resp = 0;
-//    AVDictionary *optionsDict = nullptr;
-//    av_dict_set(&optionsDict, "volume", AV_STRINGIFY(VOLUME_VAL), 0);
-//    resp = avfilter_init_dict(volumeFilterContext, &optionsDict);
-//    av_dict_free(&optionsDict);
-
-//
+    //
 //    AVRational time_base = ad->pFormatContext->streams[0]->time_base;
 //
 //    snprintf(args, sizeof(args),
@@ -210,6 +208,14 @@ int AudioFilter::initVolumeFilter() {
 //             PRIx64,
 //             time_base.num, time_base.den, ad->pCodecContext->sample_rate,
 //             av_get_sample_fmt_name(ad->pCodecContext->sample_fmt), ad->pCodecContext->channel_layout);
+    int resp = 0;
+
+//    AVDictionary *optionsDict = nullptr;
+//    av_dict_set(&optionsDict, "volume", AV_STRINGIFY(VOLUME_VAL), 0);
+//    resp = avfilter_init_dict(volumeFilterContext, &optionsDict);
+//    av_dict_free(&optionsDict);
+
+
 
     char ch_layout[64];
     av_get_channel_layout_string(ch_layout, sizeof(ch_layout), 0, ad->pCodecContext->channel_layout);
@@ -244,4 +250,35 @@ int AudioFilter::initVolumeFilter() {
 
 void AudioFilter::closeAllObjects() {
     avfilter_graph_free(&filterGraph);
+}
+
+int AudioFilter::initFormatFilter() {
+
+    int resp;
+    aFormatFilter = avfilter_get_by_name("aformat");
+    if (aFormatFilter == nullptr) {
+        cout << "Could not find aformat filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
+        return AVERROR_FILTER_NOT_FOUND;
+    }
+
+    aFormatContext = avfilter_graph_alloc_filter(filterGraph, aFormatFilter, "aformat");
+    if (aFormatContext == nullptr) {
+        cout << "Could not allocate format filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
+        return AVERROR(ENOMEM);
+    }
+    char ch_layout[64];
+    av_get_channel_layout_string(ch_layout, sizeof(ch_layout), 0, ad->pCodecContext->channel_layout);
+    av_opt_set(aFormatContext, "channel_layout", ch_layout, AV_OPT_SEARCH_CHILDREN);
+    av_opt_set(aFormatContext, "sample_fmt", av_get_sample_fmt_name(ad->pCodecContext->sample_fmt),
+               AV_OPT_SEARCH_CHILDREN);
+    av_opt_set_q(aFormatContext, "time_base", (AVRational) {1, ad->pCodecContext->sample_rate},
+                 AV_OPT_SEARCH_CHILDREN);
+    av_opt_set_int(aFormatContext, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
+    resp = avfilter_init_str(aFormatContext, nullptr);
+    if (resp < 0) {
+        cout << "Could not initialize format filter context: " << av_err2str(AV_LOG_ERROR) << endl;
+        return resp;
+    }
+    cout << "Created format Filter!" << endl;
+    return resp;
 }

@@ -41,6 +41,9 @@ public:
     AVFilterContext *sinkFilterContext = nullptr;
     const AVFilter *sinkFilter = nullptr;
 
+    AVFilterContext *aFormatContext = nullptr;
+    const AVFilter *aFormatFilter = nullptr;
+
     char args[512];
 
 
@@ -56,6 +59,8 @@ private:
     int initSinkFilter();
 
     int initVolumeFilter();
+
+    int initFormatFilter();
 };
 
 
