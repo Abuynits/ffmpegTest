@@ -20,9 +20,12 @@ void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *i
 
 int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData, FILE *outfile);
 
+void saveAudioFrame();
+
 using namespace std;
 
 int main() {
+    //TODO: make sure that first can read and write files without any changes. Then go from there
     const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
     const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
     FILE *inFile = nullptr, *outFile = nullptr;
@@ -74,7 +77,7 @@ int main() {
         cout << stderr << " ERROR unsupported codec!" << endl;
         // In this example if the codec is not found we just skip it
     }
-    bool printInfo =true;
+    bool printInfo = true;
     if (printInfo) {
         const char *fileFormat = pFormatContext->iformat->long_name;
         int64_t duration = pFormatContext->duration;
@@ -90,7 +93,7 @@ int main() {
     //codec = device able to decode or encode data
     // pCodec = avcodec_find_decoder(temp);
     //check if can open pCodec
-    if (pCodec== nullptr) {
+    if (pCodec == nullptr) {
         cout << stderr << " ERROR: could not find pCodec ";
         exit(1);
     }
@@ -143,25 +146,6 @@ int main() {
     }
     // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
     av_packet_unref(pPacket);
-//
-//
-//    /*
-//     * edits process:
-//     * 1: check if human voice detected -> if not, dont write the frame
-//     * need to think about removing frames from the start and end of the file - still need to think
-//     * 2: if not removing this current frame, need to clean up the audio in it
-//     */
-//
-//    while (av_read_frame(pFormatContext, pPacket) >= 0) {
-//
-//        int response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
-//        if (response < 0) {
-//            cout << stderr << "ERROR: broken processor, return value: " << response << endl;
-//            exit(1);
-//        }
-//        //clear the packet after each frame
-//        av_packet_unref(pPacket);
-//    }
 
     end:
     fclose(inFile);
@@ -202,10 +186,25 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
                  << ", Pkt_keyFrame: " << pFrame->key_frame << endl;
 
         }
-        //TODO: only focussing on reading the files
-    }
 
+        //TODO: only focussing on reading the files
+
+
+    }
     return 0;
+}
+
+void saveAudioFrame(AVFrame *pFrame, FILE *outFile) {
+    unsigned char *buf = pFrame->data[0];
+    int wrap = pFrame->linesize[0];
+    int xSize = pFrame->width;
+    int ySize = pFrame->height;
+
+    cout << "writing to file" << endl;
+    for (int i = 0; i < ySize; i++) {
+        fwrite(buf + i * wrap, 1, xSize, outFile);
+    }
+    fclose(outFile);
 }
 
 /**
@@ -239,25 +238,6 @@ void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *i
         cout << "format: " << fileFormat << " duration: " << duration << endl;
         cout << "audio_codec_id: " << pCodecParameters->codec_id << endl;
     }
-//        string ending = path.substr(loc);
-//
-//        if (ending == ".wav") {
-//            param->codec_id = AV_CODEC_ID_GSM_MS;
-//        } else if (ending == ".mp3") {
-//            param->codec_id = AV_CODEC_ID_MP3;
-//        } else {
-//            cout << stderr << "ERROR: not found audio ending" << endl;
-//            exit(1);
-//        }
-//    }
-//    if (printInfo) {
-//        const char *fileFormat = pContext->iformat->long_name;
-//        int64_t duration = pContext->duration;
-//
-//        cout << "format: " << fileFormat << " duration: " << duration << endl;
-//        cout << "audio_codec_id: " << param->codec_id << endl;
-//    }
-//    return param->codec_id;
 }
 
 /**
