@@ -1,10 +1,7 @@
 #include <iostream>
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 extern "C" {
 #include <libavutil/frame.h>
@@ -20,15 +17,15 @@ void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *i
 
 int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, bool printFrameData, FILE *outfile);
 
-void saveAudioFrame();
+void saveAudioFrame(AVFrame *pFrame, FILE *outFile);
 
 using namespace std;
 
 int main() {
-    //TODO: make sure that first can read and write files without any changes. Then go from there
     const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
-    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
-    FILE *inFile = nullptr, *outFile = nullptr;
+    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.mp4";
+    FILE inFile ,outFile;
+    openFiles(inputFP, outputFP, &inFile, &outFile);
     //hold the header information from the format (file)
     // http://ffmpeg.org/doxygen/trunk/structAVFormatContext.html
     AVFormatContext *pFormatContext = avformat_alloc_context();//alloc information for format of file
@@ -58,10 +55,9 @@ int main() {
         exit(1);
     }
     const AVCodec *pCodec = nullptr;
-    AVCodecParserContext *pParser = nullptr;
     AVCodecContext *pCodecContext = nullptr;
     AVCodecParameters *pCodecParam = nullptr;
-//    showDataGetCodecId(pFormatContext, true, inputFP, pCodec, pCodecParam);
+    //    showDataGetCodecId(pFormatContext, true, inputFP, pCodec, pCodecParam);
     //-----------------------------
     if (pFormatContext->nb_streams > 1) {
         cout << "CAUTION: detected more than 1 streams \t using streams[0]" << endl;
@@ -88,7 +84,7 @@ int main() {
 
     //--------------------
 
-    openFiles(inputFP, outputFP, inFile, outFile);
+
     //    AVCodecID temp = pCodecContext->codec_id;
     //codec = device able to decode or encode data
     // pCodec = avcodec_find_decoder(temp);
@@ -97,14 +93,12 @@ int main() {
         cout << stderr << " ERROR: could not find pCodec ";
         exit(1);
     }
-
     //get the context of the audio pCodec- hold info for encode/decode process
     pCodecContext = avcodec_alloc_context3(pCodec);
     if (!pCodecContext) {
         cout << stderr << "Could not allocate audio pCodec context" << endl;
         exit(1);
     }
-
     // Fill the codec context based on the values from the supplied codec parameters
     // https://ffmpeg.org/doxygen/trunk/group__lavc__core.html#gac7b282f51540ca7a99416a3ba6ee0d16
     if (avcodec_parameters_to_context(pCodecContext, pCodecParam) < 0) {
@@ -116,7 +110,6 @@ int main() {
         cout << stderr << "Could not open pCodec" << endl;
         exit(1);
     }
-
     //allocate memory for packet and frame readings
     // https://ffmpeg.org/doxygen/trunk/structAVFrame.html
     AVPacket *pPacket = av_packet_alloc();
@@ -133,11 +126,10 @@ int main() {
     }
     int response = 0;
     int how_many_packets_to_process = 8;
-
     // fill the Packet with data from the Stream
     // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga4fdb3084415a82e3810de6ee60e46a61
     while (av_read_frame(pFormatContext, pPacket) >= 0) {
-        response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
+        response = processAudioFrame(pPacket, pCodecContext, pFrame, true, &outFile);
         if (response < 0)
             break;
         // stop it, otherwise we'll be saving hundreds of frames
@@ -146,13 +138,29 @@ int main() {
     }
     // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
     av_packet_unref(pPacket);
-
+//
+//
+//    /*
+//     * edits process:
+//     * 1: check if human voice detected -> if not, dont write the frame
+//     * need to think about removing frames from the start and end of the file - still need to think
+//     * 2: if not removing this current frame, need to clean up the audio in it
+//     */
+//
+//    while (av_read_frame(pFormatContext, pPacket) >= 0) {
+//
+//        int response = processAudioFrame(pPacket, pCodecContext, pFrame, true, outFile);
+//        if (response < 0) {
+//            cout << stderr << "ERROR: broken processor, return value: " << response << endl;
+//            exit(1);
+//        }
+//        //clear the packet after each frame
+//        av_packet_unref(pPacket);
+//    }
     end:
-    fclose(inFile);
-    fclose(outFile);
-
+    fclose(&inFile);
+    fclose(&outFile);
     avcodec_free_context(&pCodecContext);
-    av_parser_close(pParser);
     av_frame_free(&pFrame);
     av_packet_free(&pPacket);
     cout << "succesfully exited program!" << endl;
@@ -184,27 +192,13 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
                  << ", Pkt_Size: " << pFrame->pkt_size
                  << ", Pkt_pts: " << pFrame->pts
                  << ", Pkt_keyFrame: " << pFrame->key_frame << endl;
-
         }
-
+        saveAudioFrame(pFrame, outfile);
         //TODO: only focussing on reading the files
-
-
     }
+
+
     return 0;
-}
-
-void saveAudioFrame(AVFrame *pFrame, FILE *outFile) {
-    unsigned char *buf = pFrame->data[0];
-    int wrap = pFrame->linesize[0];
-    int xSize = pFrame->width;
-    int ySize = pFrame->height;
-
-    cout << "writing to file" << endl;
-    for (int i = 0; i < ySize; i++) {
-        fwrite(buf + i * wrap, 1, xSize, outFile);
-    }
-    fclose(outFile);
 }
 
 /**
@@ -216,11 +210,9 @@ void saveAudioFrame(AVFrame *pFrame, FILE *outFile) {
  */
 void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *inputFilePath, const AVCodec *pCodec,
                         AVCodecParameters *pCodecParameters) {
-
     if (pContext->nb_streams > 1) {
         cout << "CAUTION: detected more than 1 streams \t using streams[0]" << endl;
     }
-
     *pCodecParameters = *pContext->streams[0]->codecpar;
     // finds the registered decoder for a codec ID
     // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga19a0ca553277f019dd5b0fec6e1f9dca
@@ -238,6 +230,27 @@ void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *i
         cout << "format: " << fileFormat << " duration: " << duration << endl;
         cout << "audio_codec_id: " << pCodecParameters->codec_id << endl;
     }
+//        string ending = path.substr(loc);
+//
+//        if (ending == ".wav") {
+//            param->codec_id = AV_CODEC_ID_GSM_MS;
+//        } else if (ending == ".mp3") {
+//            param->codec_id = AV_CODEC_ID_MP3;
+//        } else {
+//            cout << stderr << "ERROR: not found audio ending" << endl;
+//            exit(1);
+//        }
+//    }
+//    if (printInfo) {
+//        const char *fileFormat = pContext->iformat->long_name;
+//        int64_t duration = pContext->duration;
+//
+//        cout << "format: " << fileFormat << " duration: " << duration << endl;
+//        cout << "audio_codec_id: " << param->codec_id << endl;
+//    }
+//    return param->codec_id;
+
+
 }
 
 /**
@@ -250,11 +263,22 @@ void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *i
 void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut) {
     fileIn = fopen(fpIn, "rb");
     fileOut = fopen(fpOut, "wb");
-
     if (fileIn == nullptr || fileOut == nullptr) {
         cout << stderr << "ERROR: could not open files" << endl;
         fclose(fileIn);
         fclose(fileOut);
         exit(1);
+    }
+}
+
+void saveAudioFrame(AVFrame *pFrame, FILE *outFile) {
+    unsigned char *buf = pFrame->data[0];
+    int wrap = pFrame->linesize[0];
+    int xSize = pFrame->width;
+    int ySize = pFrame->height;
+
+    cout << "writing to file" << endl;
+    for (int i = 0; i < ySize; i++) {
+        fwrite(buf + i * wrap, 1, xSize, outFile);
     }
 }
