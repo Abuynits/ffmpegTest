@@ -45,15 +45,19 @@ int main() {
     // openFiles(inputFP, outputFP, &inFile, &outFile);
     //hold the header information from the format (file)
     // http://ffmpeg.org/doxygen/trunk/structAVFormatContext.html
+
     pFormatContext = avformat_alloc_context();//alloc information for format of file
     if (pFormatContext == nullptr) {
         cout << stderr << "ERROR could not allocate memory for Format Context" << endl;
         exit(1);
     }
+
+
     //open the file and read header - codecs not opened
     //AVFormatContext (what allocate memory for)
     //url to file
     //AVINputFormat -give Null and it will do auto detect
+    //try to get some information of the file vis
     // http://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga31d601155e9035d5b0e7efedc894ee49
     //TODO: check if this has to be !=0, or <=0
     int resp = avformat_open_input(&pFormatContext, inputFP, nullptr, nullptr);
@@ -62,12 +66,12 @@ int main() {
         exit(1);
     }
     // read Packets from the Format to get stream information
+    //if the fine does not have a ehader ,read some frames to figure out the information and storage type of the file
     // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#gad42172e27cddafb81096939783b157bb
     if (avformat_find_stream_info(pFormatContext, nullptr) < 0) {
         cout << stderr << " ERROR could not get the stream info" << endl;
         exit(1);
     }
-
     //    showDataGetCodecId(pFormatContext, true, inputFP, pCodec, pCodecParam);
     //-----------------------------
     if (pFormatContext->nb_streams > 1) {
@@ -91,7 +95,9 @@ int main() {
 
     cout << "format: " << fileFormat << " duration: " << duration << endl;
     cout << "audio_codec_id: " << pCodecParam->codec_id << endl;
-    //   }
+
+
+    //HERE
     // https://ffmpeg.org/doxygen/trunk/structAVCodecContext.html
     //get the context of the audio pCodec- hold info for encode/decode process
     pCodecContext = avcodec_alloc_context3(pCodec);
@@ -112,7 +118,6 @@ int main() {
         cout << stderr << "Could not open pCodec" << endl;
         exit(1);
     }
-
     //allocate memory for frame from readings
     // https://ffmpeg.org/doxygen/trunk/structAVPacket.html
     pFrame = av_frame_alloc();
@@ -129,7 +134,8 @@ int main() {
     }
 
 
-   // int packetsToProcess = 8;
+
+    // int packetsToProcess = 8;
     // fill the Packet with data from the Stream
     // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga4fdb3084415a82e3810de6ee60e46a61
     while (av_read_frame(pFormatContext, pPacket) >= 0) {
@@ -137,8 +143,8 @@ int main() {
         if (resp < 0)
             break;
         // stop it, otherwise we'll be saving hundreds of frames
-      //  packetsToProcess--;
-       // if (packetsToProcess <= 0) { break; }
+        //  packetsToProcess--;
+        // if (packetsToProcess <= 0) { break; }
         av_packet_unref(pPacket);
         //TODO: use --------------------------------
         //https://ffmpeg.org/doxygen/3.3/decode__audio_8c_source.html
@@ -196,36 +202,37 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
                  << ", Pkt_keyFrame: " << pFrame->key_frame << endl;
 
         }
-        unsigned char *buf = pFrame->data[0];
+        unsigned char *buf = pFrame->extended_data[0];
         int wrap = pFrame->linesize[0];
         int xSize = pFrame->width;
         int ySize = pFrame->height;
 
 
-//        if (xSize > 0 && ySize > 0) {
-//            for (int i = 0; i < ySize; i++) {
-//                fwrite(buf + i * wrap, 1, xSize, outfile);
-//
-//            }
-//            cout << "writing to file" << endl;
-//        } else {
-//            cout << "warning: empty data" << endl;
-//        }
+        if (xSize > 0 && ySize > 0) {
+            for (int i = 0; i < ySize; i++) {
+                fwrite(buf + i * wrap, 1, xSize, outfile);
 
-        int data_size = av_get_bytes_per_sample(pContext->sample_fmt);
-        if (data_size < 0) {
-            /* This should not occur, checking just for paranoia */
-            fprintf(stderr, "Failed to calculate data size\n");
-            exit(1);
+            }
+            cout << "writing to file" << endl;
+        } else {
+            cout << "warning: empty data" << endl;
         }
-        for (int i = 0; i < pFrame->nb_samples; i++)
-            for (int ch = 0; ch < pContext->channels; ch++)
-                fwrite(pFrame->data[ch] + data_size * i, 1, data_size, outfile);
+
+//        int data_size = av_get_bytes_per_sample(pContext->sample_fmt);
+//        if (data_size < 0) {
+//            /* This should not occur, checking just for paranoia */
+//            fprintf(stderr, "Failed to calculate data size\n");
+//            exit(1);
+//        }
+//        for (int i = 0; i < pFrame->nb_samples; i++)
+//            for (int ch = 0; ch < pContext->channels; ch++)
+//                fwrite(pFrame->data[ch] + data_size * i, 1, data_size, outfile);
 
         //       saveAudioFrame(pFrame, outfile);
     }
-
-
+//=======================================
+    //TODO: found needed link: https://fossies.org/linux/ffmpeg/doc/examples/demuxing_decoding.c
+    //=========================================
 
     //saveAudioFrame(pFrame, outfile);
     //TODO: only focussing on reading the files
