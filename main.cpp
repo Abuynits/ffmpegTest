@@ -140,7 +140,10 @@ int main() {
       //  packetsToProcess--;
        // if (packetsToProcess <= 0) { break; }
         av_packet_unref(pPacket);
-        //TODO: use https://ffmpeg.org/doxygen/3.1/filter_audio_8c-example.html
+        //TODO: use --------------------------------
+        //https://ffmpeg.org/doxygen/3.3/decode__audio_8c_source.html
+        //https://steemit.com/programming/@targodan/decoding-audio-files-with-ffmpeg
+        //TODO: -----------------------------------
 
     }
     // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
