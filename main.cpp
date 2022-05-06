@@ -129,7 +129,7 @@ int main() {
     }
 
 
-    int packetsToProcess = 8;
+   // int packetsToProcess = 8;
     // fill the Packet with data from the Stream
     // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga4fdb3084415a82e3810de6ee60e46a61
     while (av_read_frame(pFormatContext, pPacket) >= 0) {
@@ -137,9 +137,11 @@ int main() {
         if (resp < 0)
             break;
         // stop it, otherwise we'll be saving hundreds of frames
-        packetsToProcess--;
-        if (packetsToProcess <= 0) { break; }
+      //  packetsToProcess--;
+       // if (packetsToProcess <= 0) { break; }
         av_packet_unref(pPacket);
+        //TODO: use https://ffmpeg.org/doxygen/3.1/filter_audio_8c-example.html
+
     }
     // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
 
@@ -191,29 +193,33 @@ processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFrame, 
                  << ", Pkt_keyFrame: " << pFrame->key_frame << endl;
 
         }
-
-
-        //
         unsigned char *buf = pFrame->data[0];
         int wrap = pFrame->linesize[0];
         int xSize = pFrame->width;
         int ySize = pFrame->height;
 
-        cout << "writing to file" << endl;
-        for (int i = 0; i < ySize; i++) {
-            fwrite(buf + i * wrap, 1, xSize, outfile);
-        }
-//        int data_size = av_get_bytes_per_sample(pContext->sample_fmt);
-//        if (data_size < 0) {
-//            /* This should not occur, checking just for paranoia */
-//            fprintf(stderr, "Failed to calculate data size\n");
-//            exit(1);
-//        }
-//        for (int i = 0; i < pFrame->nb_samples; i++)
-//            for (int ch = 0; ch < pContext->channels; ch++)
-//                fwrite(pFrame->data[ch] + data_size * i, 1, data_size, outfile);
 
- //       saveAudioFrame(pFrame, outfile);
+//        if (xSize > 0 && ySize > 0) {
+//            for (int i = 0; i < ySize; i++) {
+//                fwrite(buf + i * wrap, 1, xSize, outfile);
+//
+//            }
+//            cout << "writing to file" << endl;
+//        } else {
+//            cout << "warning: empty data" << endl;
+//        }
+
+        int data_size = av_get_bytes_per_sample(pContext->sample_fmt);
+        if (data_size < 0) {
+            /* This should not occur, checking just for paranoia */
+            fprintf(stderr, "Failed to calculate data size\n");
+            exit(1);
+        }
+        for (int i = 0; i < pFrame->nb_samples; i++)
+            for (int ch = 0; ch < pContext->channels; ch++)
+                fwrite(pFrame->data[ch] + data_size * i, 1, data_size, outfile);
+
+        //       saveAudioFrame(pFrame, outfile);
     }
 
 
@@ -233,9 +239,12 @@ void saveAudioFrame(AVFrame *pFrame, FILE *outFile) {
     int xSize = pFrame->width;
     int ySize = pFrame->height;
 
-    cout << "writing to file" << endl;
-    for (int i = 0; i < ySize; i++) {
-        fwrite(buf + i * wrap, 1, xSize, outFile);
+    if (xSize > 0 && ySize > 0) {
+        for (int i = 0; i < ySize; i++) {
+            fwrite(buf + i * wrap, 1, xSize, outFile);
+            cout << "writing to file" << endl;
+        }
+    } else {
+        cout << "warning: empty data" << endl;
     }
-
 }
