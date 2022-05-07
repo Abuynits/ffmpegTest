@@ -32,6 +32,9 @@ int main() {
     AVCodecParameters *pCodecParam = nullptr;
     AVPacket *pPacket = nullptr;
     AVFrame *pFrame = nullptr;
+    //++++++++++++++++++++++
+    //PLAN: use https://fossies.org/linux/ffmpeg/doc/examples/demuxing_decoding.c
+    //for setting up video processing. Once I can loop, merge with master to add audio filtering capabilities
 
 
     inFile = fopen(inputFP, "rb");
