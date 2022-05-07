@@ -10,7 +10,11 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut);
+void openFiles();
+
+void initializeAllObjects();
+
+int initCodec(enum AVMediaType mediaType);
 
 void showDataGetCodecId(AVFormatContext *pContext, bool printInfo, const char *inputFilePath, const AVCodec *pCodec,
                         AVCodecParameters *pCodecParameters);
@@ -20,31 +24,38 @@ int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFra
 void saveAudioFrame(AVFrame *pFrame, FILE *outFile);
 
 using namespace std;
+const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
+const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.mp4";
+FILE *inFile;
+FILE *outFile;
+AVFormatContext *pFormatContext;
+const AVCodec *pCodec = nullptr;
+AVCodecContext *pCodecContext = nullptr;
+AVCodecParameters *pCodecParam = nullptr;
+AVPacket *pPacket = nullptr;
+AVFrame *pFrame = nullptr;
 
 int main() {
-    const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
-    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.mp4";
-    FILE *inFile;
-    FILE *outFile;
-    AVFormatContext *pFormatContext;
-    const AVCodec *pCodec = nullptr;
-    AVCodecContext *pCodecContext = nullptr;
-    AVCodecParameters *pCodecParam = nullptr;
-    AVPacket *pPacket = nullptr;
-    AVFrame *pFrame = nullptr;
+
     //++++++++++++++++++++++
     //PLAN: use https://fossies.org/linux/ffmpeg/doc/examples/demuxing_decoding.c
     //for setting up video processing. Once I can loop, merge with master to add audio filtering capabilities
 
+    openFiles();
+    cout<<"opened files"<<endl;
+    initializeAllObjects();
+    cout<<"initialized all objects"<<endl;
 
-    inFile = fopen(inputFP, "rb");
-    outFile = fopen(outputFP, "wb");
-    if (inFile == nullptr || outFile == nullptr) {
-        cout << stderr << "ERROR: could not open files" << endl;
-        fclose(inFile);
-        fclose(outFile);
-        exit(1);
+
+    int resp = initCodec(AVMEDIA_TYPE_AUDIO);
+    cout<<"created codec"<<endl;
+    if (resp==0){
+        cout<<"made it here!"<<endl;
+
     }
+    cout<<"here"<<endl;
+    return 0;
+
     // openFiles(inputFP, outputFP, &inFile, &outFile);
     //hold the header information from the format (file)
     // http://ffmpeg.org/doxygen/trunk/structAVFormatContext.html
@@ -63,7 +74,7 @@ int main() {
     //try to get some information of the file vis
     // http://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga31d601155e9035d5b0e7efedc894ee49
     //TODO: check if this has to be !=0, or <=0
-    int resp = avformat_open_input(&pFormatContext, inputFP, nullptr, nullptr);
+    resp = avformat_open_input(&pFormatContext, inputFP, nullptr, nullptr);
     if (resp != 0) {
         cout << stderr << " ERROR: could not open file: " << av_err2str(resp) << endl;
         exit(1);
@@ -260,4 +271,86 @@ void saveAudioFrame(AVFrame *pFrame, FILE *outFile) {
     } else {
         cout << "warning: empty data" << endl;
     }
+}
+
+void openFiles() {
+    inFile = fopen(inputFP, "rb");
+    outFile = fopen(outputFP, "wb");
+    if (inFile == nullptr || outFile == nullptr) {
+        cout << stderr << "ERROR: could not open files" << endl;
+        fclose(inFile);
+        fclose(outFile);
+        exit(1);
+    }
+}
+
+void initializeAllObjects() {
+    //open the file and read header - codecs not opened
+    //AVFormatContext (what allocate memory for)
+    //url to file
+    //AVINputFormat -give Null and it will do auto detect
+    //try to get some information of the file vis
+    // http://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga31d601155e9035d5b0e7efedc894ee49
+    //TODO: check if this has to be !=0, or <=0
+    int resp = avformat_open_input(&pFormatContext, inputFP, nullptr, nullptr);
+    if (resp != 0) {
+        cout << stderr << " ERROR: could not open file: " << av_err2str(resp) << endl;
+        exit(1);
+    }
+    // read Packets from the Format to get stream information
+    //if the fine does not have a ehader ,read some frames to figure out the information and storage type of the file
+    // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#gad42172e27cddafb81096939783b157bb
+    if (avformat_find_stream_info(pFormatContext, nullptr) < 0) {
+        cout << stderr << " ERROR could not get the stream info" << endl;
+        exit(1);
+    }
+
+
+}
+
+int initCodec(enum AVMediaType mediaType) {
+    int ret = av_find_best_stream(pFormatContext, mediaType, -1, -1, nullptr, 0);
+    if (ret < 0) {
+        cout << "ERROR: Could not find %s stream in input file: " << av_get_media_type_string(mediaType) << ", "
+             << inputFP << endl;
+        return ret;
+    }
+    cout<<"\tfound audio stream"<<endl;
+
+    int streamIndex = ret;
+
+    AVStream *avStream = pFormatContext->streams[streamIndex];
+
+    // finds the registered decoder for a codec ID
+    // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga19a0ca553277f019dd5b0fec6e1f9dca
+    pCodec = avcodec_find_decoder(avStream->codecpar->codec_id);
+    if (pCodec == nullptr) {
+        cout << stderr << " ERROR unsupported codec: " << av_err2str(AVERROR(EINVAL)) << endl;
+        exit(1);
+    }
+    cout<<"\tfound decoder"<<endl;
+    //HERE
+    // https://ffmpeg.org/doxygen/trunk/structAVCodecContext.html
+    //get the context of the audio pCodec- hold info for encode/decode process
+    pCodecContext = avcodec_alloc_context3(pCodec);
+    if (!pCodecContext) {
+        cout << stderr << " ERROR: Could not allocate audio pCodec context: " << av_err2str(AVERROR(ENOMEM)) << endl;
+        exit(1);
+    }
+    cout<<"\tallocated context"<<endl;
+
+    // Fill the codec context based on the values from the supplied codec parameters
+    // https://ffmpeg.org/doxygen/trunk/group__lavc__core.html#gac7b282f51540ca7a99416a3ba6ee0d16
+    if (avcodec_parameters_to_context(pCodecContext, avStream->codecpar) < 0) {
+        cout << stderr << "failed to copy codec params to codec context";
+        exit(1);
+    }
+    cout<<"\tcopied codec param"<<endl;
+    //open the actual pCodec:
+    if (avcodec_open2(pCodecContext, pCodec, nullptr) < 0) {
+        cout << stderr << "Could not open pCodec" << endl;
+        exit(1);
+    }
+    cout<<"\topened codec!"<<endl;
+    return 0;
 }
