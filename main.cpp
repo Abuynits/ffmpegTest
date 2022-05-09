@@ -27,9 +27,11 @@ int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFra
 
 int saveAudioFrame();
 
+int get_format_from_sample_fmt(AVCodecContext **pContext, enum AVSampleFormat format);
+
 using namespace std;
 const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
-const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.mp4";
+const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
 FILE *inFile;
 FILE *outFile;
 AVFormatContext *pFormatContext;
@@ -40,7 +42,7 @@ AVPacket *pPacket = nullptr;
 AVFrame *pFrame = nullptr;
 AVStream *audioStream = nullptr;
 int avStreamIndex = -1;
-int audioFrameCount=0;
+int audioFrameCount = 0;
 
 int main() {
 
@@ -84,9 +86,29 @@ int main() {
         resp = loopOverPacketFrames();
     }
     //flush the audio decoder
-    pPacket= nullptr;
+    pPacket = nullptr;
     loopOverPacketFrames();
 
+    enum AVSampleFormat sampleFormat = pCodecContext->sample_fmt;
+    int channelNum = pCodecContext->channels;
+    const char *sFormat;
+
+    if (av_sample_fmt_is_planar(sampleFormat)) {
+        const char *packed = av_get_sample_fmt_name(sampleFormat);
+        printf("Warning: the sample format the decoder produced is planar "
+               "(%s). This example will output the first channel only.\n",
+               packed ? packed : "?");
+        sampleFormat = av_get_packed_sample_fmt(sampleFormat);
+        channelNum = 1;
+    }
+
+    if ((resp = get_format_from_sample_fmt(&pCodecContext, sampleFormat)) < 0)
+        goto end;
+
+    printf("Play the output audio file with the command:\n"
+           "ffplay -f %s -ac %d -ar %d %s\n",
+           sFormat, channelNum, pCodecContext->sample_rate,
+           outputFP);
 
     end:
     fclose(inFile);
@@ -209,6 +231,35 @@ int main() {
 //    }
 //    // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
 
+}
+
+int get_format_from_sample_fmt(enum AVSampleFormat format, const char fmt) {
+
+    int i;
+    struct sample_fmt_entry {
+        enum AVSampleFormat sample_fmt;
+        const char *fmt_be, *fmt_le;
+    } sample_fmt_entries[] = {
+            {AV_SAMPLE_FMT_U8,  "u8",    "u8"},
+            {AV_SAMPLE_FMT_S16, "s16be", "s16le"},
+            {AV_SAMPLE_FMT_S32, "s32be", "s32le"},
+            {AV_SAMPLE_FMT_FLT, "f32be", "f32le"},
+            {AV_SAMPLE_FMT_DBL, "f64be", "f64le"},
+    };
+    *fmt = NULL;
+
+    for (i = 0; i < FF_ARRAY_ELEMS(sample_fmt_entries); i++) {
+        struct sample_fmt_entry *entry = &sample_fmt_entries[i];
+        if (sample_fmt == entry->sample_fmt) {
+            *fmt = AV_NE(entry->fmt_be, entry->fmt_le);
+            return 0;
+        }
+    }
+
+    fprintf(stderr,
+            "sample format %s is not supported as output format\n",
+            av_get_sample_fmt_name(sample_fmt));
+    return -1;
 }
 
 int loopOverPacketFrames() {
@@ -385,11 +436,11 @@ int initCodec(enum AVMediaType mediaType) {
 
     avStreamIndex = ret;
 
-    AVStream *avStream = pFormatContext->streams[avStreamIndex];
+    audioStream = pFormatContext->streams[avStreamIndex];
 
     // finds the registered decoder for a codec ID
     // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga19a0ca553277f019dd5b0fec6e1f9dca
-    pCodec = avcodec_find_decoder(avStream->codecpar->codec_id);
+    pCodec = avcodec_find_decoder(audioStream->codecpar->codec_id);
     if (pCodec == nullptr) {
         cout << stderr << " ERROR unsupported codec: " << av_err2str(AVERROR(EINVAL)) << endl;
         exit(1);
@@ -407,7 +458,7 @@ int initCodec(enum AVMediaType mediaType) {
 
     // Fill the codec context based on the values from the supplied codec parameters
     // https://ffmpeg.org/doxygen/trunk/group__lavc__core.html#gac7b282f51540ca7a99416a3ba6ee0d16
-    if (avcodec_parameters_to_context(pCodecContext, avStream->codecpar) < 0) {
+    if (avcodec_parameters_to_context(pCodecContext, audioStream->codecpar) < 0) {
         cout << stderr << "failed to copy codec params to codec context";
         exit(1);
     }
