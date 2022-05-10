@@ -27,7 +27,7 @@ int processAudioFrame(AVPacket *pPacket, AVCodecContext *pContext, AVFrame *pFra
 
 int saveAudioFrame();
 
-int get_format_from_sample_fmt(AVCodecContext **pContext, enum AVSampleFormat format);
+int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat audioFormat);
 
 using namespace std;
 const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
@@ -102,9 +102,9 @@ int main() {
         channelNum = 1;
     }
 
-    if ((resp = get_format_from_sample_fmt(&pCodecContext, sampleFormat)) < 0)
+    if ((resp = get_format_from_sample_fmt(&sFormat, sampleFormat)) < 0) {
         goto end;
-
+    }
     printf("Play the output audio file with the command:\n"
            "ffplay -f %s -ac %d -ar %d %s\n",
            sFormat, channelNum, pCodecContext->sample_rate,
@@ -233,24 +233,26 @@ int main() {
 
 }
 
-int get_format_from_sample_fmt(enum AVSampleFormat format, const char fmt) {
+int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat audioFormat) {
 
     int i;
     struct sample_fmt_entry {
         enum AVSampleFormat sample_fmt;
         const char *fmt_be, *fmt_le;
-    } sample_fmt_entries[] = {
+    }
+            sample_fmt_entries[] = {
             {AV_SAMPLE_FMT_U8,  "u8",    "u8"},
             {AV_SAMPLE_FMT_S16, "s16be", "s16le"},
             {AV_SAMPLE_FMT_S32, "s32be", "s32le"},
             {AV_SAMPLE_FMT_FLT, "f32be", "f32le"},
             {AV_SAMPLE_FMT_DBL, "f64be", "f64le"},
     };
-    *fmt = NULL;
+
+    *fmt = nullptr;
 
     for (i = 0; i < FF_ARRAY_ELEMS(sample_fmt_entries); i++) {
         struct sample_fmt_entry *entry = &sample_fmt_entries[i];
-        if (sample_fmt == entry->sample_fmt) {
+        if (audioFormat == entry->sample_fmt) {
             *fmt = AV_NE(entry->fmt_be, entry->fmt_le);
             return 0;
         }
@@ -258,7 +260,7 @@ int get_format_from_sample_fmt(enum AVSampleFormat format, const char fmt) {
 
     fprintf(stderr,
             "sample format %s is not supported as output format\n",
-            av_get_sample_fmt_name(sample_fmt));
+            av_get_sample_fmt_name(audioFormat));
     return -1;
 }
 
