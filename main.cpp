@@ -1,96 +1,114 @@
 #include <iostream>
-
-
-#include <stdio.h>
-#include "AudioDecoder.h"
-#include "AudioFilter.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 extern "C" {
 #include <libavutil/frame.h>
 #include <libavutil/mem.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
+#include <libavutil/timestamp.h>
+#include <libavutil/samplefmt.h>
 }
 
-/**
- * loops over the packets of a audio stream
- * @param ad the audiodecoder which holds all of the data
- * @param showData specifies whether you want to show data (true = yes)
- */
-void loopOverPackets(AudioDecoder *ad, AudioFilter *av, bool showData);
 
-/**
- * loops over the frames present in an individual audio packet
- * @param ad audiodecoder which contains all of the important objects
- * @param showData specifies whether you want to show data (true = yes)
- * @return value of whether you have a successful transfer, 0= success, <0= pain....
- */
-int processAudioPacket(AudioDecoder *ad, AudioFilter *av, bool showData);
+#include "AudioDecoder.h"
+#include "AudioFilter.h"
 
-int filterAudioFrame(AVFrame *pFrame, AudioFilter *av, AudioDecoder *ad);
+
+int loopOverPacketFrames();
+
+
+
+int getAudioRunCommand();
+
+int filterAudioFrame();
+
 
 using namespace std;
 
+AudioDecoder *ad;
+AudioFilter *av;
+
 int main() {
     const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
-    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.mp4";
+    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
 
-    AudioDecoder decoder(inputFP, outputFP);
+    ad = new AudioDecoder(inputFP, outputFP);
+    av = new AudioFilter(ad);
 
-    decoder.initializeAllObjects();
 
-    AudioFilter av(&decoder);
+    ad->openFiles();
+    cout << "opened files" << endl;
 
-    int resp = av.initializeAllObjets();
+    ad->initializeAllObjects();
+    cout << "initialized all objects" << endl;
+
+    int resp = av->initializeAllObjets();
     if (resp < 0) {
         cout << "error: could not initialize filters" << endl;
         return 1;
     }
+    cout<<"initialized all filters\n"<<endl;
 
-    loopOverPackets(&decoder, &av, true);
+    while (av_read_frame(ad->pFormatContext, ad->pPacket) >= 0) {
+        resp = loopOverPacketFrames();
+        if (resp < 0) {
+            break;
+        }
 
-    decoder.closeAllObjects();
-    av.closeAllObjects();
+    }
+
+    //flush the audio decoder
+    ad->pPacket = nullptr;
+    loopOverPacketFrames();
 
 
-    cout << "successfully converted file!" << endl;
+    resp = getAudioRunCommand();
+    if (resp < 0) {
+        cout << "ERROR getting ffplay command" << endl;
+        goto end;
+    }
+
+    end:
+    ad->closeAllObjects();
 
     return 0;
 }
-//TODO: this commit  decoding function that loops over packets and decodes frame.
 
-void loopOverPackets(AudioDecoder *ad, AudioFilter *av, bool showData) {
-    int response;
-    int how_many_packets_to_process = 8;
+int getAudioRunCommand() {
+    enum AVSampleFormat sampleFormat = ad->pCodecContext->sample_fmt;
+    int channelNum = ad->pCodecContext->channels;
+    const char *sFormat;
 
-    // fill the Packet with data from the Stream
-    // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga4fdb3084415a82e3810de6ee60e46a61
-    while (av_read_frame(ad->pFormatContext, ad->pPacket) >= 0) {
-        response = processAudioPacket(ad, av, showData);
-        if (response < 0)
-            break;
-        // stop it, otherwise we'll be saving hundreds of frames
-        if (--how_many_packets_to_process <= 0) {
-            cout << "reach end of file" << endl;
-            break;
-
-        }
-        // https://ffmpeg.org/doxygen/trunk/group__lavc__packet.html#ga63d5a489b419bd5d45cfd09091cbcbc2
-        av_packet_unref(ad->pPacket);
+    if (av_sample_fmt_is_planar(sampleFormat)) {
+        const char *packed = av_get_sample_fmt_name(sampleFormat);
+        printf("Warning: the sample format the decoder produced is planar "
+               "(%s). This example will output the first channel only.\n",
+               packed ? packed : "?");
+        sampleFormat = av_get_packed_sample_fmt(sampleFormat);
+        channelNum = 1;
     }
 
+    if (AudioDecoder::get_format_from_sample_fmt(&sFormat, sampleFormat) < 0) {
+        return -1;
+    }
+    printf("Play the output audio file with the command:\n"
+           "ffplay -f %s -ac %d -ar %d %s\n",
+           sFormat, channelNum, ad->pCodecContext->sample_rate,
+           ad->outputFP);
+    return 0;
 }
 
-int processAudioPacket(AudioDecoder *ad, AudioFilter *av, bool showData) {
-    //send raw data packed to decoder
+
+int loopOverPacketFrames() {
     int resp = avcodec_send_packet(ad->pCodecContext, ad->pPacket);
     if (resp < 0) {
-        cout << "Error while receiving a frame from the decoder: " << av_err2str(resp) << endl;
+        cout << "error submitting a packet for decoding: " << av_err2str(resp);
         return resp;
     }
     while (resp >= 0) {
-        // Return decoded output data (into a frame) from a decoder
-        // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
         resp = avcodec_receive_frame(ad->pCodecContext, ad->pFrame);
         if (resp == AVERROR(EAGAIN)) {
             cout << "Not enough data in frame, skipping to next packet" << endl;
@@ -110,33 +128,35 @@ int processAudioPacket(AudioDecoder *ad, AudioFilter *av, bool showData) {
             av_freep(ad->pFrame);
             return resp;
         }
-        if (showData) {
-            cout << "frame number: " << ad->pCodecContext->frame_number
-                 << ", Pkt_Size: " << ad->pFrame->pkt_size
-                 << ", Pkt_pts: " << ad->pFrame->pts
-                 << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
+
+        cout << "frame number: " << ad->pCodecContext->frame_number
+             << ", Pkt_Size: " << ad->pFrame->pkt_size
+             << ", Pkt_pts: " << ad->pFrame->pts
+             << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
+
+        if (filterAudioFrame() < 0) {
+            cout << "error in filtering" << endl;
 
         }
-
-        //TODO: process files here through filters!
-        //TODO: problem with saving the audio.... not uploading for some reason
-        ad->saveAudioFrame();
-//        if (filterAudioFrame(ad->pFrame, av, ad) < 0) {
-//            cout << "error in filtering" << endl;
-//
-//        }
-//        av_frame_unref(ad->pFrame);
-//        av_freep(ad->pFrame);
+        av_frame_unref(ad->pFrame);
+        av_freep(ad->pFrame);
 
 
+       // resp = ad->saveAudioFrame();
+
+        //av_frame_unref(ad->pFrame);
+        if (resp < 0) {
+            return resp;
+        }
     }
-
     return 0;
+
 }
 
-int filterAudioFrame(AVFrame *pFrame, AudioFilter *av, AudioDecoder *ad) {
+
+int filterAudioFrame() {
     //add to source frame:
-    int resp = av_buffersrc_write_frame(av->srcFilterContext, pFrame);
+    int resp = av_buffersrc_write_frame(av->srcFilterContext, ad->pFrame);
     //TODO:START
     //look at to fix/ adjust bug: https://stackoverflow.com/questions/61871719/ffmpeg-c-volume-filter
     //potentially do avfilter_graph_create_filter vs allocate context
@@ -150,21 +170,20 @@ int filterAudioFrame(AVFrame *pFrame, AudioFilter *av, AudioDecoder *ad) {
     if (resp < 0) {
         cout << "Error: cannot send to graph: " << av_err2str(resp) << endl;
         breakFilter:
-        av_frame_unref(pFrame);
+        av_frame_unref(ad->pFrame);
         return resp;
     }
     //get back the filtered data:
-    while ((resp = av_buffersink_get_frame(av->sinkFilterContext, pFrame)) >= 0) {
+    while ((resp = av_buffersink_get_frame(av->sinkFilterContext, ad->pFrame)) >= 0) {
 
         if (resp < 0) {
-            av_frame_unref(pFrame);
+            av_frame_unref(ad->pFrame);
             cout << "Error filtering data " << av_err2str(resp) << endl;
             goto breakFilter;
         }
         //TODO: unreference all audio information - lose object and write NOTHING - bug here!!
         ad->saveAudioFrame();
-        av_frame_unref(pFrame);
+        av_frame_unref(ad->pFrame);
     }
     return 0;
-
 }
