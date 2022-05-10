@@ -44,8 +44,6 @@ public:
     AVFilterContext *aFormatContext = nullptr;
     const AVFilter *aFormatFilter = nullptr;
 
-    char args[1024];
-
 
     AudioFilter(AudioDecoder *ad);
 
@@ -64,9 +62,7 @@ private:
 
     static int initByDict(AVFilterContext *afc, const char *key, const char *val);
 
-    int initByString();
-
-    int initByFunctions();
+    void initByFunctions(AVFilterContext *afc);
 };
 
 
