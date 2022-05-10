@@ -163,7 +163,7 @@ int filterAudioFrame() {
     //potentially do avfilter_graph_create_filter vs allocate context
     //maybe try to change how give input to volume filter:
 
-    snprintf(av->args, sizeof(av->args),"%f",2.0f);
+//    snprintf(av->args, sizeof(av->args),"%f",2.0f);
 //     is all I need??
 
     //TODO:END
@@ -177,7 +177,6 @@ int filterAudioFrame() {
     while ((resp = av_buffersink_get_frame(av->sinkFilterContext, ad->pFrame)) >= 0) {
 
         if (resp < 0) {
-            av_frame_unref(ad->pFrame);
             cout << "Error filtering data " << av_err2str(resp) << endl;
             goto breakFilter;
         }

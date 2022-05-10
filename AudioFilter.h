@@ -27,8 +27,8 @@ extern "C" {
 
 class AudioFilter {
 public:
-    AudioDecoder *ad;
-    AVFilterGraph *filterGraph;
+    AudioDecoder *ad = nullptr;
+    AVFilterGraph *filterGraph = nullptr;
     //used to pass in the initial frame (the first 'filter' in the graph)
     AVFilterContext *srcFilterContext = nullptr;
     const AVFilter *srcFilter = nullptr;
@@ -44,7 +44,7 @@ public:
     AVFilterContext *aFormatContext = nullptr;
     const AVFilter *aFormatFilter = nullptr;
 
-    char args[512];
+    char args[1024];
 
 
     AudioFilter(AudioDecoder *ad);
