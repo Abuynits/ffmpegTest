@@ -15,19 +15,25 @@ extern "C" {
 #include <libavutil/mem.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
+#include <libavutil/timestamp.h>
+#include <libavutil/samplefmt.h>
 }
 
 class AudioDecoder {
 public:
-    const char *inFilePath, *outFilePath;
-    FILE *inFile = nullptr, *outFile = nullptr;
-    AVFormatContext *pFormatContext = nullptr;
+    const char *inputFP = nullptr;
+    const char *outputFP = nullptr;
+    FILE *inFile= nullptr;
+    FILE *outFile= nullptr;
+
+    AVFormatContext *pFormatContext= nullptr;
     const AVCodec *pCodec = nullptr;
-    AVCodecParserContext *pParser = nullptr;
     AVCodecContext *pCodecContext = nullptr;
-    AVCodecParameters *pCodecParam = nullptr;
     AVPacket *pPacket = nullptr;
     AVFrame *pFrame = nullptr;
+    AVStream *audioStream = nullptr;
+    int avStreamIndex = -1;
+    int audioFrameCount = 0;
 
 
     AudioDecoder(const char *inFilePath, const char *ptrOutFilePath);
@@ -53,24 +59,24 @@ public:
 /**
  * saves the audio using the first channel provided
  */
-    void saveAudioFrame();
+    int saveAudioFrame();
 
-private:
 /**
  * creates file objects for the input and output files
- * @param fpIn input filepath
- * @param fpOut output filepath
- * @param fileIn input file object
- * @param fileOut output file object
  */
-    void openFiles(const char *fpIn, const char *fpOut, FILE *fileIn, FILE *fileOut);
+    void openFiles();
+
+    static int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat audioFormat);
+
+private:
+
 
     /**
-     * inidializes the codec and its format and paramters
-     * shows general info of the file
-     * @param printInfo specify whether you want to show info of the file
+     * init the codec and tis parameters
+     * @param mediaType default = audiotype
+     * @return
      */
-    void showDataGetCodec(bool printInfo);
+    int initCodec(enum AVMediaType mediaType = AVMEDIA_TYPE_AUDIO);
 
 
 };
