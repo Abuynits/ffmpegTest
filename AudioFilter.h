@@ -61,6 +61,12 @@ private:
     int initVolumeFilter();
 
     int initFormatFilter();
+
+    static int initByDict(AVFilterContext *afc, const char *key, const char *val);
+
+    int initByString();
+
+    int initByFunctions();
 };
 
 
