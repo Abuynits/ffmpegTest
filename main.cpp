@@ -20,7 +20,6 @@ extern "C" {
 int loopOverPacketFrames();
 
 
-
 int getAudioRunCommand();
 
 int filterAudioFrame();
@@ -36,21 +35,21 @@ int main() {
     const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
 
     ad = new AudioDecoder(inputFP, outputFP);
-    av = new AudioFilter(ad);
 
 
+//TODO: try to write without having a filter - just run through the buffers and see what you get.
     ad->openFiles();
     cout << "opened files" << endl;
 
     ad->initializeAllObjects();
     cout << "initialized all objects" << endl;
-
+    av = new AudioFilter(ad);
     int resp = av->initializeAllObjets();
     if (resp < 0) {
         cout << "error: could not initialize filters" << endl;
         return 1;
     }
-    cout<<"initialized all filters\n"<<endl;
+    cout << "initialized all filters\n" << endl;
 
     while (av_read_frame(ad->pFormatContext, ad->pPacket) >= 0) {
         resp = loopOverPacketFrames();
@@ -73,6 +72,7 @@ int main() {
 
     end:
     ad->closeAllObjects();
+    av->closeAllObjects();
 
     return 0;
 }
@@ -138,13 +138,14 @@ int loopOverPacketFrames() {
             cout << "error in filtering" << endl;
 
         }
-        av_frame_unref(ad->pFrame);
-        av_freep(ad->pFrame);
+//        av_frame_unref(ad->pFrame);
+//
 
 
        // resp = ad->saveAudioFrame();
 
-        //av_frame_unref(ad->pFrame);
+        av_frame_unref(ad->pFrame);
+        av_freep(ad->pFrame);
         if (resp < 0) {
             return resp;
         }
@@ -156,16 +157,15 @@ int loopOverPacketFrames() {
 
 int filterAudioFrame() {
     //add to source frame:
-    int resp = av_buffersrc_write_frame(av->srcFilterContext, ad->pFrame);
+    int resp = av_buffersrc_add_frame(av->srcFilterContext, ad->pFrame);
     //TODO:START
     //look at to fix/ adjust bug: https://stackoverflow.com/questions/61871719/ffmpeg-c-volume-filter
     //potentially do avfilter_graph_create_filter vs allocate context
     //maybe try to change how give input to volume filter:
-    /*
-     *
-    snprintf(args, sizeof(args),"%f",2.0f);
-     is all I need??
-     */
+
+    snprintf(av->args, sizeof(av->args),"%f",2.0f);
+//     is all I need??
+
     //TODO:END
     if (resp < 0) {
         cout << "Error: cannot send to graph: " << av_err2str(resp) << endl;
