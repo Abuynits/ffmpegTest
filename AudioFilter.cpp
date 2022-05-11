@@ -4,6 +4,7 @@
 #define VOLUME 1.00
 #define LOWPASS_VAL 3000
 #define HIGHPASS_VAL 200
+
 #include "AudioFilter.h"
 
 int AudioFilter::initializeAllObjets() {
@@ -66,10 +67,6 @@ int AudioFilter::initializeAllObjets() {
     cout << "configured graph!" << endl;
 
     return 0;
-}
-
-AudioFilter::AudioFilter(AudioDecoder *ad) {
-    this->ad = ad;
 }
 
 int AudioFilter::initSrcFilter() {
@@ -154,10 +151,6 @@ int AudioFilter::initVolumeFilter() {
     return 0;
 }
 
-void AudioFilter::closeAllObjects() {
-    avfilter_graph_free(&filterGraph);
-}
-
 int AudioFilter::initFormatFilter() {
 
     int resp;
@@ -185,28 +178,6 @@ int AudioFilter::initFormatFilter() {
     }
     cout << "Created format Filter!" << endl;
     return resp;
-}
-
-int AudioFilter::initByDict(AVFilterContext *afc, const char *key, const char *val) {
-
-    AVDictionary *optionsDict = nullptr;
-    av_dict_set(&optionsDict, key, val, 0);
-
-    int resp = avfilter_init_dict(afc, &optionsDict);
-    av_dict_free(&optionsDict);
-
-    return resp;
-}
-
-void AudioFilter::initByFunctions(AVFilterContext *afc) {
-    char ch_layout[64];
-    av_get_channel_layout_string(ch_layout, sizeof(ch_layout), 0, ad->pCodecContext->channel_layout);
-    av_opt_set(afc, "channel_layout", ch_layout, AV_OPT_SEARCH_CHILDREN);
-    av_opt_set(afc, "sample_fmt", av_get_sample_fmt_name(ad->pCodecContext->sample_fmt),
-               AV_OPT_SEARCH_CHILDREN);
-    av_opt_set_q(afc, "time_base", (AVRational) {1, ad->pCodecContext->sample_rate},
-                 AV_OPT_SEARCH_CHILDREN);
-    av_opt_set_int(afc, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
 }
 
 int AudioFilter::initLpFilter() {
@@ -266,4 +237,34 @@ int AudioFilter::initArnndnFilter() {
 
     resp = initByDict(arnndnFilterContext, "model", val);
     return resp;
+}
+
+AudioFilter::AudioFilter(AudioDecoder *ad) {
+    this->ad = ad;
+}
+
+void AudioFilter::closeAllObjects() {
+    avfilter_graph_free(&filterGraph);
+}
+
+int AudioFilter::initByDict(AVFilterContext *afc, const char *key, const char *val) {
+
+    AVDictionary *optionsDict = nullptr;
+    av_dict_set(&optionsDict, key, val, 0);
+
+    int resp = avfilter_init_dict(afc, &optionsDict);
+    av_dict_free(&optionsDict);
+
+    return resp;
+}
+
+void AudioFilter::initByFunctions(AVFilterContext *afc) {
+    char ch_layout[64];
+    av_get_channel_layout_string(ch_layout, sizeof(ch_layout), 0, ad->pCodecContext->channel_layout);
+    av_opt_set(afc, "channel_layout", ch_layout, AV_OPT_SEARCH_CHILDREN);
+    av_opt_set(afc, "sample_fmt", av_get_sample_fmt_name(ad->pCodecContext->sample_fmt),
+               AV_OPT_SEARCH_CHILDREN);
+    av_opt_set_q(afc, "time_base", (AVRational) {1, ad->pCodecContext->sample_rate},
+                 AV_OPT_SEARCH_CHILDREN);
+    av_opt_set_int(afc, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
 }
