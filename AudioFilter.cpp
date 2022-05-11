@@ -2,7 +2,8 @@
 // Created by Alexiy Buynitsky on 4/29/22.
 //
 #define VOLUME 1.00
-#define LOWPASS_VAL 3000
+#define LOWPASS_VAL 2000
+#define HIGHPASS_VAL 600
 #include "AudioFilter.h"
 
 int AudioFilter::initializeAllObjets() {
@@ -21,6 +22,8 @@ int AudioFilter::initializeAllObjets() {
     if (initFormatFilter() < 0) return -1;
     //----------------low pass FILTER CREATION----------------
     if (initLpFilter() < 0) return -1;
+    //----------------high pass FILTER CREATION----------------
+    if (initHpFilter() < 0) return -1;
     //----------------SINK FILTER CREATION----------------
     if (initSinkFilter() < 0) return -1;
 
@@ -31,7 +34,10 @@ int AudioFilter::initializeAllObjets() {
         resp = avfilter_link(volumeFilterContext, 0, lpFilterContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(lpFilterContext, 0, aFormatContext, 0);
+        resp = avfilter_link(lpFilterContext, 0, hpFilterContext, 0);
+    }
+    if (resp >= 0) {
+        resp = avfilter_link(hpFilterContext, 0, aFormatContext, 0);
     }
     if (resp >= 0) {
         resp = avfilter_link(aFormatContext, 0, sinkFilterContext, 0);
@@ -197,7 +203,7 @@ int AudioFilter::initLpFilter() {
     int resp;
     lpFilter = avfilter_get_by_name("lowpass");
     if (lpFilter == nullptr) {
-        cout << "Could not find aformat filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
+        cout << "Could not find lowpass filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
         return AVERROR_FILTER_NOT_FOUND;
     }
 
@@ -208,6 +214,24 @@ int AudioFilter::initLpFilter() {
     }
     char *val = AV_STRINGIFY(LOWPASS_VAL);
     resp = initByDict(lpFilterContext, "frequency", val);
+    return resp;
+}
+
+int AudioFilter::initHpFilter() {
+    int resp;
+    hpFilter = avfilter_get_by_name("highpass");
+    if (hpFilter == nullptr) {
+        cout << "Could not find highpass filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
+        return AVERROR_FILTER_NOT_FOUND;
+    }
+
+    hpFilterContext = avfilter_graph_alloc_filter(filterGraph, hpFilter, "highpass");
+    if (hpFilterContext == nullptr) {
+        cout << "Could not allocate format filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
+        return AVERROR(ENOMEM);
+    }
+    char *val = AV_STRINGIFY(HIGHPASS_VAL);
+    resp = initByDict(hpFilterContext, "frequency", val);
     return resp;
 }
 
