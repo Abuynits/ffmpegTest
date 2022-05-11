@@ -2,7 +2,7 @@
 // Created by Alexiy Buynitsky on 4/29/22.
 //
 #define VOLUME 1.00
-
+#define LOWPASS_VAL 3000
 #include "AudioFilter.h"
 
 int AudioFilter::initializeAllObjets() {
@@ -19,6 +19,8 @@ int AudioFilter::initializeAllObjets() {
     if (initVolumeFilter() < 0) return -1;
     //----------------Volume FILTER CREATION----------------
     if (initFormatFilter() < 0) return -1;
+    //----------------low pass FILTER CREATION----------------
+    if (initLpFilter() < 0) return -1;
     //----------------SINK FILTER CREATION----------------
     if (initSinkFilter() < 0) return -1;
 
@@ -26,7 +28,10 @@ int AudioFilter::initializeAllObjets() {
     int resp;
     resp = avfilter_link(srcFilterContext, 0, volumeFilterContext, 0);
     if (resp >= 0) {
-        resp = avfilter_link(volumeFilterContext, 0, aFormatContext, 0);
+        resp = avfilter_link(volumeFilterContext, 0, lpFilterContext, 0);
+    }
+    if (resp >= 0) {
+        resp = avfilter_link(lpFilterContext, 0, aFormatContext, 0);
     }
     if (resp >= 0) {
         resp = avfilter_link(aFormatContext, 0, sinkFilterContext, 0);
@@ -186,5 +191,23 @@ void AudioFilter::initByFunctions(AVFilterContext *afc) {
     av_opt_set_q(afc, "time_base", (AVRational) {1, ad->pCodecContext->sample_rate},
                  AV_OPT_SEARCH_CHILDREN);
     av_opt_set_int(afc, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
+}
+
+int AudioFilter::initLpFilter() {
+    int resp;
+    lpFilter = avfilter_get_by_name("lowpass");
+    if (lpFilter == nullptr) {
+        cout << "Could not find aformat filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
+        return AVERROR_FILTER_NOT_FOUND;
+    }
+
+    lpFilterContext = avfilter_graph_alloc_filter(filterGraph, lpFilter, "lowpass");
+    if (lpFilterContext == nullptr) {
+        cout << "Could not allocate format filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
+        return AVERROR(ENOMEM);
+    }
+    char *val = AV_STRINGIFY(LOWPASS_VAL);
+    resp = initByDict(lpFilterContext, "frequency", val);
+    return resp;
 }
 

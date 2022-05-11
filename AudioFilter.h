@@ -33,6 +33,9 @@ public:
     AVFilterContext *srcFilterContext = nullptr;
     const AVFilter *srcFilter = nullptr;
 
+
+    AVFilterContext *lpFilterContext = nullptr;
+    const AVFilter *lpFilter = nullptr;
     //vad filter
     AVFilterContext *volumeFilterContext = nullptr;
     const AVFilter *volumeFilter = nullptr;
@@ -43,7 +46,9 @@ public:
 
     AVFilterContext *aFormatContext = nullptr;
     const AVFilter *aFormatFilter = nullptr;
-
+/*
+ * want to filter out everything between 500hz or 200hz and 3000hz
+ */
 
     AudioFilter(AudioDecoder *ad);
 
@@ -57,6 +62,8 @@ private:
     int initSinkFilter();
 
     int initVolumeFilter();
+
+    int initLpFilter();
 
     int initFormatFilter();
 
