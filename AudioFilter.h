@@ -43,6 +43,10 @@ public:
     AVFilterContext *arnndnFilterContext = nullptr;
     const AVFilter *arnndnFilter = nullptr;
 
+    //silence detector:
+    AVFilterContext *silenceRemoverFilterContext = nullptr;
+    const AVFilter *silenceRemoverFilter = nullptr;
+
     //vad filter
     AVFilterContext *volumeFilterContext = nullptr;
     const AVFilter *volumeFilter = nullptr;
@@ -77,6 +81,8 @@ private:
     int initArnndnFilter();
 
     int initFormatFilter();
+
+    int initSilenceRemoverFilter();
 
     static int initByDict(AVFilterContext *afc, const char *key, const char *val);
 

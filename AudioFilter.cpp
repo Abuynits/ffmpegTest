@@ -27,6 +27,8 @@ int AudioFilter::initializeAllObjets() {
     if (initHpFilter() < 0) return -1;
     //----------------arnndn FILTER CREATION----------------
     if (initArnndnFilter() < 0) return -1;
+    //----------------arnndn FILTER CREATION----------------
+    if (initSilenceRemoverFilter() < 0) return -1;
     //----------------SINK FILTER CREATION----------------
     if (initSinkFilter() < 0) return -1;
     /*
@@ -48,7 +50,10 @@ int AudioFilter::initializeAllObjets() {
         resp = avfilter_link(hpFilterContext, 0, arnndnFilterContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(arnndnFilterContext, 0, aFormatContext, 0);
+        resp = avfilter_link(arnndnFilterContext, 0, silenceRemoverFilterContext, 0);
+    }
+    if (resp >= 0) {
+        resp = avfilter_link(silenceRemoverFilterContext, 0, aFormatContext, 0);
     }
     if (resp >= 0) {
         resp = avfilter_link(aFormatContext, 0, sinkFilterContext, 0);
@@ -214,6 +219,37 @@ int AudioFilter::initHpFilter() {
     char *val = AV_STRINGIFY(HIGHPASS_VAL);
     resp = initByDict(hpFilterContext, "frequency", val);
     return resp;
+}
+
+int AudioFilter::initSilenceRemoverFilter() {
+    int resp;
+    silenceRemoverFilter = avfilter_get_by_name("highpass");
+    if (silenceRemoverFilter == nullptr) {
+        cout << "Could not find highpass filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
+        return AVERROR_FILTER_NOT_FOUND;
+    }
+
+    silenceRemoverFilterContext = avfilter_graph_alloc_filter(filterGraph, silenceRemoverFilter, "highpass");
+    if (silenceRemoverFilterContext == nullptr) {
+        cout << "Could not allocate format filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
+        return AVERROR(ENOMEM);
+    }
+    //TODO: update the inputs to the dictionary, need multiple
+    char *val = AV_STRINGIFY(1);
+
+    resp = initByDict(silenceRemoverFilterContext, "start_periods", val);
+    if (resp < 0) {
+        return resp;
+    }
+    resp = initByDict(silenceRemoverFilterContext, "stop_periods", val);
+
+    //start_threshold
+    //stop_threshold
+    //use these two values to specify the actual decibal value which is considered silence or not
+    //TODO: use https://ffmpeg.org/ffmpeg-filters.html#silencedetect
+
+    return resp;
+
 }
 
 int AudioFilter::initArnndnFilter() {
