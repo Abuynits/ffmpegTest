@@ -39,6 +39,10 @@ public:
 
     AVFilterContext *hpFilterContext = nullptr;
     const AVFilter *hpFilter = nullptr;
+
+    AVFilterContext *arnndnFilterContext = nullptr;
+    const AVFilter *arnndnFilter = nullptr;
+
     //vad filter
     AVFilterContext *volumeFilterContext = nullptr;
     const AVFilter *volumeFilter = nullptr;
@@ -69,6 +73,8 @@ private:
     int initLpFilter();
 
     int initHpFilter();
+
+    int initArnndnFilter();
 
     int initFormatFilter();
 

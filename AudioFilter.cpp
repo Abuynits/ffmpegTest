@@ -2,8 +2,8 @@
 // Created by Alexiy Buynitsky on 4/29/22.
 //
 #define VOLUME 1.00
-#define LOWPASS_VAL 2000
-#define HIGHPASS_VAL 600
+#define LOWPASS_VAL 3000
+#define HIGHPASS_VAL 200
 #include "AudioFilter.h"
 
 int AudioFilter::initializeAllObjets() {
@@ -24,8 +24,15 @@ int AudioFilter::initializeAllObjets() {
     if (initLpFilter() < 0) return -1;
     //----------------high pass FILTER CREATION----------------
     if (initHpFilter() < 0) return -1;
+    //----------------arnndn FILTER CREATION----------------
+    if (initArnndnFilter() < 0) return -1;
     //----------------SINK FILTER CREATION----------------
     if (initSinkFilter() < 0) return -1;
+    /*
+     * NOTES:
+     * use arnndn filter which uses rnn, give it a model
+     * https://github.com/GregorR/rnnoise-models
+     */
 
 //------------CONNECT THE FILTERS ------------------
     int resp;
@@ -37,7 +44,10 @@ int AudioFilter::initializeAllObjets() {
         resp = avfilter_link(lpFilterContext, 0, hpFilterContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(hpFilterContext, 0, aFormatContext, 0);
+        resp = avfilter_link(hpFilterContext, 0, arnndnFilterContext, 0);
+    }
+    if (resp >= 0) {
+        resp = avfilter_link(arnndnFilterContext, 0, aFormatContext, 0);
     }
     if (resp >= 0) {
         resp = avfilter_link(aFormatContext, 0, sinkFilterContext, 0);
@@ -235,3 +245,25 @@ int AudioFilter::initHpFilter() {
     return resp;
 }
 
+int AudioFilter::initArnndnFilter() {
+    int resp;
+    arnndnFilter = avfilter_get_by_name("arnndn");
+    if (arnndnFilter == nullptr) {
+        cout << "Could not find arnndn filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
+        return AVERROR_FILTER_NOT_FOUND;
+    }
+
+    arnndnFilterContext = avfilter_graph_alloc_filter(filterGraph, arnndnFilter, "arnndn");
+    if (arnndnFilterContext == nullptr) {
+        cout << "Could not allocate arnndn filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
+        return AVERROR(ENOMEM);
+    }
+    /*
+     * model selection: beguiling-drafter bc the file is a recording, and we want to remove both noise and non-speech human sounds
+     * more info can be found here: https://github.com/GregorR/rnnoise-models
+     */
+    char *val = "/Users/abuynits/CLionProjects/ffmpegTest5/rnnoise-models-master/beguiling-drafter-2018-08-30/bd.rnnn";
+
+    resp = initByDict(arnndnFilterContext, "model", val);
+    return resp;
+}
