@@ -223,17 +223,24 @@ int AudioFilter::initHpFilter() {
 
 int AudioFilter::initSilenceRemoverFilter() {
     int resp;
-    silenceRemoverFilter = avfilter_get_by_name("highpass");
+    silenceRemoverFilter = avfilter_get_by_name("silenceremove");
     if (silenceRemoverFilter == nullptr) {
         cout << "Could not find highpass filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
         return AVERROR_FILTER_NOT_FOUND;
     }
 
-    silenceRemoverFilterContext = avfilter_graph_alloc_filter(filterGraph, silenceRemoverFilter, "highpass");
+    silenceRemoverFilterContext = avfilter_graph_alloc_filter(filterGraph, silenceRemoverFilter, "silenceremove");
     if (silenceRemoverFilterContext == nullptr) {
         cout << "Could not allocate format filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
         return AVERROR(ENOMEM);
     }
+
+
+    /*
+     * start_period: show if audio should be trimmed from start, 0= none, 1= non silence detected
+     *
+     */
+
     //TODO: update the inputs to the dictionary, need multiple
     char *val = AV_STRINGIFY(1);
 
@@ -241,8 +248,49 @@ int AudioFilter::initSilenceRemoverFilter() {
     if (resp < 0) {
         return resp;
     }
-    resp = initByDict(silenceRemoverFilterContext, "stop_periods", val);
 
+    resp = initByDict(silenceRemoverFilterContext, "stop_periods", val);
+    if (resp < 0) {
+        return resp;
+    }
+    val = AV_STRINGIFY(-50dB);
+
+
+    resp = initByDict(silenceRemoverFilterContext, "start_threshold", val);
+    if (resp < 0) {
+        return resp;
+    }
+//    resp = initByDict(silenceRemoverFilterContext, "stop_threshold", val);
+//    if (resp < 0) {
+//        return resp;
+//    }
+    val = AV_STRINGIFY(0.5);
+
+//    resp = initByDict(silenceRemoverFilterContext, "stop_silence", val);
+//    if (resp < 0) {
+//        return resp;
+//    }
+    resp = initByDict(silenceRemoverFilterContext, "start_silence", val);
+    if (resp < 0) {
+        return resp;
+    }
+
+    val = AV_STRINGIFY(peak);
+    resp = initByDict(silenceRemoverFilterContext, "detection", val);
+    if (resp < 0) {
+        return resp;
+    }
+
+//    val = AV_STRINGIFY(any);
+//
+//    resp = initByDict(silenceRemoverFilterContext, "start_mode", val);
+//    if (resp < 0) {
+//        return resp;
+//    }
+//    resp = initByDict(silenceRemoverFilterContext, "stop_mode", val);
+//    if (resp < 0) {
+//        return resp;
+//    }
     //start_threshold
     //stop_threshold
     //use these two values to specify the actual decibal value which is considered silence or not
