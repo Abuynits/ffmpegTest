@@ -1,12 +1,33 @@
 //
 // Created by Alexiy Buynitsky on 4/29/22.
-//
+//percentage of wanted volume. Present to 100% = 1.00
 #define VOLUME 1.00
+//The threshold for the lowpass filter. All frequencies below this value are kepy
 #define LOWPASS_VAL 3000
+//The threshold for the highpass filter. All frequencies above this value are kepy
 #define HIGHPASS_VAL 200
-#define SILENCE_DB -30dB
-#define SILENCE_FRAMES 1
-#define WANTED_SILENCE 0.2
+//1=remove silent frames, 0=keep all silent frames (same for start and end of audio), -1 = remove in the middle as well
+#define STOP_PERIOD 1
+//1=remove silent frames, 0=keep all silent frames (same for start and end of audio)
+#define START_PERIOD 1
+//CAN CHANGE/ EDIT, DONT REALLY NEED TO
+//Threshold for detection of silence. has to be negative. if it is closer to 0, it is more sensitive. -30dB was recommended
+#define START_THRESHOLD -30dB
+//Threshold for detection of silence. has to be negative. if it is closer to 0, it is more sensitive. -30dB was recommended
+#define STOP_THRESHOLD -40dB
+//the amount of time that non-silence has to be detected before it stops trimming audio
+#define START_DURATION 0
+//The amount of silence that you want at the end of the audio. the greater the number, the more silence at the end.
+#define STOP_SILENCE 0
+//The amount of silence that you want at the start of the audio. the greater the number, the more silence at the start.
+#define START_SILENCE 0.9
+//HERE: STILL VARIABLE::
+//The amount of time used for determining whether you have silence in audio. default =0.02,
+#define WINDOW 0.9
+//set how detect silence: "peak" = faster and works better with digital silence, "rms" = default
+#define DETECTION rms
+//used to skip over wanted silence. very important for skipping over gaps
+#define STOP_DURATION 0
 
 #include "AudioFilter.h"
 
@@ -238,50 +259,71 @@ int AudioFilter::initSilenceRemoverFilter() {
         return AVERROR(ENOMEM);
     }
 
-    char *val = AV_STRINGIFY(1);
+//=========GENERAL INIT====================
+
+    char *val = AV_STRINGIFY(START_PERIOD);
     resp = initByDict(silenceRemoverFilterContext, "start_periods", val);
     if (resp < 0) {
         return resp;
     }
-    val = AV_STRINGIFY(-30dB);
+    val = AV_STRINGIFY(STOP_PERIOD);
+    resp = initByDict(silenceRemoverFilterContext, "stop_periods", val);
+    if (resp < 0) {
+        return resp;
+    }
+    val = AV_STRINGIFY(WINDOW);
+    resp = initByDict(silenceRemoverFilterContext, "window", val);
+    if (resp < 0) {
+        return resp;
+    }
+    val = AV_STRINGIFY(DETECTION);
+    resp = initByDict(silenceRemoverFilterContext, "detection", val);
+    if (resp < 0) {
+        return resp;
+    }
+//=========START FILTERS====================
+
+
+    val = AV_STRINGIFY(START_THRESHOLD);
     resp = initByDict(silenceRemoverFilterContext, "start_threshold", val);
     if (resp < 0) {
         return resp;
     }
-    val = AV_STRINGIFY(WANTED_SILENCE);
+
+    val = AV_STRINGIFY(START_SILENCE);
     resp = initByDict(silenceRemoverFilterContext, "start_silence", val);
     if (resp < 0) {
         return resp;
     }
 
+//=========END FILTERS====================
 
-
-
-    val = AV_STRINGIFY(1);
-    resp = initByDict(silenceRemoverFilterContext, "stop_periods", val);
+    val = AV_STRINGIFY(START_DURATION);
+    resp = initByDict(silenceRemoverFilterContext, "start_duration", val);
     if (resp < 0) {
         return resp;
     }
-
-    val = AV_STRINGIFY(-40dB);
+    val = AV_STRINGIFY(STOP_THRESHOLD);
     resp = initByDict(silenceRemoverFilterContext, "stop_threshold", val);
     if (resp < 0) {
         return resp;
     }
     //stop_periods=-1:stop_duration=1:stop_threshold=-90dB
 
-    val = AV_STRINGIFY(1);
+    val = AV_STRINGIFY(STOP_SILENCE);
+    resp = initByDict(silenceRemoverFilterContext, "stop_silence", val);
+    if (resp < 0) {
+        return resp;
+    }
+
+    val = AV_STRINGIFY(STOP_DURATION);
     resp = initByDict(silenceRemoverFilterContext, "stop_duration", val);
     if (resp < 0) {
         return resp;
     }
 
 
-//    val = AV_STRINGIFY(peak);
-//    resp = initByDict(silenceRemoverFilterContext, "detection", val);
-//    if (resp < 0) {
-//        return resp;
-//    }
+
 
 //    val = AV_STRINGIFY(any);
 //
