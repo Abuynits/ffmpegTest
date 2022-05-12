@@ -81,6 +81,9 @@ void AudioDecoder::initializeAllObjects() {
     // http://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga31d601155e9035d5b0e7efedc894ee49
 
     pFormatContext = avformat_alloc_context();
+    //get the output format for this specific audio stream
+    const AVOutputFormat *outputFormat = av_guess_format(nullptr, outputFP, nullptr);
+    pFormatContext->oformat = outputFormat;
 
     int resp = avformat_open_input(&pFormatContext, inputFP, nullptr, nullptr);
     if (resp != 0) {
@@ -122,6 +125,11 @@ void AudioDecoder::initializeAllObjects() {
         cout << stderr << "Could not open packet" << endl;
         exit(1);
     }
+//    resp = avformat_write_header(pFormatContext, nullptr);
+//    if (resp < 0) {
+//        cout << "Error when opening output file" << endl;
+//        exit(1);
+//    }
 }
 
 void AudioDecoder::closeAllObjects() {
