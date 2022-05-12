@@ -21,14 +21,12 @@ extern "C" {
 
 class AudioDecoder {
 public:
-
-
     const char *inputFP = nullptr;
     const char *outputFP = nullptr;
-    FILE *inFile = nullptr;
-    FILE *outFile = nullptr;
+    FILE *inFile= nullptr;
+    FILE *outFile= nullptr;
 
-    AVFormatContext *pFormatContext = nullptr;
+    AVFormatContext *pFormatContext= nullptr;
     const AVCodec *pCodec = nullptr;
     AVCodecContext *pCodecContext = nullptr;
     AVPacket *pPacket = nullptr;

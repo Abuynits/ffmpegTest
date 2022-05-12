@@ -7,9 +7,7 @@
 #define SILENCE_DB -30dB
 #define SILENCE_FRAMES 1
 #define WANTED_SILENCE 0.2
-#define NUMBER_FILTERS 4
 
-#include <list>
 #include "AudioFilter.h"
 
 int AudioFilter::initializeAllObjets() {
@@ -20,95 +18,30 @@ int AudioFilter::initializeAllObjets() {
         return AVERROR(ENOMEM);
     }
 
-    InnerFilter filters[NUMBER_FILTERS];
-    string filterName = "volume";
-    string keys = "volume";
-    string vals = AV_STRINGIFY(VOLUME);
-    filters[0] = InnerFilter(this, filterName, keys, vals);
-
-    filterName = "lowpass";
-    keys = "frequency";
-    vals = AV_STRINGIFY(LOWPASS_VAL);
-    filters[1] = InnerFilter(this, filterName, keys, vals);
-
-    filterName = "highpass";
-    keys = "frequency";
-    vals = AV_STRINGIFY(HIGHPASS_VAL);
-    filters[2] = InnerFilter(this, filterName, keys, vals);
-
-    filterName = "arnndn";
-    keys = "model";
-    vals = {"/Users/abuynits/CLionProjects/ffmpegTest5/rnnoise-models-master/beguiling-drafter-2018-08-30/bd.rnnn"};
-    filters[3] = InnerFilter(this, filterName, keys, vals);
-
-//    filterName = "silenceremove";
-//    string multKeys[] = {"window", "start_periods", "start_threshold", "start_duration", "start_silence",
-//                         "stop_periods",
-//                         "stop_threshold", "stop_duration"};
-//    string multVals[] = {AV_STRINGIFY(0.3), AV_STRINGIFY(1), AV_STRINGIFY(-30dB), AV_STRINGIFY(0.2),
-//                         AV_STRINGIFY(WANTED_SILENCE),
-//                         AV_STRINGIFY(1), AV_STRINGIFY(-40dB), AV_STRINGIFY(100)};
-//    filters[4] = InnerFilter(this, filterName, multKeys, multVals, 1);
-
-//    for (InnerFilter f: filters) {
-//        int resp = f.initFilter();
-//        if (resp < 0) {
-//            cout << "error in init filter!" << endl;
-//            return -1;
-//        }
-//    }
-
-
-//    //----------------SRC FILTER CREATION----------------
-//    if (initSrcFilter() < 0) return -1;
-//    //----------------Volume FILTER CREATION----------------
-//    if (initVolumeFilter() < 0) return -1;
-//    //----------------Volume FILTER CREATION----------------
-//    if (initFormatFilter() < 0) return -1;
-//    //----------------low pass FILTER CREATION----------------
-//    if (initLpFilter() < 0) return -1;
-//    //----------------high pass FILTER CREATION----------------
-//    if (initHpFilter() < 0) return -1;
-//    //----------------arnndn FILTER CREATION----------------
-//    if (initArnndnFilter() < 0) return -1;
-//    //----------------arnndn FILTER CREATION----------------
-//    if (initSilenceRemoverFilter() < 0) return -1;
-//    //----------------SINK FILTER CREATION----------------
-//    if (initSinkFilter() < 0) return -1;
-//    /*
-//     * NOTES:
-//     * use arnndn filter which uses rnn, give it a model
-//     * https://github.com/GregorR/rnnoise-models
-//     */
+    //----------------SRC FILTER CREATION----------------
+    if (initSrcFilter() < 0) return -1;
+    //----------------Volume FILTER CREATION----------------
+    if (initVolumeFilter() < 0) return -1;
+    //----------------Volume FILTER CREATION----------------
+    if (initFormatFilter() < 0) return -1;
+    //----------------low pass FILTER CREATION----------------
+    if (initLpFilter() < 0) return -1;
+    //----------------high pass FILTER CREATION----------------
+    if (initHpFilter() < 0) return -1;
+    //----------------arnndn FILTER CREATION----------------
+    if (initArnndnFilter() < 0) return -1;
+    //----------------arnndn FILTER CREATION----------------
+    if (initSilenceRemoverFilter() < 0) return -1;
+    //----------------SINK FILTER CREATION----------------
+    if (initSinkFilter() < 0) return -1;
+    /*
+     * NOTES:
+     * use arnndn filter which uses rnn, give it a model
+     * https://github.com/GregorR/rnnoise-models
+     */
 
 //------------CONNECT THE FILTERS ------------------
-
     int resp;
-
-
-    resp = avfilter_link(srcFilterContext, 0, filters[0].filterContext, 0);
-    if (resp < 0) {
-        goto exitLinking;
-    }
-    cout<<"here"<<endl;
-    for (int i = 1; i < NUMBER_FILTERS - 1; i++) {
-        resp = avfilter_link(filters[i].filterContext, 0, filters[i + 1].filterContext, 0);
-        if (resp < 0) {
-            cout << "error on: " << i << endl;
-            goto exitLinking;
-        }
-
-    }
-    if (resp >= 0) {
-        resp = avfilter_link(filters[NUMBER_FILTERS - 1].filterContext, 0, sinkFilterContext, 0);
-    }
-    exitLinking:
-    if (resp < 0) {
-        cout << "Error connecting filters: " << av_err2str(resp) << endl;
-        return resp;
-    }
-    /*
-     *
     resp = avfilter_link(srcFilterContext, 0, volumeFilterContext, 0);
     if (resp >= 0) {
         resp = avfilter_link(volumeFilterContext, 0, lpFilterContext, 0);
@@ -132,7 +65,6 @@ int AudioFilter::initializeAllObjets() {
         cout << "Error connecting filters: " << av_err2str(resp) << endl;
         return resp;
     }
-     */
     cout << "linked filters!" << endl;
 
     resp = avfilter_graph_config(filterGraph, nullptr);
@@ -305,17 +237,8 @@ int AudioFilter::initSilenceRemoverFilter() {
         cout << "Could not allocate format filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
         return AVERROR(ENOMEM);
     }
-    char *val;
 
-    //===============General Setup====================
-    val = AV_STRINGIFY(0.3);
-    resp = initByDict(silenceRemoverFilterContext, "window", val);
-    if (resp < 0) {
-        return resp;
-    }
-
-    //===============START OF AUDIO====================
-    val = AV_STRINGIFY(1);
+    char *val = AV_STRINGIFY(1);
     resp = initByDict(silenceRemoverFilterContext, "start_periods", val);
     if (resp < 0) {
         return resp;
@@ -325,17 +248,13 @@ int AudioFilter::initSilenceRemoverFilter() {
     if (resp < 0) {
         return resp;
     }
-    val = AV_STRINGIFY(0.2);
-    resp = initByDict(silenceRemoverFilterContext, "start_duration", val);
-    if (resp < 0) {
-        return resp;
-    }
     val = AV_STRINGIFY(WANTED_SILENCE);
     resp = initByDict(silenceRemoverFilterContext, "start_silence", val);
     if (resp < 0) {
         return resp;
     }
-    //===============End OF AUDIO====================
+
+
 
 
     val = AV_STRINGIFY(1);
@@ -351,60 +270,29 @@ int AudioFilter::initSilenceRemoverFilter() {
     }
     //stop_periods=-1:stop_duration=1:stop_threshold=-90dB
 
-    val = AV_STRINGIFY(100);
+    val = AV_STRINGIFY(1);
     resp = initByDict(silenceRemoverFilterContext, "stop_duration", val);
     if (resp < 0) {
         return resp;
     }
 
 
-    return resp;
+//    val = AV_STRINGIFY(peak);
+//    resp = initByDict(silenceRemoverFilterContext, "detection", val);
+//    if (resp < 0) {
+//        return resp;
+//    }
 
-    //===============START OF AUDIO====================
-
-    val = AV_STRINGIFY(1);
-    resp = initByDict(silenceRemoverFilterContext, "start_periods", val);
-    if (resp < 0) {
-        return resp;
-    }
-    val = AV_STRINGIFY(-30dB);
-    resp = initByDict(silenceRemoverFilterContext, "start_threshold", val);
-    if (resp < 0) {
-        return resp;
-    }
-    val = AV_STRINGIFY(0.2);
-    resp = initByDict(silenceRemoverFilterContext, "start_silence", val);
-    if (resp < 0) {
-        return resp;
-    }
-
-    //==========END OF AUDIO=================
-
+//    val = AV_STRINGIFY(any);
 //
-//    val = AV_STRINGIFY(1);
-//    resp = initByDict(silenceRemoverFilterContext, "stop_periods", val);
+//    resp = initByDict(silenceRemoverFilterContext, "start_mode", val);
 //    if (resp < 0) {
 //        return resp;
 //    }
-//    val = AV_STRINGIFY(-40dB);
-//    resp = initByDict(silenceRemoverFilterContext, "stop_threshold", val);
+//    resp = initByDict(silenceRemoverFilterContext, "stop_mode", val);
 //    if (resp < 0) {
 //        return resp;
 //    }
-//    //stop_periods=-1:stop_duration=1:stop_threshold=-90dB
-//
-//    val = AV_STRINGIFY(1);
-//    resp = initByDict(silenceRemoverFilterContext, "stop_duration", val);
-//    if (resp < 0) {
-//        return resp;
-//    }
-//    //TODO: bug here with trimming a value
-//    val = AV_STRINGIFY(0.5);
-//    resp = initByDict(silenceRemoverFilterContext, "stop_silence", val);
-//    if (resp < 0) {
-//        return resp;
-//    }
-
 
     //start_threshold
     //stop_threshold
@@ -466,68 +354,4 @@ void AudioFilter::initByFunctions(AVFilterContext *afc) {
     av_opt_set_q(afc, "time_base", (AVRational) {1, ad->pCodecContext->sample_rate},
                  AV_OPT_SEARCH_CHILDREN);
     av_opt_set_int(afc, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
-}
-
-int AudioFilter::InnerFilter::initSingleInputFilter() {
-    filter = avfilter_get_by_name(name.c_str());
-    if (filter == nullptr) {
-        cout << "Could not find the volume filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-
-    filterContext = avfilter_graph_alloc_filter(av->filterGraph, filter, name.c_str());
-    if (filterContext == nullptr) {
-        cout << "Could not find the " << name << " filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-    int resp = initByDict(key.c_str(), value.c_str());
-    if (resp < 0) {
-        cout << "Could not initialize the " << name << " with " << key.c_str() << " and " << value.c_str() << endl;
-        return resp;
-    }
-
-
-    cout << "created " << name << " Filter!" << endl;
-    return 0;
-}
-
-int AudioFilter::InnerFilter::initByDict(const char *key, const char *val) const {
-
-    AVDictionary *optionsDict = nullptr;
-    av_dict_set(&optionsDict, key, val, 0);
-
-    int resp = avfilter_init_dict(filterContext, &optionsDict);
-    av_dict_free(&optionsDict);
-
-    return resp;
-}
-
-int AudioFilter::InnerFilter::initMultipleInputFilter() {
-    filter = avfilter_get_by_name(name.c_str());
-    if (filter == nullptr) {
-        cout << "Could not find the volume filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-
-    filterContext = avfilter_graph_alloc_filter(av->filterGraph, filter, name.c_str());
-    if (filterContext == nullptr) {
-        cout << "Could not find the " << name << " filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-    for (int i = 0; i < numFactors; i++) {
-        const char *k = keys[i].c_str();
-        const char *v = values[i].c_str();
-
-        int resp = initByDict(k, v);
-        if (resp < 0) {
-            cout << "Could not initialize the " << name << " with " << k << " and " << v << endl;
-            return resp;
-        }
-    }
-
-
-    cout << "created " << name << " Filter!" << endl;
-    return 0;
-
-    return 0;
 }
