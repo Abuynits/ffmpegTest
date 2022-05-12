@@ -22,7 +22,7 @@
 //The amount of silence that you want at the start of the audio. the greater the number, the more silence at the start.
 #define START_SILENCE 0.9
 //HERE: STILL VARIABLE::
-//The amount of time used for determining whether you have silence in audio. default =0.02,
+//The amount of time used for determining whether you have silence in audio. default =0.02, (using longer window to have more frames to determine if have noise or not)
 #define WINDOW 0.9
 //set how detect silence: "peak" = faster and works better with digital silence, "rms" = default
 #define DETECTION rms

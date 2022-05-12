@@ -79,12 +79,16 @@ void AudioDecoder::initializeAllObjects() {
     //AVINputFormat -give Null and it will do auto detect
     //try to get some information of the file vis
     // http://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga31d601155e9035d5b0e7efedc894ee49
-    //TODO: check if this has to be !=0, or <=0
+
+    pFormatContext = avformat_alloc_context();
+
     int resp = avformat_open_input(&pFormatContext, inputFP, nullptr, nullptr);
     if (resp != 0) {
         cout << stderr << " ERROR: could not open file: " << av_err2str(resp) << endl;
         exit(1);
     }
+
+
     // read Packets from the Format to get stream information
     //if the fine does not have a ehader ,read some frames to figure out the information and storage type of the file
     // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#gad42172e27cddafb81096939783b157bb
