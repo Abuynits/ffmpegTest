@@ -27,6 +27,36 @@ extern "C" {
 
 class AudioFilter {
 public:
+    struct InnerFilter {
+        AudioFilter *av;
+        string name;
+        AVFilterContext *filterContext = nullptr;
+        const AVFilter *filter = nullptr;
+        int numFactors = 0;
+        string key;
+        string value;
+        string *keys,*values;
+        InnerFilter(AudioFilter *av, string name, string key, string value) {
+            this->av = av;
+            this->name = name;
+            this->value = value;
+            this->key = key;
+            initSingleInputFilter();
+        }
+        InnerFilter(AudioFilter *av, string name, string *keys, string *values, int numFactors) {
+            this->av = av;
+            this->name = name;
+            this->values = values;
+            this->keys = keys;
+            this->numFactors = numFactors;
+            initMultipleInputFilter();
+        }
+        InnerFilter(){};
+        int initSingleInputFilter();
+        int initMultipleInputFilter();
+        int initByDict(const char *key, const char *val) const;
+    };
+
     AudioDecoder *ad = nullptr;
     AVFilterGraph *filterGraph = nullptr;
     //used to pass in the initial frame (the first 'filter' in the graph)
