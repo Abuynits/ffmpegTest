@@ -84,9 +84,11 @@ private:
 
     int initSilenceRemoverFilter();
 
+    int generalFilterInit(AVFilterContext **af, const AVFilter **f, const char *name) const;
+
     static int initByDict(AVFilterContext *afc, const char *key, const char *val);
 
-    void initByFunctions(AVFilterContext *afc);
+    void initByFunctions(AVFilterContext *afc) const;
 };
 
 

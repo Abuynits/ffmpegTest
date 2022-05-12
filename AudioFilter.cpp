@@ -99,19 +99,10 @@ int AudioFilter::initializeAllObjets() {
 }
 
 int AudioFilter::initSrcFilter() {
-    //create aBuffer filter, used for inputing data to filtergraph -> recieves frames from the decoder
-    srcFilter = avfilter_get_by_name("abuffer");
-    if (srcFilter == nullptr) {
-        cout << "ERROR: Could not find the abuffer filter" << endl;
-
-        return AVERROR_FILTER_NOT_FOUND;
+    int resp = generalFilterInit(&srcFilterContext, &srcFilter, "abuffer");
+    if (resp < 0) {
+        return resp;
     }
-    srcFilterContext = avfilter_graph_alloc_filter(filterGraph, srcFilter, "src");
-    if (srcFilterContext == nullptr) {
-        cout << "Could not allocate the inputFilter context" << endl;
-        return AVERROR(ENOMEM);
-    }
-
 //check if have channel layout:
     if (!ad->pCodecContext->channel_layout) {
         cout << "warning: channel context not initialized... initializing" << endl;
@@ -120,7 +111,7 @@ int AudioFilter::initSrcFilter() {
 
     initByFunctions(srcFilterContext);
 
-    int resp = avfilter_init_str(srcFilterContext, nullptr);
+    resp = avfilter_init_str(srcFilterContext, nullptr);
     if (resp < 0) {
         cout << "ERROR: creating srcFilter: " << av_err2str(resp) << endl;
         return resp;
@@ -132,18 +123,9 @@ int AudioFilter::initSrcFilter() {
 
 int AudioFilter::initSinkFilter() {
 
-    int resp;
-
-    sinkFilter = avfilter_get_by_name("abuffersink");
-    if (srcFilter == nullptr) {
-        cout << "ERROR: Could not find the abuffersink filter" << endl;
-
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-    sinkFilterContext = avfilter_graph_alloc_filter(filterGraph, sinkFilter, "sink");
-    if (sinkFilterContext == nullptr) {
-        cout << "Could not allocate the outputFilter context" << endl;
-        return AVERROR(ENOMEM);
+    int resp = generalFilterInit(&sinkFilterContext, &sinkFilter, "abuffersink");
+    if (resp < 0) {
+        return resp;
     }
 
     resp = avfilter_init_str(sinkFilterContext, nullptr);
@@ -156,20 +138,12 @@ int AudioFilter::initSinkFilter() {
 }
 
 int AudioFilter::initVolumeFilter() {
-    volumeFilter = avfilter_get_by_name("volume");
-    if (volumeFilter == nullptr) {
-        cout << "Could not find the volume filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
+    int resp = generalFilterInit(&volumeFilterContext, &volumeFilter, "volume");
+    if (resp < 0) {
+        return resp;
     }
-
-    volumeFilterContext = avfilter_graph_alloc_filter(filterGraph, volumeFilter, "volume");
-    if (volumeFilterContext == nullptr) {
-        cout << "Could not find the volume filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-
     char *val = AV_STRINGIFY(VOLUME);
-    int resp = initByDict(volumeFilterContext, "volume", val);
+    resp = initByDict(volumeFilterContext, "volume", val);
 
     if (resp < 0) {
         fprintf(stderr, "Could not initialize the volume filter.\n");
@@ -181,18 +155,9 @@ int AudioFilter::initVolumeFilter() {
 }
 
 int AudioFilter::initFormatFilter() {
-
-    int resp;
-    aFormatFilter = avfilter_get_by_name("aformat");
-    if (aFormatFilter == nullptr) {
-        cout << "Could not find aformat filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-
-    aFormatContext = avfilter_graph_alloc_filter(filterGraph, aFormatFilter, "aformat");
-    if (aFormatContext == nullptr) {
-        cout << "Could not allocate format filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
-        return AVERROR(ENOMEM);
+    int resp = generalFilterInit(&aFormatContext, &aFormatFilter, "aformat");
+    if (resp < 0) {
+        return resp;
     }
 
     char args[1024];
@@ -210,53 +175,31 @@ int AudioFilter::initFormatFilter() {
 }
 
 int AudioFilter::initLpFilter() {
-    int resp;
-    lpFilter = avfilter_get_by_name("lowpass");
-    if (lpFilter == nullptr) {
-        cout << "Could not find lowpass filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-
-    lpFilterContext = avfilter_graph_alloc_filter(filterGraph, lpFilter, "lowpass");
-    if (lpFilterContext == nullptr) {
-        cout << "Could not allocate format filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
-        return AVERROR(ENOMEM);
+    int resp = generalFilterInit(&lpFilterContext, &lpFilter, "lowpass");
+    if (resp < 0) {
+        return resp;
     }
     char *val = AV_STRINGIFY(LOWPASS_VAL);
     resp = initByDict(lpFilterContext, "frequency", val);
+    cout << "Created lp Filter!" << endl;
     return resp;
 }
 
 int AudioFilter::initHpFilter() {
-    int resp;
-    hpFilter = avfilter_get_by_name("highpass");
-    if (hpFilter == nullptr) {
-        cout << "Could not find highpass filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-
-    hpFilterContext = avfilter_graph_alloc_filter(filterGraph, hpFilter, "highpass");
-    if (hpFilterContext == nullptr) {
-        cout << "Could not allocate format filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
-        return AVERROR(ENOMEM);
+    int resp = generalFilterInit(&hpFilterContext, &hpFilter, "highpass");
+    if (resp < 0) {
+        return resp;
     }
     char *val = AV_STRINGIFY(HIGHPASS_VAL);
     resp = initByDict(hpFilterContext, "frequency", val);
+    cout << "Created hp Filter!" << endl;
     return resp;
 }
 
 int AudioFilter::initSilenceRemoverFilter() {
-    int resp;
-    silenceRemoverFilter = avfilter_get_by_name("silenceremove");
-    if (silenceRemoverFilter == nullptr) {
-        cout << "Could not find highpass filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-
-    silenceRemoverFilterContext = avfilter_graph_alloc_filter(filterGraph, silenceRemoverFilter, "silenceremove");
-    if (silenceRemoverFilterContext == nullptr) {
-        cout << "Could not allocate format filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
-        return AVERROR(ENOMEM);
+    int resp = generalFilterInit(&silenceRemoverFilterContext, &silenceRemoverFilter, "silenceremove");
+    if (resp < 0) {
+        return resp;
     }
 
 //=========GENERAL INIT====================
@@ -321,23 +264,7 @@ int AudioFilter::initSilenceRemoverFilter() {
     if (resp < 0) {
         return resp;
     }
-
-
-
-
-//    val = AV_STRINGIFY(any);
-//
-//    resp = initByDict(silenceRemoverFilterContext, "start_mode", val);
-//    if (resp < 0) {
-//        return resp;
-//    }
-//    resp = initByDict(silenceRemoverFilterContext, "stop_mode", val);
-//    if (resp < 0) {
-//        return resp;
-//    }
-
-    //start_threshold
-    //stop_threshold
+    cout << "Created silenceremove Filter!" << endl;
     //use these two values to specify the actual decibal value which is considered silence or not
     //TODO: use https://ffmpeg.org/ffmpeg-filters.html#silencedetect
 
@@ -346,17 +273,9 @@ int AudioFilter::initSilenceRemoverFilter() {
 }
 
 int AudioFilter::initArnndnFilter() {
-    int resp;
-    arnndnFilter = avfilter_get_by_name("arnndn");
-    if (arnndnFilter == nullptr) {
-        cout << "Could not find arnndn filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
-        return AVERROR_FILTER_NOT_FOUND;
-    }
-
-    arnndnFilterContext = avfilter_graph_alloc_filter(filterGraph, arnndnFilter, "arnndn");
-    if (arnndnFilterContext == nullptr) {
-        cout << "Could not allocate arnndn filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
-        return AVERROR(ENOMEM);
+    int resp = generalFilterInit(&arnndnFilterContext, &arnndnFilter, "arnndn");
+    if (resp < 0) {
+        return resp;
     }
     /*
      * model selection: beguiling-drafter bc the file is a recording, and we want to remove both noise and non-speech human sounds
@@ -365,6 +284,7 @@ int AudioFilter::initArnndnFilter() {
     char *val = "/Users/abuynits/CLionProjects/ffmpegTest5/rnnoise-models-master/beguiling-drafter-2018-08-30/bd.rnnn";
 
     resp = initByDict(arnndnFilterContext, "model", val);
+    cout << "Created arnndn Filter!" << endl;
     return resp;
 }
 
@@ -387,7 +307,7 @@ int AudioFilter::initByDict(AVFilterContext *afc, const char *key, const char *v
     return resp;
 }
 
-void AudioFilter::initByFunctions(AVFilterContext *afc) {
+void AudioFilter::initByFunctions(AVFilterContext *afc) const {
     char ch_layout[64];
     av_get_channel_layout_string(ch_layout, sizeof(ch_layout), 0, ad->pCodecContext->channel_layout);
     av_opt_set(afc, "channel_layout", ch_layout, AV_OPT_SEARCH_CHILDREN);
@@ -397,3 +317,19 @@ void AudioFilter::initByFunctions(AVFilterContext *afc) {
                  AV_OPT_SEARCH_CHILDREN);
     av_opt_set_int(afc, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
 }
+
+int AudioFilter::generalFilterInit(AVFilterContext **af, const AVFilter **f, const char *name) const {
+    *f = avfilter_get_by_name(name);
+    if (*f == nullptr) {
+        cout << "Could not find " << name << " filter: " << av_err2str(AVERROR_FILTER_NOT_FOUND) << endl;
+        return AVERROR_FILTER_NOT_FOUND;
+    }
+
+    *af = avfilter_graph_alloc_filter(filterGraph, *f, name);
+    if (*af == nullptr) {
+        cout << "Could not allocate " << name << " filter context: " << av_err2str(AVERROR(ENOMEM)) << endl;
+        return AVERROR(ENOMEM);
+    }
+    return 0;
+}
+
