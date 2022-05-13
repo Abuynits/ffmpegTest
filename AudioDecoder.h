@@ -26,7 +26,9 @@ public:
     FILE *inFile= nullptr;
     FILE *outFile= nullptr;
 
-    AVFormatContext *pFormatContext= nullptr;
+    AVFormatContext *pInFormatContext= nullptr;
+    AVFormatContext *pOutFormatContext= nullptr;
+    const AVOutputFormat *outputFormat = nullptr;
     const AVCodec *pCodec = nullptr;
     AVCodecContext *pCodecContext = nullptr;
     AVPacket *pPacket = nullptr;
@@ -34,13 +36,15 @@ public:
     AVStream *audioStream = nullptr;
     int avStreamIndex = -1;
     int audioFrameCount = 0;
+    int *streamMapping= nullptr;
+    int streamIndex =0;
 
 
     AudioDecoder(const char *inFilePath, const char *ptrOutFilePath);
 
 /**
  * intializes:
- *  AVFormatContext *pFormatContext
+ *  AVFormatContext *pInFormatContext
     const AVCodec *pCodec
     AVCodecParserContext *pParser
     AVCodecContext *pCodecContext

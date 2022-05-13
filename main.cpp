@@ -51,7 +51,7 @@ int main() {
     }
     cout << "initialized all filters\n" << endl;
 
-    while (av_read_frame(ad->pFormatContext, ad->pPacket) >= 0) {
+    while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
         resp = loopOverPacketFrames();
         if (resp < 0) {
             break;
@@ -173,7 +173,11 @@ int filterAudioFrame() {
             goto breakFilter;
         }
         //TODO: unreference all audio information - lose object and write NOTHING - bug here!!
-        ad->saveAudioFrame();
+        //ad->saveAudioFrame();
+        resp = av_interleaved_write_frame(ad->pOutFormatContext, ad->pPacket);
+        if(resp<0){
+            cout<<"Error muxing packet"<<endl;
+        }
         av_frame_unref(ad->pFrame);
     }
     return 0;
