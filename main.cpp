@@ -20,7 +20,7 @@ extern "C" {
 int loopOverPacketFrames();
 
 
-int getAudioRunCommand();
+int getAudioRunCommand(AudioDecoder *audioDec);
 
 int filterAudioFrame();
 
@@ -29,15 +29,14 @@ using namespace std;
 
 AudioDecoder *ad;
 AudioFilter *av;
+AudioDecoder *ad2;
 
 int main() {
     const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
     const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
-
+    const char *finalOutputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
     ad = new AudioDecoder(inputFP, outputFP);
 
-
-//TODO: try to write without having a filter - just run through the buffers and see what you get.
     ad->openFiles();
     cout << "opened files" << endl;
 
@@ -52,34 +51,101 @@ int main() {
     cout << "initialized all filters\n" << endl;
 
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
+//        AVStream *inStream, *outStream;
+//        inStream = ad->pInFormatContext->streams[ad->pPacket->stream_index];
         resp = loopOverPacketFrames();
         if (resp < 0) {
             break;
         }
 
+
     }
+    //
 
     //flush the audio decoder
     ad->pPacket = nullptr;
     loopOverPacketFrames();
 
 
-    resp = getAudioRunCommand();
+    resp = getAudioRunCommand(ad);
+    if (resp < 0) {
+        cout << "ERROR getting ffplay command" << endl;
+        goto end;
+    }
+    cout << "finished processing first loop" << endl;
+    end:
+    ad->closeAllObjects();
+    av->closeAllObjects();
+
+    //TODO: change input file path to output from previous
+    ad2 = new AudioDecoder(inputFP, finalOutputFP);
+
+    ad2->openFiles();
+    cout << "opened files" << endl;
+
+    ad2->initializeAllObjects();
+    cout << "initialized all objects" << endl;
+
+
+    resp = avformat_write_header(ad2->pOutFormatContext, nullptr);
+    if (resp < 0) {
+        cout << "Error when opening output file" << endl;
+        return -1;
+    }
+    int inputPts = 0;
+    while (1) {
+        resp = av_read_frame(ad2->pInFormatContext, ad2->pPacket);
+        if (resp < 0) {
+            break;
+        }
+        AVStream *inStream, *outStream;
+        inStream = ad2->pInFormatContext->streams[ad2->pPacket->stream_index];
+
+        if (ad2->pPacket->stream_index >= ad2->streamMappingSize ||
+            ad2->streamMapping[ad2->pPacket->stream_index] < 0) {
+            av_packet_unref(ad2->pPacket);
+            continue;
+        }
+
+        ad2->pPacket->stream_index = ad2->streamMapping[ad2->pPacket->stream_index];
+
+        outStream = ad2->pOutFormatContext->streams[ad2->pPacket->stream_index];
+
+        ad2->pPacket->duration = av_rescale_q(ad2->pPacket->duration, inStream->time_base, outStream->time_base);
+
+        ad2->pPacket->pts = inputPts;
+        ad2->pPacket->dts = inputPts;
+        inputPts += ad2->pPacket->duration;
+        ad2->pPacket->pos = -1;
+
+        resp = av_interleaved_write_frame(ad2->pOutFormatContext, ad2->pPacket);
+        if (resp < 0) {
+            cout << "Error muxing packet" << endl;
+            break;
+        }
+        av_packet_unref(ad2->pPacket);
+    }
+    av_write_trailer(ad2->pOutFormatContext);
+
+    resp = getAudioRunCommand(ad2);
     if (resp < 0) {
         cout << "ERROR getting ffplay command" << endl;
         goto end;
     }
 
-    end:
-    ad->closeAllObjects();
-    av->closeAllObjects();
+    if(ad2->pOutFormatContext && !(ad2->pOutFormatContext->flags &AVFMT_NOFILE)){
+        avio_closep(&ad2->pOutFormatContext->pb);
+    }
+    avformat_free_context(ad2->pOutFormatContext);
+    ad2->closeAllObjects();
+    cout << "finished converting!" << endl;
 
     return 0;
 }
 
-int getAudioRunCommand() {
-    enum AVSampleFormat sampleFormat = ad->pCodecContext->sample_fmt;
-    int channelNum = ad->pCodecContext->channels;
+int getAudioRunCommand(AudioDecoder *audioDec) {
+    enum AVSampleFormat sampleFormat = audioDec->pCodecContext->sample_fmt;
+    int channelNum = audioDec->pCodecContext->channels;
     const char *sFormat;
 
     if (av_sample_fmt_is_planar(sampleFormat)) {
@@ -96,8 +162,8 @@ int getAudioRunCommand() {
     }
     printf("Play the output audio file with the command:\n"
            "ffplay -f %s -ac %d -ar %d %s\n",
-           sFormat, channelNum, ad->pCodecContext->sample_rate,
-           ad->outputFP);
+           sFormat, channelNum, audioDec->pCodecContext->sample_rate,
+           audioDec->outputFP);
     return 0;
 }
 
@@ -172,11 +238,11 @@ int filterAudioFrame() {
             cout << "Error filtering data " << av_err2str(resp) << endl;
             goto breakFilter;
         }
-        //TODO: unreference all audio information - lose object and write NOTHING - bug here!!
-        //ad->saveAudioFrame();
-        resp = av_interleaved_write_frame(ad->pOutFormatContext, ad->pPacket);
-        if(resp<0){
-            cout<<"Error muxing packet"<<endl;
+
+        ad->saveAudioFrame();
+
+        if (resp < 0) {
+            cout << "Error muxing packet" << endl;
         }
         av_frame_unref(ad->pFrame);
     }

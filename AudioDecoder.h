@@ -37,7 +37,10 @@ public:
     int avStreamIndex = -1;
     int audioFrameCount = 0;
     int *streamMapping= nullptr;
-    int streamIndex =0;
+    int demuxerStreamIndex =0;
+    int streamMappingSize =0;
+    AVStream *outStream=nullptr;
+    AVStream  *inStream = nullptr;
 
 
     AudioDecoder(const char *inFilePath, const char *ptrOutFilePath);

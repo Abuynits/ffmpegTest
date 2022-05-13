@@ -80,11 +80,9 @@ void AudioDecoder::initializeAllObjects() {
     //try to get some information of the file vis
     // http://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga31d601155e9035d5b0e7efedc894ee49
 
-    pInFormatContext = avformat_alloc_context();
-    pOutFormatContext = avformat_alloc_context();
-    //get the output format for this specific audio stream
-    outputFormat = av_guess_format(nullptr, outputFP, nullptr);
-    pInFormatContext->oformat = outputFormat;
+    pInFormatContext = nullptr;
+    pOutFormatContext = nullptr;
+
 
     int resp = avformat_open_input(&pInFormatContext, inputFP, nullptr, nullptr);
     if (resp != 0) {
@@ -146,8 +144,13 @@ int AudioDecoder::initDemuxer() {
         cout << "error: cannot allocate output context" << endl;
         return -1;
     }
-    int streamMappingSize = pInFormatContext->nb_streams;
-    streamMapping = static_cast<int *>(av_calloc(streamMappingSize, sizeof(streamMapping)));
+    streamMappingSize = pInFormatContext->nb_streams;
+    streamMapping = new int[streamMappingSize];
+
+    //get the output format for this specific audio stream
+    outputFormat = av_guess_format(nullptr, outputFP, nullptr);
+    pInFormatContext->oformat = outputFormat;
+
     if (!streamMapping) {
         cout << "Error: cannot get stream map" << endl;
         return -1;
@@ -155,8 +158,8 @@ int AudioDecoder::initDemuxer() {
 
 
     for (int i = 0; i < pInFormatContext->nb_streams; i++) {
-        AVStream *outStream;
-        AVStream *inStream = pInFormatContext->streams[i];
+
+        inStream = pInFormatContext->streams[i];
         AVCodecParameters *inCodecpar = inStream->codecpar;
 
         if (inCodecpar->codec_type != AVMEDIA_TYPE_AUDIO &&
@@ -166,23 +169,21 @@ int AudioDecoder::initDemuxer() {
             continue;
         }
 
-        streamMapping[i] = streamIndex++;
+        streamMapping[i] = demuxerStreamIndex++;
 
         outStream = avformat_new_stream(pOutFormatContext, nullptr);
         if (!outStream) {
-            fprintf(stderr, "Failed allocating output stream\n");
-            resp = AVERROR_UNKNOWN;
+            cout << "Error: unable to allocate output stream" << endl;
             return -1;
         }
 
         resp = avcodec_parameters_copy(outStream->codecpar, inCodecpar);
         if (resp < 0) {
-            fprintf(stderr, "Failed to copy codec parameters\n");
+            cout << "Error: failed to copy codec parameters" << endl;
             return -1;
         }
         outStream->codecpar->codec_tag = 0;
     }
-
 
     av_dump_format(pOutFormatContext, 0, outputFP, 1);
 
@@ -194,11 +195,6 @@ int AudioDecoder::initDemuxer() {
         }
     }
 
-    resp = avformat_write_header(pOutFormatContext, nullptr);
-    if (resp < 0) {
-        cout << "Error when opening output file" << endl;
-        return -1;
-    }
     return 0;
 }
 
