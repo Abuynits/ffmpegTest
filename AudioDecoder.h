@@ -82,7 +82,7 @@ private:
      */
     int initCodec(enum AVMediaType mediaType = AVMEDIA_TYPE_AUDIO);
 
-
+    int initDemuxer();
 };
 
 #endif //FFMPEGTEST5_AUDIODECODER_H

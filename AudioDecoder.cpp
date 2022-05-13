@@ -100,68 +100,10 @@ void AudioDecoder::initializeAllObjects() {
         cout << stderr << " ERROR could not get the stream info" << endl;
         exit(1);
     }
-    //dump input information to stderr
-    av_dump_format(pInFormatContext, 0, inputFP, 0);
-
-    resp = avformat_alloc_output_context2(&pOutFormatContext, outputFormat, nullptr, outputFP);
+    resp = initDemuxer();
     if (resp < 0) {
-        cout << "error: cannot allocate output context" << endl;
         exit(1);
     }
-    int streamMappingSize = pInFormatContext->nb_streams;
-    streamMapping = static_cast<int *>(av_calloc(streamMappingSize, sizeof(streamMapping)));
-    if (!streamMapping) {
-        cout << "Error: cannot get stream map" << endl;
-        exit(1);
-    }
-
-
-    for (int i = 0; i < pInFormatContext->nb_streams; i++) {
-        AVStream *outStream;
-        AVStream *inStream = pInFormatContext->streams[i];
-        AVCodecParameters *inCodecpar = inStream->codecpar;
-
-        if (inCodecpar->codec_type != AVMEDIA_TYPE_AUDIO &&
-            inCodecpar->codec_type != AVMEDIA_TYPE_VIDEO &&
-            inCodecpar->codec_type != AVMEDIA_TYPE_SUBTITLE) {
-            streamMapping[i] = -1;
-            continue;
-        }
-
-        streamMapping[i] = streamIndex++;
-
-        outStream = avformat_new_stream(pOutFormatContext, NULL);
-        if (!outStream) {
-            fprintf(stderr, "Failed allocating output stream\n");
-            resp = AVERROR_UNKNOWN;
-            exit(1);
-        }
-
-        resp = avcodec_parameters_copy(outStream->codecpar, inCodecpar);
-        if (resp < 0) {
-            fprintf(stderr, "Failed to copy codec parameters\n");
-            exit(1);
-        }
-        outStream->codecpar->codec_tag = 0;
-    }
-
-
-    av_dump_format(pOutFormatContext, 0, outputFP, 1);
-
-    if (!(pOutFormatContext->flags & AVFMT_NOFILE)) {
-        resp = avio_open(&pOutFormatContext->pb, outputFP, AVIO_FLAG_WRITE);
-        if (resp < 0) {
-            fprintf(stderr, "Could not open output file '%s'", outputFP);
-            exit(1);
-        }
-    }
-
-    resp = avformat_write_header(pOutFormatContext, nullptr);
-    if (resp < 0) {
-        cout << "Error when opening output file" << endl;
-        exit(1);
-    }
-    cout << "here" << endl;
 
 
     //take either AVMEDIA_TYPE_AUDIO (Default) or AVMEDIA_TYPE_VIDEO
@@ -192,6 +134,72 @@ void AudioDecoder::initializeAllObjects() {
         exit(1);
     }
 
+}
+
+int AudioDecoder::initDemuxer() {
+    int resp;
+    //dump input information to stderr
+    av_dump_format(pInFormatContext, 0, inputFP, 0);
+
+    resp = avformat_alloc_output_context2(&pOutFormatContext, outputFormat, nullptr, outputFP);
+    if (resp < 0) {
+        cout << "error: cannot allocate output context" << endl;
+        return -1;
+    }
+    int streamMappingSize = pInFormatContext->nb_streams;
+    streamMapping = static_cast<int *>(av_calloc(streamMappingSize, sizeof(streamMapping)));
+    if (!streamMapping) {
+        cout << "Error: cannot get stream map" << endl;
+        return -1;
+    }
+
+
+    for (int i = 0; i < pInFormatContext->nb_streams; i++) {
+        AVStream *outStream;
+        AVStream *inStream = pInFormatContext->streams[i];
+        AVCodecParameters *inCodecpar = inStream->codecpar;
+
+        if (inCodecpar->codec_type != AVMEDIA_TYPE_AUDIO &&
+            inCodecpar->codec_type != AVMEDIA_TYPE_VIDEO &&
+            inCodecpar->codec_type != AVMEDIA_TYPE_SUBTITLE) {
+            streamMapping[i] = -1;
+            continue;
+        }
+
+        streamMapping[i] = streamIndex++;
+
+        outStream = avformat_new_stream(pOutFormatContext, nullptr);
+        if (!outStream) {
+            fprintf(stderr, "Failed allocating output stream\n");
+            resp = AVERROR_UNKNOWN;
+            return -1;
+        }
+
+        resp = avcodec_parameters_copy(outStream->codecpar, inCodecpar);
+        if (resp < 0) {
+            fprintf(stderr, "Failed to copy codec parameters\n");
+            return -1;
+        }
+        outStream->codecpar->codec_tag = 0;
+    }
+
+
+    av_dump_format(pOutFormatContext, 0, outputFP, 1);
+
+    if (!(pOutFormatContext->flags & AVFMT_NOFILE)) {
+        resp = avio_open(&pOutFormatContext->pb, outputFP, AVIO_FLAG_WRITE);
+        if (resp < 0) {
+            fprintf(stderr, "Could not open output file '%s'", outputFP);
+            return -1;
+        }
+    }
+
+    resp = avformat_write_header(pOutFormatContext, nullptr);
+    if (resp < 0) {
+        cout << "Error when opening output file" << endl;
+        return -1;
+    }
+    return 0;
 }
 
 void AudioDecoder::closeAllObjects() {
