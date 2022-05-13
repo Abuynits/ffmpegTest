@@ -32,9 +32,12 @@ AudioFilter *av;
 
 int main() {
     const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
-    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
+    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.mp3";
     const char *finalOutputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
-    ad = new AudioDecoder(inputFP, outputFP);
+    int resp;
+
+
+    ad = new AudioDecoder(inputFP, outputFP,true,true);
 
     ad->openFiles();
     cout << "opened files" << endl;
@@ -42,19 +45,24 @@ int main() {
     ad->initializeAllObjects();
     cout << "initialized all objects" << endl;
     av = new AudioFilter(ad);
-    int resp = av->initializeAllObjets();
+    resp = av->initializeAllObjets();
     if (resp < 0) {
         cout << "error: could not initialize filters" << endl;
         return 1;
     }
     cout << "initialized all filters\n" << endl;
-
+    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+    if (resp < 0) {
+        cout << "Error when opening output file" << endl;
+        return -1;
+    }
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
         resp = loopOverPacketFrames();
         if (resp < 0) {
             break;
         }
     }
+    av_write_trailer(ad->pOutFormatContext);
     //
 
     //flush the audio decoder
@@ -73,7 +81,7 @@ int main() {
     av->closeAllObjects();
 
     //TODO: change input file path to output from previous
-    ad = new AudioDecoder(outputFP, finalOutputFP);
+    ad = new AudioDecoder(outputFP, finalOutputFP,false,true);
 
     ad->openFiles();
     cout << "opened files" << endl;

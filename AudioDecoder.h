@@ -41,9 +41,10 @@ public:
     int streamMappingSize =0;
     AVStream *outStream=nullptr;
     AVStream  *inStream = nullptr;
+    bool iCodec=false;
+    bool iDemuxer = false;
 
-
-    AudioDecoder(const char *inFilePath, const char *ptrOutFilePath);
+    AudioDecoder(const char *inFilePath, const char *ptrOutFilePath,bool initCodecs,bool initDemuxer);
 
 /**
  * intializes:

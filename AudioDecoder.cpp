@@ -4,10 +4,12 @@
 
 #include "AudioDecoder.h"
 
-AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath) {
+AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath,bool initCodecs,bool initDemuxer) {
 
     this->inputFP = inFilePath;
     this->outputFP = outFilePath;
+    this->iCodec=initCodecs;
+    this->iDemuxer=initDemuxer;
 
 }
 
@@ -79,9 +81,8 @@ void AudioDecoder::initializeAllObjects() {
     //AVINputFormat -give Null and it will do auto detect
     //try to get some information of the file vis
     // http://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga31d601155e9035d5b0e7efedc894ee49
-
-    pInFormatContext = nullptr;
-    pOutFormatContext = nullptr;
+    pInFormatContext = avformat_alloc_context();
+    pOutFormatContext = avformat_alloc_context();
 
 
     int resp = avformat_open_input(&pInFormatContext, inputFP, nullptr, nullptr);
@@ -98,20 +99,26 @@ void AudioDecoder::initializeAllObjects() {
         cout << stderr << " ERROR could not get the stream info" << endl;
         exit(1);
     }
-    resp = initDemuxer();
-    if (resp < 0) {
-        exit(1);
+    if(iDemuxer){
+        resp = initDemuxer();
+        if (resp < 0) {
+            exit(1);
+        }
     }
+
 
 
     //take either AVMEDIA_TYPE_AUDIO (Default) or AVMEDIA_TYPE_VIDEO
-    resp = initCodec();
-    if (resp < 0) {
-        cout << "error: cannot create codec" << endl;
-        exit(1);
+    if(iCodec){
+        resp = initCodec();
+        if (resp < 0) {
+            cout << "error: cannot create codec" << endl;
+            exit(1);
+        }
+
+        cout << "\tcreated codec" << endl;
     }
 
-    cout << "\tcreated codec" << endl;
     audioStream = pInFormatContext->streams[avStreamIndex];
 
 
