@@ -76,6 +76,7 @@ public:
 
     static int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat audioFormat);
 
+
 private:
 
 

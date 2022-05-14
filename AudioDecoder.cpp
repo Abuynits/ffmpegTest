@@ -4,12 +4,12 @@
 
 #include "AudioDecoder.h"
 
-AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath,bool initCodecs,bool initDemuxer) {
+AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath, bool initCodecs, bool initDemuxer) {
 
     this->inputFP = inFilePath;
     this->outputFP = outFilePath;
-    this->iCodec=initCodecs;
-    this->iDemuxer=initDemuxer;
+    this->iCodec = initCodecs;
+    this->iDemuxer = initDemuxer;
 
 }
 
@@ -99,7 +99,8 @@ void AudioDecoder::initializeAllObjects() {
         cout << stderr << " ERROR could not get the stream info" << endl;
         exit(1);
     }
-    if(iDemuxer){
+    //TODO: need to transfer parameters from input Format context to output
+    if (iDemuxer) {
         resp = initDemuxer();
         if (resp < 0) {
             exit(1);
@@ -109,7 +110,7 @@ void AudioDecoder::initializeAllObjects() {
 
 
     //take either AVMEDIA_TYPE_AUDIO (Default) or AVMEDIA_TYPE_VIDEO
-    if(iCodec){
+    if (iCodec) {
         resp = initCodec();
         if (resp < 0) {
             cout << "error: cannot create codec" << endl;
@@ -146,7 +147,7 @@ int AudioDecoder::initDemuxer() {
     //dump input information to stderr
     av_dump_format(pInFormatContext, 0, inputFP, 0);
 
-    resp = avformat_alloc_output_context2(&pOutFormatContext, outputFormat, nullptr, outputFP);
+    resp = avformat_alloc_output_context2(&pOutFormatContext, nullptr, nullptr, outputFP);
     if (resp < 0) {
         cout << "error: cannot allocate output context" << endl;
         return -1;
@@ -156,7 +157,7 @@ int AudioDecoder::initDemuxer() {
 
     //get the output format for this specific audio stream
     outputFormat = av_guess_format(nullptr, outputFP, nullptr);
-    pInFormatContext->oformat = outputFormat;
+    pOutFormatContext->oformat = outputFormat;
 
     if (!streamMapping) {
         cout << "Error: cannot get stream map" << endl;

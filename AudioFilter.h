@@ -24,6 +24,12 @@ extern "C" {
 #include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
 }
+//The threshold for the lowpass filter. All frequencies below this value are kepy
+//TODO: remove low pass and high pass filter
+//TODO: why not write header to ffmpeg.
+// output: use mp3/aac. As input we tail aim4a? what browser inputs
+//TODO: add 3 metrics: Start cutofff ,end cutoff, ratio of noise suppression. Signal to noise ratio.
+//
 //percentage of wanted volume. Present to 100% = 1.00
 #define VOLUME 1.00
 //The threshold for the lowpass filter. All frequencies below this value are kepy
