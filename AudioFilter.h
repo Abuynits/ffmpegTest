@@ -27,9 +27,19 @@ extern "C" {
 //percentage of wanted volume. Present to 100% = 1.00
 #define VOLUME 1.00
 //The threshold for the lowpass filter. All frequencies below this value are kepy
-#define LOWPASS_VAL 3000
+//TODO: remove low pass and high pass filter
+//TODO: why not write header to ffmpeg.
+// output: use mp3/aac. As input we tail aim4a? what browser inputs
+//TODO: add 3 metrics: Start cutofff ,end cutoff, ratio of noise suppression. Signal to noise ratio.
+//
+//Need to look at the power before and after the filter, but only for non speech segments.
+//
+//These numbers should tell which files have a lot of things -
+//
+//sqrt(sum of all squares of signals)
+#define LOWPASS_VAL 10000
 //The threshold for the highpass filter. All frequencies above this value are kepy
-#define HIGHPASS_VAL 200
+#define HIGHPASS_VAL 50
 //1=remove silent frames, 0=keep all silent frames (same for start and end of audio), -1 = remove in the middle as well
 #define STOP_PERIOD 1
 //1=remove silent frames, 0=keep all silent frames (same for start and end of audio)

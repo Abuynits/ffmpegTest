@@ -31,8 +31,8 @@ AudioDecoder *ad;
 AudioFilter *av;
 
 int main() {
-    const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
-    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
+    const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/test.wav";
+    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/testOutput.wav";
 
     ad = new AudioDecoder(inputFP, outputFP);
 
