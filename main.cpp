@@ -43,6 +43,10 @@ int main() {
     cout << "opened files" << endl;
 
     ad->initializeAllObjects();
+    if (resp < 0) {
+        cout << "error: could not initialize decoder" << endl;
+        return 1;
+    }
     cout << "initialized all objects" << endl;
     av = new AudioFilter(ad);
     resp = av->initializeAllObjets();
@@ -51,18 +55,18 @@ int main() {
         return 1;
     }
     cout << "initialized all filters\n" << endl;
-    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
-    if (resp < 0) {
-        cout << "Error when opening output file" << endl;
-        return -1;
-    }
+//    resp = avformat_write_header(ad->pInFormatContext, nullptr);
+//    if (resp < 0) {
+//        cout << "Error when opening output file" << endl;
+//        return -1;
+//    }
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
         resp = loopOverPacketFrames();
         if (resp < 0) {
             break;
         }
     }
-    av_write_trailer(ad->pOutFormatContext);
+ //   av_write_trailer(ad->pOutFormatContext);
     //
 
     //flush the audio decoder
@@ -81,7 +85,7 @@ int main() {
     av->closeAllObjects();
 
     //TODO: change input file path to output from previous
-    ad = new AudioDecoder(outputFP, finalOutputFP,false,true);
+    ad = new AudioDecoder(inputFP, finalOutputFP,false,true);
 
     ad->openFiles();
     cout << "opened files" << endl;
