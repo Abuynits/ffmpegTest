@@ -44,6 +44,9 @@ public:
     bool iCodec=false;
     bool iDemuxer = false;
 
+    string startTime, endTime;
+    int startWriting = -2;
+
     AudioDecoder(const char *inFilePath, const char *ptrOutFilePath,bool initCodecs,bool initDemuxer);
 
 /**

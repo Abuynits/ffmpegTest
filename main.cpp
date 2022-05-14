@@ -36,7 +36,9 @@ int main() {
     const char *finalOutputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
     int resp;
 
-
+//TODO: use: https://www.ffmpeg.org/doxygen/0.6/wav_8c-source.html with parameters from input AVFormat
+//then run the raw data to the outputfile, then open a new file, write the wav header, copy the data
+//write the closing
     ad = new AudioDecoder(inputFP, outputFP, true, true);
 
     ad->openFiles();
@@ -58,12 +60,12 @@ int main() {
 //    if(av_dict_set(&(*ad->pOutFormatContext).metadata,"ISFT",NULL, AV_DICT_IGNORE_SUFFIX)){
 //        cout<<"did not work"<<endl;
 //    }
-    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
-    if (resp < 0) {
-        cout << "Error when writing header" << endl;
-        return -1;
-    }
-    cout << av_dict_count((*ad->pOutFormatContext).metadata) << endl;
+//    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+//    if (resp < 0) {
+//        cout << "Error when writing header" << endl;
+//        return -1;
+//    }
+   // cout << av_dict_count((*ad->pOutFormatContext).metadata) << endl;
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
         resp = loopOverPacketFrames();
         if (resp < 0) {
@@ -77,7 +79,7 @@ int main() {
     ad->pPacket = nullptr;
     loopOverPacketFrames();
 
-    av_write_trailer(ad->pOutFormatContext);
+ //   av_write_trailer(ad->pOutFormatContext);
     resp = getAudioRunCommand(ad);
     if (resp < 0) {
         cout << "ERROR getting ffplay command" << endl;
@@ -88,6 +90,7 @@ int main() {
     ad->closeAllObjects();
     av->closeAllObjects();
 
+    cout<<ad->startTime<<" and "<<ad->endTime<<endl;
 
 //    //TODO: change input file path to output from previous
 //    ad = new AudioDecoder(inputFP, finalOutputFP,false,true);
