@@ -58,7 +58,6 @@ int AudioFilter::initializeAllObjets() {
         cout << "Error connecting filters: " << av_err2str(resp) << endl;
         return resp;
     }
-    cout << "linked filters!" << endl;
 
     resp = avfilter_graph_config(filterGraph, nullptr);
     if (resp < 0) {
@@ -77,7 +76,7 @@ int AudioFilter::initSrcFilter() {
     }
 //check if have channel layout:
     if (!ad->pCodecContext->channel_layout) {
-        cout << "warning: channel context not initialized... initializing" << endl;
+        cout << "\twarning: channel context not initialized... initializing" << endl;
         ad->pCodecContext->channel_layout = av_get_default_channel_layout(ad->pCodecContext->channels);
     }
 
@@ -88,7 +87,7 @@ int AudioFilter::initSrcFilter() {
         cout << "ERROR: creating srcFilter: " << av_err2str(resp) << endl;
         return resp;
     }
-    cout << "created srcFilter!" << endl;
+    cout << "\tcreated srcFilter!" << endl;
 
     return 0;
 }
@@ -105,7 +104,7 @@ int AudioFilter::initSinkFilter() {
         cout << "ERROR: creating sinkFilter: " << av_err2str(resp) << endl;
         return resp;
     }
-    cout << "Created sink Filter!" << endl;
+    cout << "\tCreated sink Filter!" << endl;
     return 0;
 }
 
@@ -122,7 +121,7 @@ int AudioFilter::initVolumeFilter() {
         return resp;
     }
 
-    cout << "created volume Filter!" << endl;
+    cout << "\tcreated volume Filter!" << endl;
     return 0;
 }
 
@@ -142,7 +141,7 @@ int AudioFilter::initFormatFilter() {
         cout << "Could not initialize format filter context: " << av_err2str(AV_LOG_ERROR) << endl;
         return resp;
     }
-    cout << "Created format Filter!" << endl;
+    cout << "\tCreated format Filter!" << endl;
     return resp;
 }
 
@@ -153,7 +152,7 @@ int AudioFilter::initLpFilter() {
     }
     char *val = AV_STRINGIFY(LOWPASS_VAL);
     resp = initByDict(lpFilterContext, "frequency", val);
-    cout << "Created lp Filter!" << endl;
+    cout << "\tCreated lp Filter!" << endl;
     return resp;
 }
 
@@ -164,7 +163,7 @@ int AudioFilter::initHpFilter() {
     }
     char *val = AV_STRINGIFY(HIGHPASS_VAL);
     resp = initByDict(hpFilterContext, "frequency", val);
-    cout << "Created hp Filter!" << endl;
+    cout << "\tCreated hp Filter!" << endl;
     return resp;
 }
 
@@ -236,7 +235,7 @@ int AudioFilter::initSilenceRemoverFilter() {
     if (resp < 0) {
         return resp;
     }
-    cout << "Created silenceremove Filter!" << endl;
+    cout << "\tCreated silenceremove Filter!" << endl;
     //use these two values to specify the actual decibal value which is considered silence or not
     //TODO: use https://ffmpeg.org/ffmpeg-filters.html#silencedetect
 
@@ -256,7 +255,7 @@ int AudioFilter::initArnndnFilter() {
     char *val = "/Users/abuynits/CLionProjects/ffmpegTest5/rnnoise-models-master/beguiling-drafter-2018-08-30/bd.rnnn";
 
     resp = initByDict(arnndnFilterContext, "model", val);
-    cout << "Created arnndn Filter!" << endl;
+    cout << "\tCreated arnndn Filter!" << endl;
     return resp;
 }
 

@@ -17,7 +17,7 @@ extern "C" {
 #include "AudioFilter.h"
 
 
-int loopOverPacketFrames();
+int loopOverPacketFrames(bool showFrameData);
 
 int filterAudioFrame();
 
@@ -27,12 +27,13 @@ using namespace std;
 
 AudioDecoder *ad;
 AudioFilter *av;
-
+const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
+const char *tempFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
+const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
+int resp;
+const bool showData =false;
 int main() {
-    const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
-    const char *tempFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
-    const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
-    int resp;
+
 
 //TODO: use: https://www.ffmpeg.org/doxygen/0.6/wav_8c-source.html with parameters from input AVFormat
 //then run the raw data to the outputfile, then open a new file, write the wav header, copy the data
@@ -46,7 +47,7 @@ int main() {
         cout << "error: could not initialize decoder" << endl;
         return 1;
     }
-    cout << "initialized all objects" << endl;
+    cout << "initialized AudioDecoder" << endl;
 
     av = new AudioFilter(ad);
     resp = av->initializeAllObjets();
@@ -54,7 +55,7 @@ int main() {
         cout << "error: could not initialize filters" << endl;
         return 1;
     }
-    cout << "initialized all filters\n" << endl;
+    cout << "initialized AudioFilter\n" << endl;
 
     resp = avformat_write_header(ad->pOutFormatContext, nullptr);
     if (resp < 0) {
@@ -63,7 +64,7 @@ int main() {
     }
 
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
-        resp = loopOverPacketFrames();
+        resp = loopOverPacketFrames(showData);
         if (resp < 0) {
             break;
         }
@@ -72,7 +73,7 @@ int main() {
 
     //flush the audio decoder
     ad->pPacket = nullptr;
-    loopOverPacketFrames();
+    loopOverPacketFrames(showData);
 
     av_write_trailer(ad->pOutFormatContext);
     resp = ad->getAudioRunCommand();
@@ -150,7 +151,7 @@ int transferStreamData(int *inputPts) {
 }
 
 
-int loopOverPacketFrames() {
+int loopOverPacketFrames(bool showFrameData) {
     int resp = avcodec_send_packet(ad->pCodecContext, ad->pPacket);
     if (resp < 0) {
         cout << "error submitting a packet for decoding: " << av_err2str(resp);
@@ -159,7 +160,7 @@ int loopOverPacketFrames() {
     while (resp >= 0) {
         resp = avcodec_receive_frame(ad->pCodecContext, ad->pFrame);
         if (resp == AVERROR(EAGAIN)) {
-            cout << "Not enough data in frame, skipping to next packet" << endl;
+            if (showFrameData) cout << "Not enough data in frame, skipping to next packet" << endl;
             //decoded not have enough data to process frame
             //not error unless reached end of the stream - pass more packets untill have enough to produce frame
             clearFrames:
@@ -177,20 +178,16 @@ int loopOverPacketFrames() {
             return resp;
         }
 
-        cout << "frame number: " << ad->pCodecContext->frame_number
-             << ", Pkt_Size: " << ad->pFrame->pkt_size
-             << ", Pkt_pts: " << ad->pFrame->pts
-             << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
+        if (showFrameData)
+            cout << "frame number: " << ad->pCodecContext->frame_number
+                 << ", Pkt_Size: " << ad->pFrame->pkt_size
+                 << ", Pkt_pts: " << ad->pFrame->pts
+                 << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
 
         if (filterAudioFrame() < 0) {
             cout << "error in filtering" << endl;
 
         }
-//        av_frame_unref(ad->pFrame);
-//
-
-
-        // resp = ad->saveAudioFrame();
 
         av_frame_unref(ad->pFrame);
         av_freep(ad->pFrame);
@@ -221,7 +218,7 @@ int filterAudioFrame() {
             goto breakFilter;
         }
 
-        ad->saveAudioFrame();
+        ad->saveAudioFrame(showData);
 
         if (resp < 0) {
             cout << "Error muxing packet" << endl;

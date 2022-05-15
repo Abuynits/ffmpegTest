@@ -81,7 +81,7 @@ public:
 /**
  * saves the audio using the first channel provided
  */
-    int saveAudioFrame();
+    int saveAudioFrame(bool showFrameData);
 
 /**
  * creates file objects for the input and output files
