@@ -19,11 +19,9 @@ extern "C" {
 
 int loopOverPacketFrames();
 
-
-int getAudioRunCommand(AudioDecoder *audioDec);
-
 int filterAudioFrame();
 
+int transferStreamData(int *inputPts);
 
 using namespace std;
 
@@ -32,17 +30,16 @@ AudioFilter *av;
 
 int main() {
     const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
-    const char *outputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
-    const char *finalOutputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
+    const char *tempFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
+    const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
     int resp;
 
 //TODO: use: https://www.ffmpeg.org/doxygen/0.6/wav_8c-source.html with parameters from input AVFormat
 //then run the raw data to the outputfile, then open a new file, write the wav header, copy the data
 //write the closing
-    ad = new AudioDecoder(inputFP, outputFP, true, true);
+    ad = new AudioDecoder(inputFP, tempFP, true, true);
 
     ad->openFiles();
-    cout << "opened files" << endl;
 
     ad->initializeAllObjects();
     if (resp < 0) {
@@ -50,6 +47,7 @@ int main() {
         return 1;
     }
     cout << "initialized all objects" << endl;
+
     av = new AudioFilter(ad);
     resp = av->initializeAllObjets();
     if (resp < 0) {
@@ -57,15 +55,13 @@ int main() {
         return 1;
     }
     cout << "initialized all filters\n" << endl;
-//    if(av_dict_set(&(*ad->pOutFormatContext).metadata,"ISFT",NULL, AV_DICT_IGNORE_SUFFIX)){
-//        cout<<"did not work"<<endl;
-//    }
+
     resp = avformat_write_header(ad->pOutFormatContext, nullptr);
     if (resp < 0) {
         cout << "Error when writing header" << endl;
         return -1;
     }
-   // cout << av_dict_count((*ad->pOutFormatContext).metadata) << endl;
+
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
         resp = loopOverPacketFrames();
         if (resp < 0) {
@@ -74,13 +70,12 @@ int main() {
     }
 
 
-
     //flush the audio decoder
     ad->pPacket = nullptr;
     loopOverPacketFrames();
 
     av_write_trailer(ad->pOutFormatContext);
-    resp = getAudioRunCommand(ad);
+    resp = ad->getAudioRunCommand();
     if (resp < 0) {
         cout << "ERROR getting ffplay command" << endl;
         goto end;
@@ -90,16 +85,15 @@ int main() {
     ad->closeAllObjects();
     av->closeAllObjects();
 
-    cout<<ad->startTime<<" and "<<ad->endTime<<endl;
+    cout << ad->startTime << " and " << ad->endTime << endl;
 
+    //========================SECOND STAGE: make playable by wav output file==========================
     //TODO: change input file path to output from previous
-    ad = new AudioDecoder(outputFP, finalOutputFP,false,true);
+    ad = new AudioDecoder(tempFP, finalFP, false, true);
 
     ad->openFiles();
-    cout << "opened files" << endl;
 
     ad->initializeAllObjects();
-    cout << "initialized all objects" << endl;
 
 
     resp = avformat_write_header(ad->pOutFormatContext, nullptr);
@@ -113,25 +107,8 @@ int main() {
         if (resp < 0) {
             break;
         }
-        AVStream *inStream, *outStream;
-        inStream = ad->pInFormatContext->streams[ad->pPacket->stream_index];
 
-        if (ad->pPacket->stream_index >= ad->streamMappingSize ||
-            ad->streamMapping[ad->pPacket->stream_index] < 0) {
-            av_packet_unref(ad->pPacket);
-            continue;
-        }
-
-        ad->pPacket->stream_index = ad->streamMapping[ad->pPacket->stream_index];
-
-        outStream = ad->pOutFormatContext->streams[ad->pPacket->stream_index];
-
-        ad->pPacket->duration = av_rescale_q(ad->pPacket->duration, inStream->time_base, outStream->time_base);
-
-        ad->pPacket->pts = inputPts;
-        ad->pPacket->dts = inputPts;
-        inputPts += ad->pPacket->duration;
-        ad->pPacket->pos = -1;
+        if (transferStreamData(&inputPts) == 1) { continue; }
 
         resp = av_interleaved_write_frame(ad->pOutFormatContext, ad->pPacket);
         if (resp < 0) {
@@ -141,39 +118,34 @@ int main() {
         av_packet_unref(ad->pPacket);
     }
     av_write_trailer(ad->pOutFormatContext);
-    cout<<"finished writing all files"<<endl;
 
-    if(ad->pOutFormatContext && !(ad->pOutFormatContext->flags & AVFMT_NOFILE)){
-        avio_closep(&ad->pOutFormatContext->pb);
-    }
-    avformat_free_context(ad->pOutFormatContext);
     ad->closeAllObjects();
-    cout << "finished converting!" << endl;
+    cout << "finished muxing files" << endl;
 
     return 0;
 }
 
-int getAudioRunCommand(AudioDecoder *audioDec) {
-    enum AVSampleFormat sampleFormat = audioDec->pCodecContext->sample_fmt;
-    int channelNum = audioDec->pCodecContext->channels;
-    const char *sFormat;
 
-    if (av_sample_fmt_is_planar(sampleFormat)) {
-        const char *packed = av_get_sample_fmt_name(sampleFormat);
-        printf("Warning: the sample format the decoder produced is planar "
-               "(%s). This example will output the first channel only.\n",
-               packed ? packed : "?");
-        sampleFormat = av_get_packed_sample_fmt(sampleFormat);
-        channelNum = 1;
+int transferStreamData(int *inputPts) {
+    AVStream *inStream, *outStream;
+    inStream = ad->pInFormatContext->streams[ad->pPacket->stream_index];
+
+    if (ad->pPacket->stream_index >= ad->streamMappingSize ||
+        ad->streamMapping[ad->pPacket->stream_index] < 0) {
+        av_packet_unref(ad->pPacket);
+        return 1;
     }
 
-    if (AudioDecoder::get_format_from_sample_fmt(&sFormat, sampleFormat) < 0) {
-        return -1;
-    }
-    printf("Play the output audio file with the command:\n"
-           "ffplay -f %s -ac %d -ar %d %s\n",
-           sFormat, channelNum, audioDec->pCodecContext->sample_rate,
-           audioDec->outputFP);
+    ad->pPacket->stream_index = ad->streamMapping[ad->pPacket->stream_index];
+
+    outStream = ad->pOutFormatContext->streams[ad->pPacket->stream_index];
+
+    ad->pPacket->duration = av_rescale_q(ad->pPacket->duration, inStream->time_base, outStream->time_base);
+
+    ad->pPacket->pts = *inputPts;
+    ad->pPacket->dts = *inputPts;
+    *inputPts += ad->pPacket->duration;
+    ad->pPacket->pos = -1;
     return 0;
 }
 

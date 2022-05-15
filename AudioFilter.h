@@ -101,6 +101,8 @@ public:
 
     void closeAllObjects();
 
+    int getAudioRunCommand();
+
 private:
     int initSrcFilter();
 

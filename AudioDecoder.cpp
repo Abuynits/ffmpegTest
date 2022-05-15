@@ -208,10 +208,18 @@ int AudioDecoder::initDemuxer() {
     return 0;
 }
 
+
 void AudioDecoder::closeAllObjects() {
+    if (iDemuxer) {
+        if (pOutFormatContext && !(pOutFormatContext->flags & AVFMT_NOFILE)) {
+            avio_closep(&pOutFormatContext->pb);
+        }
+    }
 
     fclose(inFile);
     fclose(outFile);
+    avformat_free_context(pOutFormatContext);
+    avformat_free_context(pInFormatContext);
 
     avcodec_free_context(&pCodecContext);
     av_frame_free(&pFrame);
@@ -264,4 +272,28 @@ int AudioDecoder::get_format_from_sample_fmt(const char **fmt, enum AVSampleForm
             "sample format %s is not supported as output format\n",
             av_get_sample_fmt_name(audioFormat));
     return -1;
+}
+
+int AudioDecoder::getAudioRunCommand() {
+    enum AVSampleFormat sampleFormat = pCodecContext->sample_fmt;
+    int channelNum = pCodecContext->channels;
+    const char *sFormat;
+
+    if (av_sample_fmt_is_planar(sampleFormat)) {
+        const char *packed = av_get_sample_fmt_name(sampleFormat);
+        printf("Warning: the sample format the decoder produced is planar "
+               "(%s). This example will output the first channel only.\n",
+               packed ? packed : "?");
+        sampleFormat = av_get_packed_sample_fmt(sampleFormat);
+        channelNum = 1;
+    }
+
+    if (AudioDecoder::get_format_from_sample_fmt(&sFormat, sampleFormat) < 0) {
+        return -1;
+    }
+    printf("Play the output audio file with the command:\n"
+           "ffplay -f %s -ac %d -ar %d %s\n",
+           sFormat, channelNum, pCodecContext->sample_rate,
+           outputFP);
+    return 0;
 }

@@ -92,6 +92,9 @@ public:
 
     int writeWavHeader(AVFormatContext *afc);
 
+
+    int getAudioRunCommand();
+
 private:
 
 
