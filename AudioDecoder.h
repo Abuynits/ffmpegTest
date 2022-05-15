@@ -46,17 +46,8 @@ public:
     bool iCodec = false;
     bool iDemuxer = false;
 
-    string startTime, endTime;
-    int startWriting = -2;
-
-    typedef struct {
-        int64_t data;
-        int64_t dataEmd;
-        int64_t minPts;
-        int64_t maxPts;
-        int lastDuration;
-        int w64;
-    } WavContext;
+    int startFrame, endFrame;
+    int startWriting = -1;
 
     AudioDecoder(const char *inFilePath, const char *ptrOutFilePath, bool initCodecs, bool initDemuxer);
 

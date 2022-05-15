@@ -30,10 +30,10 @@ AudioFilter *av;
 const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
 const char *tempFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
 const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
-int resp;
+int totalFrameCount = 0;
 const bool showData =false;
 int main() {
-
+    int resp;
 
 //TODO: use: https://www.ffmpeg.org/doxygen/0.6/wav_8c-source.html with parameters from input AVFormat
 //then run the raw data to the outputfile, then open a new file, write the wav header, copy the data
@@ -86,7 +86,7 @@ int main() {
     ad->closeAllObjects();
     av->closeAllObjects();
 
-    cout << ad->startTime << " and " << ad->endTime << endl;
+    cout << "start from frame "<<ad->startFrame << " to " << ad->endFrame << " of "<<totalFrameCount<<" frames"<<endl;
 
     //========================SECOND STAGE: make playable by wav output file==========================
     //TODO: change input file path to output from previous
@@ -119,7 +119,6 @@ int main() {
         av_packet_unref(ad->pPacket);
     }
     av_write_trailer(ad->pOutFormatContext);
-
     ad->closeAllObjects();
     cout << "finished muxing files" << endl;
 
@@ -177,6 +176,13 @@ int loopOverPacketFrames(bool showFrameData) {
             av_freep(ad->pFrame);
             return resp;
         }
+        /*
+         * brainstorm:
+         * here: looping over and incremeting the frames- loop over them regardless of what you have
+         * then: if all the filter audio, and start writing, it calls the frame number.
+         * within audio frame, can keep track of the start and end
+         * need to give the current frame count and use that to calculate
+         */
 
         if (showFrameData)
             cout << "frame number: " << ad->pCodecContext->frame_number
@@ -194,6 +200,7 @@ int loopOverPacketFrames(bool showFrameData) {
         if (resp < 0) {
             return resp;
         }
+        totalFrameCount++;
     }
     return 0;
 

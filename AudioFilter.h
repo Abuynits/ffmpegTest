@@ -67,7 +67,7 @@ extern "C" {
 //set how detect silence: "peak" = faster and works better with digital silence, "rms" = default
 #define DETECTION rms
 //used to skip over wanted silence. very important for skipping over gaps
-#define STOP_DURATION 0.5
+#define STOP_DURATION 0
 
 class AudioFilter {
 public:
