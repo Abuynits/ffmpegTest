@@ -90,9 +90,6 @@ public:
 
     static int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat audioFormat);
 
-    int writeWavHeader(AVFormatContext *afc);
-
-
     int getAudioRunCommand();
 
 private:
