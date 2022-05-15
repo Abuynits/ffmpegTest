@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <iostream>
 
+
 using namespace std;
 extern "C" {
 #include <libavutil/frame.h>
@@ -17,16 +18,19 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavutil/timestamp.h>
 #include <libavutil/samplefmt.h>
+
 }
 
 class AudioDecoder {
 public:
     const char *inputFP = nullptr;
     const char *outputFP = nullptr;
-    FILE *inFile= nullptr;
-    FILE *outFile= nullptr;
+    FILE *inFile = nullptr;
+    FILE *outFile = nullptr;
 
-    AVFormatContext *pFormatContext= nullptr;
+    AVFormatContext *pInFormatContext = nullptr;
+    AVFormatContext *pOutFormatContext = nullptr;
+    const AVOutputFormat *outputFormat = nullptr;
     const AVCodec *pCodec = nullptr;
     AVCodecContext *pCodecContext = nullptr;
     AVPacket *pPacket = nullptr;
@@ -34,13 +38,31 @@ public:
     AVStream *audioStream = nullptr;
     int avStreamIndex = -1;
     int audioFrameCount = 0;
+    int *streamMapping = nullptr;
+    int demuxerStreamIndex = 0;
+    int streamMappingSize = 0;
+    AVStream *outStream = nullptr;
+    AVStream *inStream = nullptr;
+    bool iCodec = false;
+    bool iDemuxer = false;
 
+    string startTime, endTime;
+    int startWriting = -2;
 
-    AudioDecoder(const char *inFilePath, const char *ptrOutFilePath);
+    typedef struct {
+        int64_t data;
+        int64_t dataEmd;
+        int64_t minPts;
+        int64_t maxPts;
+        int lastDuration;
+        int w64;
+    } WavContext;
+
+    AudioDecoder(const char *inFilePath, const char *ptrOutFilePath, bool initCodecs, bool initDemuxer);
 
 /**
  * intializes:
- *  AVFormatContext *pFormatContext
+ *  AVFormatContext *pInFormatContext
     const AVCodec *pCodec
     AVCodecParserContext *pParser
     AVCodecContext *pCodecContext
@@ -68,6 +90,8 @@ public:
 
     static int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat audioFormat);
 
+    int getAudioRunCommand();
+
 private:
 
 
@@ -78,7 +102,7 @@ private:
      */
     int initCodec(enum AVMediaType mediaType = AVMEDIA_TYPE_AUDIO);
 
-
+    int initDemuxer();
 };
 
 #endif //FFMPEGTEST5_AUDIODECODER_H

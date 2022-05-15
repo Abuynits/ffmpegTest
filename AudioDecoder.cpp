@@ -4,10 +4,12 @@
 
 #include "AudioDecoder.h"
 
-AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath) {
+AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath, bool initCodecs, bool initDemuxer) {
 
     this->inputFP = inFilePath;
     this->outputFP = outFilePath;
+    this->iCodec = initCodecs;
+    this->iDemuxer = initDemuxer;
 
 }
 
@@ -25,7 +27,7 @@ void AudioDecoder::openFiles() {
 
 int AudioDecoder::initCodec(enum AVMediaType mediaType) {
 
-    int ret = av_find_best_stream(pFormatContext, mediaType, -1, -1, nullptr, 0);
+    int ret = av_find_best_stream(pInFormatContext, mediaType, -1, -1, nullptr, 0);
     if (ret < 0) {
         cout << "ERROR: Could not find %s stream in input file: " << av_get_media_type_string(mediaType) << ", "
              << inputFP << endl;
@@ -35,7 +37,7 @@ int AudioDecoder::initCodec(enum AVMediaType mediaType) {
 
     avStreamIndex = ret;
 
-    audioStream = pFormatContext->streams[avStreamIndex];
+    audioStream = pInFormatContext->streams[avStreamIndex];
 
     // finds the registered decoder for a codec ID
     // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga19a0ca553277f019dd5b0fec6e1f9dca
@@ -79,13 +81,11 @@ void AudioDecoder::initializeAllObjects() {
     //AVINputFormat -give Null and it will do auto detect
     //try to get some information of the file vis
     // http://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga31d601155e9035d5b0e7efedc894ee49
+    pInFormatContext = avformat_alloc_context();
+    pOutFormatContext = avformat_alloc_context();
 
-    pFormatContext = avformat_alloc_context();
-    //get the output format for this specific audio stream
-    const AVOutputFormat *outputFormat = av_guess_format(nullptr, outputFP, nullptr);
-    pFormatContext->oformat = outputFormat;
 
-    int resp = avformat_open_input(&pFormatContext, inputFP, nullptr, nullptr);
+    int resp = avformat_open_input(&pInFormatContext, inputFP, nullptr, nullptr);
     if (resp != 0) {
         cout << stderr << " ERROR: could not open file: " << av_err2str(resp) << endl;
         exit(1);
@@ -95,21 +95,37 @@ void AudioDecoder::initializeAllObjects() {
     // read Packets from the Format to get stream information
     //if the fine does not have a ehader ,read some frames to figure out the information and storage type of the file
     // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#gad42172e27cddafb81096939783b157bb
-    if (avformat_find_stream_info(pFormatContext, nullptr) < 0) {
+    if (avformat_find_stream_info(pInFormatContext, nullptr) < 0) {
         cout << stderr << " ERROR could not get the stream info" << endl;
         exit(1);
     }
+    outputFormat = av_guess_format(nullptr, outputFP, nullptr);
+    pInFormatContext->oformat = outputFormat;
+    //TODO: need to transfer parameters from input Format context to output
+    if (iDemuxer) {
+        resp = initDemuxer();
+        if (resp < 0) {
+            exit(1);
+        }
+    }
+
+
 
     //take either AVMEDIA_TYPE_AUDIO (Default) or AVMEDIA_TYPE_VIDEO
-    resp = initCodec();
-    if (resp == 0) {
+    if (iCodec) {
+        resp = initCodec();
+        if (resp < 0) {
+            cout << "error: cannot create codec" << endl;
+            exit(1);
+        }
+
         cout << "\tcreated codec" << endl;
     }
 
-    audioStream = pFormatContext->streams[avStreamIndex];
+    audioStream = pInFormatContext->streams[avStreamIndex];
 
-    //dump input information to stderr
-    av_dump_format(pFormatContext, 0, inputFP, 0);
+
+
 
     //allocate memory for frame from readings
     // https://ffmpeg.org/doxygen/trunk/structAVPacket.html
@@ -125,17 +141,85 @@ void AudioDecoder::initializeAllObjects() {
         cout << stderr << "Could not open packet" << endl;
         exit(1);
     }
-//    resp = avformat_write_header(pFormatContext, nullptr);
-//    if (resp < 0) {
-//        cout << "Error when opening output file" << endl;
-//        exit(1);
-//    }
+
 }
 
+int AudioDecoder::initDemuxer() {
+    int resp;
+    //dump input information to stderr
+    av_dump_format(pInFormatContext, 0, inputFP, 0);
+
+    resp = avformat_alloc_output_context2(&pOutFormatContext, nullptr, nullptr, outputFP);
+    if (resp < 0) {
+        cout << "error: cannot allocate output context" << endl;
+        return -1;
+    }
+    streamMappingSize = pInFormatContext->nb_streams;
+    streamMapping = new int[streamMappingSize];
+
+    //get the output format for this specific audio stream
+    // outputFormat = av_guess_format(nullptr, outputFP, nullptr);
+    pOutFormatContext->oformat = outputFormat;
+
+    if (!streamMapping) {
+        cout << "Error: cannot get stream map" << endl;
+        return -1;
+    }
+
+
+    for (int i = 0; i < pInFormatContext->nb_streams; i++) {
+
+        inStream = pInFormatContext->streams[i];
+        AVCodecParameters *inCodecpar = inStream->codecpar;
+
+        if (inCodecpar->codec_type != AVMEDIA_TYPE_AUDIO &&
+            inCodecpar->codec_type != AVMEDIA_TYPE_VIDEO &&
+            inCodecpar->codec_type != AVMEDIA_TYPE_SUBTITLE) {
+            streamMapping[i] = -1;
+            continue;
+        }
+
+        streamMapping[i] = demuxerStreamIndex++;
+
+        outStream = avformat_new_stream(pOutFormatContext, nullptr);
+        if (!outStream) {
+            cout << "Error: unable to allocate output stream" << endl;
+            return -1;
+        }
+
+        resp = avcodec_parameters_copy(outStream->codecpar, inCodecpar);
+        if (resp < 0) {
+            cout << "Error: failed to copy codec parameters" << endl;
+            return -1;
+        }
+        outStream->codecpar->codec_tag = 0;
+    }
+
+    av_dump_format(pOutFormatContext, 0, outputFP, 1);
+
+    if (!(pOutFormatContext->flags & AVFMT_NOFILE)) {
+        resp = avio_open(&pOutFormatContext->pb, outputFP, AVIO_FLAG_WRITE);
+        if (resp < 0) {
+            fprintf(stderr, "Could not open output file '%s'", outputFP);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+
 void AudioDecoder::closeAllObjects() {
+    if (iDemuxer) {
+        if (pOutFormatContext && !(pOutFormatContext->flags & AVFMT_NOFILE)) {
+            avio_closep(&pOutFormatContext->pb);
+        }
+    }
 
     fclose(inFile);
     fclose(outFile);
+    avformat_free_context(pOutFormatContext);
+    avformat_free_context(pInFormatContext);
 
     avcodec_free_context(&pCodecContext);
     av_frame_free(&pFrame);
@@ -145,11 +229,17 @@ void AudioDecoder::closeAllObjects() {
 
 
 int AudioDecoder::saveAudioFrame() {
+    char *time = av_ts2timestr(pFrame->pts, &pCodecContext->time_base);
+    if (startWriting != 0) {
+        startTime = time;
+        startWriting++;
+    }
+    endTime = time;
 
     size_t lineSize = pFrame->nb_samples * av_get_bytes_per_sample(pCodecContext->sample_fmt);
     printf("audio_frame n:%d nb_samples:%d pts:%s\n",
            audioFrameCount++, pFrame->nb_samples,
-           av_ts2timestr(pFrame->pts, &pCodecContext->time_base));
+           time);
     fwrite(pFrame->extended_data[0], 1, lineSize, outFile);
 }
 
@@ -182,4 +272,28 @@ int AudioDecoder::get_format_from_sample_fmt(const char **fmt, enum AVSampleForm
             "sample format %s is not supported as output format\n",
             av_get_sample_fmt_name(audioFormat));
     return -1;
+}
+
+int AudioDecoder::getAudioRunCommand() {
+    enum AVSampleFormat sampleFormat = pCodecContext->sample_fmt;
+    int channelNum = pCodecContext->channels;
+    const char *sFormat;
+
+    if (av_sample_fmt_is_planar(sampleFormat)) {
+        const char *packed = av_get_sample_fmt_name(sampleFormat);
+        printf("Warning: the sample format the decoder produced is planar "
+               "(%s). This example will output the first channel only.\n",
+               packed ? packed : "?");
+        sampleFormat = av_get_packed_sample_fmt(sampleFormat);
+        channelNum = 1;
+    }
+
+    if (AudioDecoder::get_format_from_sample_fmt(&sFormat, sampleFormat) < 0) {
+        return -1;
+    }
+    printf("Play the output audio file with the command:\n"
+           "ffplay -f %s -ac %d -ar %d %s\n",
+           sFormat, channelNum, pCodecContext->sample_rate,
+           outputFP);
+    return 0;
 }

@@ -24,6 +24,12 @@ extern "C" {
 #include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
 }
+//The threshold for the lowpass filter. All frequencies below this value are kepy
+//TODO: remove low pass and high pass filter
+//TODO: why not write header to ffmpeg.
+// output: use mp3/aac. As input we tail aim4a? what browser inputs
+//TODO: add 3 metrics: Start cutofff ,end cutoff, ratio of noise suppression. Signal to noise ratio.
+//
 //percentage of wanted volume. Present to 100% = 1.00
 #define VOLUME 1.00
 //The threshold for the lowpass filter. All frequencies below this value are kepy
@@ -54,14 +60,14 @@ extern "C" {
 //The amount of silence that you want at the end of the audio. the greater the number, the more silence at the end.
 #define STOP_SILENCE 0
 //The amount of silence that you want at the start of the audio. the greater the number, the more silence at the start.
-#define START_SILENCE 1
+#define START_SILENCE 0.9
 //HERE: STILL VARIABLE::
 //The amount of time used for determining whether you have silence in audio. default =0.02, (using longer window to have more frames to determine if have noise or not)
 #define WINDOW 0.9
 //set how detect silence: "peak" = faster and works better with digital silence, "rms" = default
 #define DETECTION rms
 //used to skip over wanted silence. very important for skipping over gaps
-#define STOP_DURATION 0
+#define STOP_DURATION 0.5
 
 class AudioFilter {
 public:
@@ -104,6 +110,8 @@ public:
     int initializeAllObjets();
 
     void closeAllObjects();
+
+    int getAudioRunCommand();
 
 private:
     int initSrcFilter();
