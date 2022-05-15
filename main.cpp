@@ -60,11 +60,11 @@ int main() {
 //    if(av_dict_set(&(*ad->pOutFormatContext).metadata,"ISFT",NULL, AV_DICT_IGNORE_SUFFIX)){
 //        cout<<"did not work"<<endl;
 //    }
-//    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
-//    if (resp < 0) {
-//        cout << "Error when writing header" << endl;
-//        return -1;
-//    }
+    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+    if (resp < 0) {
+        cout << "Error when writing header" << endl;
+        return -1;
+    }
    // cout << av_dict_count((*ad->pOutFormatContext).metadata) << endl;
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
         resp = loopOverPacketFrames();
@@ -79,7 +79,7 @@ int main() {
     ad->pPacket = nullptr;
     loopOverPacketFrames();
 
- //   av_write_trailer(ad->pOutFormatContext);
+    av_write_trailer(ad->pOutFormatContext);
     resp = getAudioRunCommand(ad);
     if (resp < 0) {
         cout << "ERROR getting ffplay command" << endl;
@@ -92,68 +92,63 @@ int main() {
 
     cout<<ad->startTime<<" and "<<ad->endTime<<endl;
 
-//    //TODO: change input file path to output from previous
-//    ad = new AudioDecoder(inputFP, finalOutputFP,false,true);
-//
-//    ad->openFiles();
-//    cout << "opened files" << endl;
-//
-//    ad->initializeAllObjects();
-//    cout << "initialized all objects" << endl;
-//
-//
-//    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
-//    if (resp < 0) {
-//        cout << "Error when opening output file" << endl;
-//        return -1;
-//    }
-//    int inputPts = 0;
-//    while (1) {
-//        resp = av_read_frame(ad->pInFormatContext, ad->pPacket);
-//        if (resp < 0) {
-//            break;
-//        }
-//        AVStream *inStream, *outStream;
-//        inStream = ad->pInFormatContext->streams[ad->pPacket->stream_index];
-//
-//        if (ad->pPacket->stream_index >= ad->streamMappingSize ||
-//            ad->streamMapping[ad->pPacket->stream_index] < 0) {
-//            av_packet_unref(ad->pPacket);
-//            continue;
-//        }
-//
-//        ad->pPacket->stream_index = ad->streamMapping[ad->pPacket->stream_index];
-//
-//        outStream = ad->pOutFormatContext->streams[ad->pPacket->stream_index];
-//
-//        ad->pPacket->duration = av_rescale_q(ad->pPacket->duration, inStream->time_base, outStream->time_base);
-//
-//        ad->pPacket->pts = inputPts;
-//        ad->pPacket->dts = inputPts;
-//        inputPts += ad->pPacket->duration;
-//        ad->pPacket->pos = -1;
-//
-//        resp = av_interleaved_write_frame(ad->pOutFormatContext, ad->pPacket);
-//        if (resp < 0) {
-//            cout << "Error muxing packet" << endl;
-//            break;
-//        }
-//        av_packet_unref(ad->pPacket);
-//    }
-//    av_write_trailer(ad->pOutFormatContext);
-//
-//    resp = getAudioRunCommand(ad);
-//    if (resp < 0) {
-//        cout << "ERROR getting ffplay command" << endl;
-//        goto end;
-//    }
-//
-//    if(ad->pOutFormatContext && !(ad->pOutFormatContext->flags & AVFMT_NOFILE)){
-//        avio_closep(&ad->pOutFormatContext->pb);
-//    }
-//    avformat_free_context(ad->pOutFormatContext);
-//    ad->closeAllObjects();
-//    cout << "finished converting!" << endl;
+    //TODO: change input file path to output from previous
+    ad = new AudioDecoder(outputFP, finalOutputFP,false,true);
+
+    ad->openFiles();
+    cout << "opened files" << endl;
+
+    ad->initializeAllObjects();
+    cout << "initialized all objects" << endl;
+
+
+    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+    if (resp < 0) {
+        cout << "Error when opening output file" << endl;
+        return -1;
+    }
+    int inputPts = 0;
+    while (1) {
+        resp = av_read_frame(ad->pInFormatContext, ad->pPacket);
+        if (resp < 0) {
+            break;
+        }
+        AVStream *inStream, *outStream;
+        inStream = ad->pInFormatContext->streams[ad->pPacket->stream_index];
+
+        if (ad->pPacket->stream_index >= ad->streamMappingSize ||
+            ad->streamMapping[ad->pPacket->stream_index] < 0) {
+            av_packet_unref(ad->pPacket);
+            continue;
+        }
+
+        ad->pPacket->stream_index = ad->streamMapping[ad->pPacket->stream_index];
+
+        outStream = ad->pOutFormatContext->streams[ad->pPacket->stream_index];
+
+        ad->pPacket->duration = av_rescale_q(ad->pPacket->duration, inStream->time_base, outStream->time_base);
+
+        ad->pPacket->pts = inputPts;
+        ad->pPacket->dts = inputPts;
+        inputPts += ad->pPacket->duration;
+        ad->pPacket->pos = -1;
+
+        resp = av_interleaved_write_frame(ad->pOutFormatContext, ad->pPacket);
+        if (resp < 0) {
+            cout << "Error muxing packet" << endl;
+            break;
+        }
+        av_packet_unref(ad->pPacket);
+    }
+    av_write_trailer(ad->pOutFormatContext);
+    cout<<"finished writing all files"<<endl;
+
+    if(ad->pOutFormatContext && !(ad->pOutFormatContext->flags & AVFMT_NOFILE)){
+        avio_closep(&ad->pOutFormatContext->pb);
+    }
+    avformat_free_context(ad->pOutFormatContext);
+    ad->closeAllObjects();
+    cout << "finished converting!" << endl;
 
     return 0;
 }

@@ -99,6 +99,8 @@ void AudioDecoder::initializeAllObjects() {
         cout << stderr << " ERROR could not get the stream info" << endl;
         exit(1);
     }
+    outputFormat = av_guess_format(nullptr, outputFP, nullptr);
+    pInFormatContext->oformat = outputFormat;
     //TODO: need to transfer parameters from input Format context to output
     if (iDemuxer) {
         resp = initDemuxer();
@@ -156,7 +158,7 @@ int AudioDecoder::initDemuxer() {
     streamMapping = new int[streamMappingSize];
 
     //get the output format for this specific audio stream
-    outputFormat = av_guess_format(nullptr, outputFP, nullptr);
+    // outputFormat = av_guess_format(nullptr, outputFP, nullptr);
     pOutFormatContext->oformat = outputFormat;
 
     if (!streamMapping) {
@@ -220,9 +222,9 @@ void AudioDecoder::closeAllObjects() {
 
 int AudioDecoder::saveAudioFrame() {
     char *time = av_ts2timestr(pFrame->pts, &pCodecContext->time_base);
-    if (startWriting!=0) {
-        startTime= time;
-        startWriting ++;
+    if (startWriting != 0) {
+        startTime = time;
+        startWriting++;
     }
     endTime = time;
 
