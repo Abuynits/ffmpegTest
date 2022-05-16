@@ -177,11 +177,8 @@ int loopOverPacketFrames(bool showFrameData) {
             return resp;
         }
         /*
-         * brainstorm:
-         * here: looping over and incremeting the frames- loop over them regardless of what you have
-         * then: if all the filter audio, and start writing, it calls the frame number.
-         * within audio frame, can keep track of the start and end
-         * need to give the current frame count and use that to calculate
+         * TODO: need to find the noise level of audio file
+         * try to look at astats filter, then at the portions where silence is detected idk
          */
 
         if (showFrameData)
@@ -209,7 +206,7 @@ int loopOverPacketFrames(bool showFrameData) {
 
 int filterAudioFrame() {
     //add to source frame:
-    int resp = av_buffersrc_add_frame(av->srcFilterContext, ad->pFrame);
+    int resp = av_buffersrc_add_frame(av->srcContext, ad->pFrame);
     //TODO:START
     if (resp < 0) {
         cout << "Error: cannot send to graph: " << av_err2str(resp) << endl;
@@ -218,7 +215,7 @@ int filterAudioFrame() {
         return resp;
     }
     //get back the filtered data:
-    while ((resp = av_buffersink_get_frame(av->sinkFilterContext, ad->pFrame)) >= 0) {
+    while ((resp = av_buffersink_get_frame(av->sinkContext, ad->pFrame)) >= 0) {
 
         if (resp < 0) {
             cout << "Error filtering data " << av_err2str(resp) << endl;

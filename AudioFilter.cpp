@@ -35,24 +35,24 @@ int AudioFilter::initializeAllObjets() {
 
 //------------CONNECT THE FILTERS ------------------
     int resp;
-    resp = avfilter_link(srcFilterContext, 0, volumeFilterContext, 0);
+    resp = avfilter_link(srcContext, 0, volumeContext, 0);
     if (resp >= 0) {
-        resp = avfilter_link(volumeFilterContext, 0, lpFilterContext, 0);
+        resp = avfilter_link(volumeContext, 0, lpContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(lpFilterContext, 0, hpFilterContext, 0);
+        resp = avfilter_link(lpContext, 0, hpContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(hpFilterContext, 0, arnndnFilterContext, 0);
+        resp = avfilter_link(hpContext, 0, arnndnContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(arnndnFilterContext, 0, silenceRemoverFilterContext, 0);
+        resp = avfilter_link(arnndnContext, 0, silenceRemoverContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(silenceRemoverFilterContext, 0, aFormatContext, 0);
+        resp = avfilter_link(silenceRemoverContext, 0, aFormatContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(aFormatContext, 0, sinkFilterContext, 0);
+        resp = avfilter_link(aFormatContext, 0, sinkContext, 0);
     }
     if (resp < 0) {
         cout << "Error connecting filters: " << av_err2str(resp) << endl;
@@ -70,7 +70,7 @@ int AudioFilter::initializeAllObjets() {
 }
 
 int AudioFilter::initSrcFilter() {
-    int resp = generalFilterInit(&srcFilterContext, &srcFilter, "abuffer");
+    int resp = generalFilterInit(&srcContext, &srcFilter, "abuffer");
     if (resp < 0) {
         return resp;
     }
@@ -80,9 +80,9 @@ int AudioFilter::initSrcFilter() {
         ad->pCodecContext->channel_layout = av_get_default_channel_layout(ad->pCodecContext->channels);
     }
 
-    initByFunctions(srcFilterContext);
+    initByFunctions(srcContext);
 
-    resp = avfilter_init_str(srcFilterContext, nullptr);
+    resp = avfilter_init_str(srcContext, nullptr);
     if (resp < 0) {
         cout << "ERROR: creating srcFilter: " << av_err2str(resp) << endl;
         return resp;
@@ -94,12 +94,12 @@ int AudioFilter::initSrcFilter() {
 
 int AudioFilter::initSinkFilter() {
 
-    int resp = generalFilterInit(&sinkFilterContext, &sinkFilter, "abuffersink");
+    int resp = generalFilterInit(&sinkContext, &sinkFilter, "abuffersink");
     if (resp < 0) {
         return resp;
     }
 
-    resp = avfilter_init_str(sinkFilterContext, nullptr);
+    resp = avfilter_init_str(sinkContext, nullptr);
     if (resp < 0) {
         cout << "ERROR: creating sinkFilter: " << av_err2str(resp) << endl;
         return resp;
@@ -109,12 +109,12 @@ int AudioFilter::initSinkFilter() {
 }
 
 int AudioFilter::initVolumeFilter() {
-    int resp = generalFilterInit(&volumeFilterContext, &volumeFilter, "volume");
+    int resp = generalFilterInit(&volumeContext, &volumeFilter, "volume");
     if (resp < 0) {
         return resp;
     }
     char *val = AV_STRINGIFY(VOLUME);
-    resp = initByDict(volumeFilterContext, "volume", val);
+    resp = initByDict(volumeContext, "volume", val);
 
     if (resp < 0) {
         fprintf(stderr, "Could not initialize the volume filter.\n");
@@ -146,29 +146,29 @@ int AudioFilter::initFormatFilter() {
 }
 
 int AudioFilter::initLpFilter() {
-    int resp = generalFilterInit(&lpFilterContext, &lpFilter, "lowpass");
+    int resp = generalFilterInit(&lpContext, &lpFilter, "lowpass");
     if (resp < 0) {
         return resp;
     }
     char *val = AV_STRINGIFY(LOWPASS_VAL);
-    resp = initByDict(lpFilterContext, "frequency", val);
+    resp = initByDict(lpContext, "frequency", val);
     cout << "\tCreated lp Filter!" << endl;
     return resp;
 }
 
 int AudioFilter::initHpFilter() {
-    int resp = generalFilterInit(&hpFilterContext, &hpFilter, "highpass");
+    int resp = generalFilterInit(&hpContext, &hpFilter, "highpass");
     if (resp < 0) {
         return resp;
     }
     char *val = AV_STRINGIFY(HIGHPASS_VAL);
-    resp = initByDict(hpFilterContext, "frequency", val);
+    resp = initByDict(hpContext, "frequency", val);
     cout << "\tCreated hp Filter!" << endl;
     return resp;
 }
 
 int AudioFilter::initSilenceRemoverFilter() {
-    int resp = generalFilterInit(&silenceRemoverFilterContext, &silenceRemoverFilter, "silenceremove");
+    int resp = generalFilterInit(&silenceRemoverContext, &silenceRemoverFilter, "silenceremove");
     if (resp < 0) {
         return resp;
     }
@@ -176,22 +176,22 @@ int AudioFilter::initSilenceRemoverFilter() {
 //=========GENERAL INIT====================
 
     char *val = AV_STRINGIFY(START_PERIOD);
-    resp = initByDict(silenceRemoverFilterContext, "start_periods", val);
+    resp = initByDict(silenceRemoverContext, "start_periods", val);
     if (resp < 0) {
         return resp;
     }
     val = AV_STRINGIFY(STOP_PERIOD);
-    resp = initByDict(silenceRemoverFilterContext, "stop_periods", val);
+    resp = initByDict(silenceRemoverContext, "stop_periods", val);
     if (resp < 0) {
         return resp;
     }
     val = AV_STRINGIFY(WINDOW);
-    resp = initByDict(silenceRemoverFilterContext, "window", val);
+    resp = initByDict(silenceRemoverContext, "window", val);
     if (resp < 0) {
         return resp;
     }
     val = AV_STRINGIFY(DETECTION);
-    resp = initByDict(silenceRemoverFilterContext, "detection", val);
+    resp = initByDict(silenceRemoverContext, "detection", val);
     if (resp < 0) {
         return resp;
     }
@@ -199,13 +199,13 @@ int AudioFilter::initSilenceRemoverFilter() {
 
 
     val = AV_STRINGIFY(START_THRESHOLD);
-    resp = initByDict(silenceRemoverFilterContext, "start_threshold", val);
+    resp = initByDict(silenceRemoverContext, "start_threshold", val);
     if (resp < 0) {
         return resp;
     }
 
     val = AV_STRINGIFY(START_SILENCE);
-    resp = initByDict(silenceRemoverFilterContext, "start_silence", val);
+    resp = initByDict(silenceRemoverContext, "start_silence", val);
     if (resp < 0) {
         return resp;
     }
@@ -213,25 +213,25 @@ int AudioFilter::initSilenceRemoverFilter() {
 //=========END FILTERS====================
 
     val = AV_STRINGIFY(START_DURATION);
-    resp = initByDict(silenceRemoverFilterContext, "start_duration", val);
+    resp = initByDict(silenceRemoverContext, "start_duration", val);
     if (resp < 0) {
         return resp;
     }
     val = AV_STRINGIFY(STOP_THRESHOLD);
-    resp = initByDict(silenceRemoverFilterContext, "stop_threshold", val);
+    resp = initByDict(silenceRemoverContext, "stop_threshold", val);
     if (resp < 0) {
         return resp;
     }
     //stop_periods=-1:stop_duration=1:stop_threshold=-90dB
 
     val = AV_STRINGIFY(STOP_SILENCE);
-    resp = initByDict(silenceRemoverFilterContext, "stop_silence", val);
+    resp = initByDict(silenceRemoverContext, "stop_silence", val);
     if (resp < 0) {
         return resp;
     }
 
     val = AV_STRINGIFY(STOP_DURATION);
-    resp = initByDict(silenceRemoverFilterContext, "stop_duration", val);
+    resp = initByDict(silenceRemoverContext, "stop_duration", val);
     if (resp < 0) {
         return resp;
     }
@@ -244,7 +244,7 @@ int AudioFilter::initSilenceRemoverFilter() {
 }
 
 int AudioFilter::initArnndnFilter() {
-    int resp = generalFilterInit(&arnndnFilterContext, &arnndnFilter, "arnndn");
+    int resp = generalFilterInit(&arnndnContext, &arnndnFilter, "arnndn");
     if (resp < 0) {
         return resp;
     }
@@ -254,7 +254,7 @@ int AudioFilter::initArnndnFilter() {
      */
     char *val = "/Users/abuynits/CLionProjects/ffmpegTest5/rnnoise-models-master/beguiling-drafter-2018-08-30/bd.rnnn";
 
-    resp = initByDict(arnndnFilterContext, "model", val);
+    resp = initByDict(arnndnContext, "model", val);
     cout << "\tCreated arnndn Filter!" << endl;
     return resp;
 }
@@ -302,5 +302,12 @@ int AudioFilter::generalFilterInit(AVFilterContext **af, const AVFilter **f, con
         return AVERROR(ENOMEM);
     }
     return 0;
+}
+
+int AudioFilter::initStatFilter(AVFilterContext **afc, const AVFilter **f) {
+    int resp = generalFilterInit(afc, f, "astats");
+    if (resp < 0) {
+        return resp;
+    }
 }
 

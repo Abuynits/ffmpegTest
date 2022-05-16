@@ -74,29 +74,35 @@ public:
     AudioDecoder *ad = nullptr;
     AVFilterGraph *filterGraph = nullptr;
     //used to pass in the initial frame (the first 'filter' in the graph)
-    AVFilterContext *srcFilterContext = nullptr;
+    AVFilterContext *srcContext = nullptr;
     const AVFilter *srcFilter = nullptr;
 
 
-    AVFilterContext *lpFilterContext = nullptr;
+    AVFilterContext *lpContext = nullptr;
     const AVFilter *lpFilter = nullptr;
 
-    AVFilterContext *hpFilterContext = nullptr;
+    AVFilterContext *hpContext = nullptr;
     const AVFilter *hpFilter = nullptr;
 
-    AVFilterContext *arnndnFilterContext = nullptr;
+    AVFilterContext *arnndnContext = nullptr;
     const AVFilter *arnndnFilter = nullptr;
 
     //silence detector:
-    AVFilterContext *silenceRemoverFilterContext = nullptr;
+    AVFilterContext *silenceRemoverContext = nullptr;
     const AVFilter *silenceRemoverFilter = nullptr;
 
+    AVFilterContext *beforeStatsContext = nullptr;
+    const AVFilter *beforeStatsFilter = nullptr;
+
+    AVFilterContext *afterStatsContext = nullptr;
+    const AVFilter *afterStatsFilter = nullptr;
+
     //vad filter
-    AVFilterContext *volumeFilterContext = nullptr;
+    AVFilterContext *volumeContext = nullptr;
     const AVFilter *volumeFilter = nullptr;
 
     //the end point of the filter - this is how you specify what to write
-    AVFilterContext *sinkFilterContext = nullptr;
+    AVFilterContext *sinkContext = nullptr;
     const AVFilter *sinkFilter = nullptr;
 
     AVFilterContext *aFormatContext = nullptr;
@@ -127,6 +133,8 @@ private:
     int initArnndnFilter();
 
     int initFormatFilter();
+
+    int initStatFilter(AVFilterContext **afc, const AVFilter **f);
 
     int initSilenceRemoverFilter();
 
