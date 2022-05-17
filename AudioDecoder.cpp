@@ -293,9 +293,8 @@ int AudioDecoder::getAudioRunCommand() {
     if (AudioDecoder::get_format_from_sample_fmt(&sFormat, sampleFormat) < 0) {
         return -1;
     }
-    printf("Play the output audio file with the command:\n"
-           "ffplay -f %s -ac %d -ar %d %s\n",
-           sFormat, channelNum, pCodecContext->sample_rate,
-           outputFP);
+    cerr << "Play the data output File w/" << endl;
+    cerr << "ffplay -f " << sFormat << " -ac " << channelNum << " -ar " << pCodecContext->sample_rate << " "<<outputFP<<endl;
+
     return 0;
 }

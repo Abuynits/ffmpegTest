@@ -1,9 +1,3 @@
-#include <iostream>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <sstream>
-
 extern "C" {
 #include <libavutil/frame.h>
 #include <libavutil/mem.h>
@@ -13,11 +7,13 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 }
 
-
 #include "AudioDecoder.h"
 #include "AudioFilter.h"
 #include "OutputAnalysis.h"
-
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 int loopOverPacketFrames(bool showFrameData);
 
@@ -25,30 +21,35 @@ int filterAudioFrame();
 
 int transferStreamData(int *inputPts);
 
+int applyFilters();
+
+int applyMuxers();
+
+void getAudioInfo();
+
 using namespace std;
 
 AudioDecoder *ad;
 AudioFilter *av;
+OutputAnalysis *audioInfo;
+
 const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
 const char *tempFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
 const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
 const char *statOutFP = "/Users/abuynits/CLionProjects/ffmpegTest5/output.txt";
+
 int totalFrameCount = 0;
 const bool showData = false;
 
 int main() {
     int resp;
-    freopen(statOutFP, "w", stderr);
-    OutputAnalysis *info = new OutputAnalysis(statOutFP);
 
-//TODO: use: https://www.ffmpeg.org/doxygen/0.6/wav_8c-source.html with parameters from input AVFormat
-//then run the raw data to the outputfile, then open a new file, write the wav header, copy the data
-//write the closing
+    audioInfo = new OutputAnalysis(statOutFP);
+
     ad = new AudioDecoder(inputFP, tempFP, true, true);
-
     ad->openFiles();
-
     ad->initializeAllObjects();
+
     if (resp < 0) {
         cerr << "error: could not initialize decoder" << endl;
         return 1;
@@ -63,79 +64,29 @@ int main() {
     }
     cerr << "initialized AudioFilter\n" << endl;
 
-    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
-    if (resp < 0) {
-        cerr << "Error when writing header" << endl;
-        return -1;
+    resp = applyFilters();
+    if (resp == 0) {
+        cerr << "finished processing first loop" << endl;
     }
 
-    while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
-        resp = loopOverPacketFrames(showData);
-        if (resp < 0) {
-            break;
-        }
-    }
-
-
-    //flush the audio decoder
-    ad->pPacket = nullptr;
-    loopOverPacketFrames(showData);
-
-    av_write_trailer(ad->pOutFormatContext);
-    resp = ad->getAudioRunCommand();
-    if (resp < 0) {
-        cerr << "ERROR getting ffplay command" << endl;
-        goto end;
-    }
-    cerr << "finished processing first loop" << endl;
-    end:
     ad->closeAllObjects();
     av->closeAllObjects();
 
-    info->setFrameVals(ad->startFrame, ad->endFrame, totalFrameCount);
+    audioInfo->setFrameVals(ad->startFrame, ad->endFrame, totalFrameCount);
 
     //========================SECOND STAGE: make playable by wav output file==========================
-    //TODO: change input file path to output from previous
     ad = new AudioDecoder(tempFP, finalFP, false, true);
-
     ad->openFiles();
-
     ad->initializeAllObjects();
 
-
-    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
-    if (resp < 0) {
-        cerr << "Error when opening output file" << endl;
-        return -1;
+    resp = applyMuxers();
+    if (resp == 0) {
+        cerr << "finished muxing files" << endl;
     }
-    int inputPts = 0;
-    while (1) {
-        resp = av_read_frame(ad->pInFormatContext, ad->pPacket);
-        if (resp < 0) {
-            break;
-        }
 
-        if (transferStreamData(&inputPts) == 1) { continue; }
-
-        resp = av_interleaved_write_frame(ad->pOutFormatContext, ad->pPacket);
-        if (resp < 0) {
-            cerr << "Error muxing packet" << endl;
-            break;
-        }
-        av_packet_unref(ad->pPacket);
-    }
-    av_write_trailer(ad->pOutFormatContext);
     ad->closeAllObjects();
-    cerr << "finished muxing files" << endl;
 //    //==============RMS PROCESSING===================
-    cerr.flush();
-    info->getRMS();
-
-    cout << "===============VIDEO DATA===============" << endl;
-    cout << "start frame " << info->startFrame << " to " << info->endFrame << " of " << info->totalFrame << " frames"
-         << endl;
-    cout<<"before trough rms: "<<info->bTrough <<" after trough rms: "<<info->aTrough<<endl;
-    cout<<"before peak rms: "<<info->bPeak <<" after peak rms: "<<info->aPeak<<endl;
+    getAudioInfo();
     return 0;
 }
 
@@ -245,4 +196,74 @@ int filterAudioFrame() {
         av_frame_unref(ad->pFrame);
     }
     return 0;
+}
+
+int applyFilters() {
+    int resp = 0;
+    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+    if (resp < 0) {
+        cerr << "Error when writing header" << endl;
+        return -1;
+    }
+
+    while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
+        resp = loopOverPacketFrames(showData);
+        if (resp < 0) {
+            break;
+        }
+    }
+
+    //flush the audio decoder
+    ad->pPacket = nullptr;
+    loopOverPacketFrames(showData);
+
+    av_write_trailer(ad->pOutFormatContext);
+
+
+    resp = ad->getAudioRunCommand();
+    if (resp < 0) {
+        cerr << "ERROR getting ffplay command" << endl;
+        return resp;
+    }
+
+    return 0;
+}
+
+int applyMuxers() {
+    int resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+    if (resp < 0) {
+        cerr << "Error when opening output file" << endl;
+        return -1;
+    }
+    int inputPts = 0;
+    while (1) {
+        resp = av_read_frame(ad->pInFormatContext, ad->pPacket);
+        if (resp < 0) {
+            break;
+        }
+
+        if (transferStreamData(&inputPts) == 1) { continue; }
+
+        resp = av_interleaved_write_frame(ad->pOutFormatContext, ad->pPacket);
+        if (resp < 0) {
+            cerr << "Error muxing packet" << endl;
+            break;
+        }
+        av_packet_unref(ad->pPacket);
+    }
+    av_write_trailer(ad->pOutFormatContext);
+    return 0;
+}
+
+void getAudioInfo() {
+    cerr.flush();
+    audioInfo->getRMS();
+
+    cout << "===============VIDEO DATA===============" << endl;
+    cout << "start frame " << audioInfo->startFrame << " to " << audioInfo->endFrame << " of " << audioInfo->totalFrame
+         << " frames"
+         << endl;
+    cout << "before trough rms: " << audioInfo->bTrough << " DB after trough rms: " << audioInfo->aTrough << " DB"
+         << endl;
+    cout << "before peak rms: " << audioInfo->bPeak << " DB after peak rms: " << audioInfo->aPeak << " DB" << endl;
 }
