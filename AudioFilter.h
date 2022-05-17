@@ -24,28 +24,14 @@ extern "C" {
 #include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
 }
-//The threshold for the lowpass filter. All frequencies below this value are kepy
-//TODO: remove low pass and high pass filter
-//TODO: why not write header to ffmpeg.
-// output: use mp3/aac. As input we tail aim4a? what browser inputs
-//TODO: add 3 metrics: Start cutofff ,end cutoff, ratio of noise suppression. Signal to noise ratio.
-//
+
 //percentage of wanted volume. Present to 100% = 1.00
 #define VOLUME 1.00
-//The threshold for the lowpass filter. All frequencies below this value are kepy
-//TODO: remove low pass and high pass filter
-//TODO: why not write header to ffmpeg.
-// output: use mp3/aac. As input we tail aim4a? what browser inputs
-//TODO: add 3 metrics: Start cutofff ,end cutoff, ratio of noise suppression. Signal to noise ratio.
-//
-//Need to look at the power before and after the filter, but only for non speech segments.
-//
-//These numbers should tell which files have a lot of things -
-//
 //sqrt(sum of all squares of signals)
 #define LOWPASS_VAL 10000
 //The threshold for the highpass filter. All frequencies above this value are kepy
-#define HIGHPASS_VAL 50
+#define HIGHPASS_VAL 25
+//============silence remove filter===================
 //1=remove silent frames, 0=keep all silent frames (same for start and end of audio), -1 = remove in the middle as well
 #define STOP_PERIOD 1
 //1=remove silent frames, 0=keep all silent frames (same for start and end of audio)
@@ -69,6 +55,15 @@ extern "C" {
 //used to skip over wanted silence. very important for skipping over gaps
 #define STOP_DURATION 0
 
+//============stat filter===================
+//the length of the audio used to detect silence with rms: 0.01 = 1 millisecond
+#define AUDIO_SAMPLE_LENGTH 0.01
+//the number of frames used to process the stats - 1 = reset after first frames
+#define FRAMES_RESET_SAMPLE 1
+//the channel number used for determining samples
+#define CHANNEL_NUMBER 1
+//specific parameters to measure:
+#define PARAM_MEASURE none
 class AudioFilter {
 public:
     AudioDecoder *ad = nullptr;
