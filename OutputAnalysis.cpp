@@ -10,13 +10,7 @@ void OutputAnalysis::getRMS() {
         while (getline(f, l)) {
             //here, l contains the value of the rms, but need to look for:
             /*
-             * first;
-             * RMS trough dB:
-             * RMS peak dB:
-             *
-             * second:
-             * RMS trough dB:
-             * RMS peak dB:
+
              */
             checkForData(l, rmsTrough);
             checkForData(l, rmsPeak);

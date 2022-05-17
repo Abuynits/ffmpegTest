@@ -68,6 +68,8 @@ extern "C" {
 class AudioFilter {
 public:
     AudioDecoder *ad = nullptr;
+
+    //=========== FILTER CONTEXTS and FILTERS here====================
     AVFilterGraph *filterGraph = nullptr;
     //used to pass in the initial frame (the first 'filter' in the graph)
     AVFilterContext *srcContext = nullptr;

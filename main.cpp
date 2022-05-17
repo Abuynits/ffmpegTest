@@ -23,6 +23,12 @@ extern "C" {
  */
 int loopOverPacketFrames(bool showFrameData);
 
+/**
+ * adds the frames to the head node of filtergraph
+ * recieves the output from the filtergraph
+ * writes the raw data to the output file
+ * @return whether an error occured
+ */
 int filterAudioFrame();
 
 /**
