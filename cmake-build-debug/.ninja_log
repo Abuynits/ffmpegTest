@@ -46,3 +46,8 @@
 5	1313	1652814860339570050	CMakeFiles/ffmpegTest5.dir/AudioFilter.cpp.o	d94577e810c28eaf
 4	1485	1652814860511281923	CMakeFiles/ffmpegTest5.dir/main.cpp.o	282a848fbae0e329
 1486	1594	1652814860623965345	ffmpegTest5	e2ea8298d3f27ce3
+1	8166	1652824023192357595	CMakeFiles/ffmpegTest5.dir/AudioFilter.cpp.o	d94577e810c28eaf
+1	8172	1652824023192335974	CMakeFiles/ffmpegTest5.dir/AudioDecoder.cpp.o	5e838e10b00413dd
+1	8257	1652824023286952511	CMakeFiles/ffmpegTest5.dir/OutputAnalysis.cpp.o	6b7cde5dbf6b9f83
+0	8287	1652824023317351459	CMakeFiles/ffmpegTest5.dir/main.cpp.o	282a848fbae0e329
+8287	8849	1652824023883801405	ffmpegTest5	e2ea8298d3f27ce3

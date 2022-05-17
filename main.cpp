@@ -1,3 +1,6 @@
+//
+// Created by Alexiy Buynitsky on 4/23/22.
+//
 extern "C" {
 #include <libavutil/frame.h>
 #include <libavutil/mem.h>
