@@ -31,7 +31,7 @@ private:
     const char *filePath;
     const string rmsTrough="RMS trough dB: ";
     const string rmsPeak ="RMS peak dB: ";
-    double bPeak, bTrough, aPeak, aTrough;
+    double bPeak=0, bTrough=0, aPeak=0, aTrough=0;
     ifstream f;
     void checkForData(string line, string key);
 
