@@ -34,7 +34,7 @@ int totalFrameCount = 0;
 const bool showData =false;
 int main() {
     int resp;
-
+    freopen("/Users/abuynits/CLionProjects/ffmpegTest5/output.txt", "w", stderr);
 //TODO: use: https://www.ffmpeg.org/doxygen/0.6/wav_8c-source.html with parameters from input AVFormat
 //then run the raw data to the outputfile, then open a new file, write the wav header, copy the data
 //write the closing

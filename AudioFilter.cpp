@@ -319,17 +319,31 @@ int AudioFilter::initStatFilter(AVFilterContext **afc, const AVFilter **f) {
     if (resp < 0) {
         return resp;
     }
-
+    //the number of frames after which recalculate stats
     char *val = AV_STRINGIFY(1);
     resp = initByDict(*afc, "reset", val);
     if (resp < 0) {
         return resp;
     }
-    val = AV_STRINGIFY(5);
+    //the lenght of audio sample used for determining stats: 0.05 = 5 milliseconds
+    val = AV_STRINGIFY(0.01);
     resp = initByDict(*afc, "length", val);
     if (resp < 0) {
         return resp;
     }
+    //the channel number = should have 1 as default
+    val = AV_STRINGIFY(1);
+    resp = initByDict(*afc, "metadata", val);
+    if (resp < 0) {
+        return resp;
+    }
+    //not track any parameters
+    val = AV_STRINGIFY(none);
+    resp = initByDict(*afc, "measure_perchannel", val);
+    if (resp < 0) {
+        return resp;
+    }
+
 
 
 
