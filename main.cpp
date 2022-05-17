@@ -15,37 +15,72 @@ extern "C" {
 #include <cstdlib>
 #include <cstring>
 
+/**
+ * first loop: loops over the frames present in a packet
+ * runs them through the filters and handles eof/ not enough frames
+ * @param showFrameData boolean whether to display the info of each frame during output
+ * @return whether an error occured
+ */
 int loopOverPacketFrames(bool showFrameData);
 
 int filterAudioFrame();
 
+/**
+ * transfers parameters from input codec to output codec
+ * estimates the raw data based on the bitrate and other parameters
+ * writes the correct header and tail to the final output path
+ * transfers the raw data to the output data
+ * @param inputPts  tracks the points being looped over
+ * @return whether an error occured
+ */
 int transferStreamData(int *inputPts);
 
+/**
+ * first loop: runs all of the frames through the filters
+ * writes a header and tail, but they will be fixed in the second loop
+ * @return whether an error occured
+ */
 int applyFilters();
 
+/**
+ * the second loop: fixes the headers and tails of the first loop
+ * transfers the data as is, but creates custon headers and tails
+ * @return whether an error occured
+ */
 int applyMuxers();
 
+/**
+ * displays the audio information
+ * this includes the start and end frames, the total frame
+ * the before and after RMS of the trough and peak of a silent frame
+ */
 void getAudioInfo();
 
 using namespace std;
-
+//info about codecs, and is responsible for processing audio
 AudioDecoder *ad;
+//list of filters and how they are linked to each other
 AudioFilter *av;
+//audio info about the frames and the rms
 OutputAnalysis *audioInfo;
-
+//the input file path
 const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
+//stores the raw data after applying filters
 const char *tempFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
+//the output file path
 const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
+//stores the stderr output which contains rms stats and other debug info
 const char *statOutFP = "/Users/abuynits/CLionProjects/ffmpegTest5/output.txt";
 
 int totalFrameCount = 0;
 const bool showData = false;
 
 int main() {
+    //used to error return errors
     int resp;
-
+    //create audioInfo
     audioInfo = new OutputAnalysis(statOutFP);
-
+    //create audio decoder
     ad = new AudioDecoder(inputFP, tempFP, true, true);
     ad->openFiles();
     ad->initializeAllObjects();
@@ -55,7 +90,7 @@ int main() {
         return 1;
     }
     cerr << "initialized AudioDecoder" << endl;
-
+    //create audio filter
     av = new AudioFilter(ad);
     resp = av->initializeAllObjets();
     if (resp < 0) {
@@ -63,22 +98,22 @@ int main() {
         return 1;
     }
     cerr << "initialized AudioFilter\n" << endl;
-
+    //loop over the frames in each packet and apply a chain of filters to each frame
     resp = applyFilters();
     if (resp == 0) {
         cerr << "finished processing first loop" << endl;
     }
-
+    //close all of the objects
     ad->closeAllObjects();
     av->closeAllObjects();
-
+    //save the stats from the filter stage into the info object
     audioInfo->setFrameVals(ad->startFrame, ad->endFrame, totalFrameCount);
 
     //========================SECOND STAGE: make playable by wav output file==========================
     ad = new AudioDecoder(tempFP, finalFP, false, true);
     ad->openFiles();
     ad->initializeAllObjects();
-
+    //loop over the file to get the correct header to be playable
     resp = applyMuxers();
     if (resp == 0) {
         cerr << "finished muxing files" << endl;
@@ -86,10 +121,10 @@ int main() {
 
     ad->closeAllObjects();
 //    //==============RMS PROCESSING===================
+//get the stats and show them
     getAudioInfo();
     return 0;
 }
-
 
 int transferStreamData(int *inputPts) {
     AVStream *inStream, *outStream;
@@ -113,7 +148,6 @@ int transferStreamData(int *inputPts) {
     ad->pPacket->pos = -1;
     return 0;
 }
-
 
 int loopOverPacketFrames(bool showFrameData) {
     int resp = avcodec_send_packet(ad->pCodecContext, ad->pPacket);
@@ -168,7 +202,6 @@ int loopOverPacketFrames(bool showFrameData) {
     return 0;
 
 }
-
 
 int filterAudioFrame() {
     //add to source frame:

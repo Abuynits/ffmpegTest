@@ -11,6 +11,8 @@ AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath, bool
     this->iCodec = initCodecs;
     this->iDemuxer = initDemuxer;
 
+
+
 }
 
 
@@ -294,7 +296,8 @@ int AudioDecoder::getAudioRunCommand() {
         return -1;
     }
     cerr << "Play the data output File w/" << endl;
-    cerr << "ffplay -f " << sFormat << " -ac " << channelNum << " -ar " << pCodecContext->sample_rate << " "<<outputFP<<endl;
+    cerr << "ffplay -f " << sFormat << " -ac " << channelNum << " -ar " << pCodecContext->sample_rate << " " << outputFP
+         << endl;
 
     return 0;
 }

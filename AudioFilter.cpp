@@ -346,8 +346,5 @@ int AudioFilter::initStatFilter(AVFilterContext **afc, const AVFilter **f) {
     }
 
 
-
-
-return 0;
+    return 0;
 }
-

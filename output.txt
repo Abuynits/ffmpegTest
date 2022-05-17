@@ -30,48 +30,48 @@ Reached end of file
 Play the data output File w/
 ffplay -f s16le -ac 1 -ar 48000 /Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav
 finished processing first loop
-[astats @ 0x7f7b83705900] Overall
-[astats @ 0x7f7b83705900] DC offset: -0.001500
-[astats @ 0x7f7b83705900] Min level: -127.000000
-[astats @ 0x7f7b83705900] Max level: 29.000000
-[astats @ 0x7f7b83705900] Min difference: 0.000000
-[astats @ 0x7f7b83705900] Max difference: 25.000000
-[astats @ 0x7f7b83705900] Mean difference: 5.440758
-[astats @ 0x7f7b83705900] RMS difference: 6.979319
-[astats @ 0x7f7b83705900] Peak level dB: -48.232659
-[astats @ 0x7f7b83705900] RMS level dB: -54.819239
-[astats @ 0x7f7b83705900] RMS peak dB: -54.819239
-[astats @ 0x7f7b83705900] RMS trough dB: -54.819239
-[astats @ 0x7f7b83705900] Flat factor: 0.000000
-[astats @ 0x7f7b83705900] Peak count: 2.000000
-[astats @ 0x7f7b83705900] Noise floor dB: nan
-[astats @ 0x7f7b83705900] Noise floor count: 0.000000
-[astats @ 0x7f7b83705900] Entropy: 0.363934
-[astats @ 0x7f7b83705900] Bit depth: 16/16
-[astats @ 0x7f7b83705900] Number of samples: 212
-[astats @ 0x7f7b837056c0] Overall
-[astats @ 0x7f7b837056c0] DC offset: 0.000642
-[astats @ 0x7f7b837056c0] Min level: -0.041168
-[astats @ 0x7f7b837056c0] Max level: 0.035858
-[astats @ 0x7f7b837056c0] Min difference: 0.000000
-[astats @ 0x7f7b837056c0] Max difference: 0.011627
-[astats @ 0x7f7b837056c0] Mean difference: 0.002582
-[astats @ 0x7f7b837056c0] RMS difference: 0.003579
-[astats @ 0x7f7b837056c0] Peak level dB: -27.708760
-[astats @ 0x7f7b837056c0] RMS level dB: -37.041779
-[astats @ 0x7f7b837056c0] RMS peak dB: -36.871273
-[astats @ 0x7f7b837056c0] RMS trough dB: -39.122530
-[astats @ 0x7f7b837056c0] Flat factor: 0.000000
-[astats @ 0x7f7b837056c0] Peak count: 2.000000
-[astats @ 0x7f7b837056c0] Noise floor dB: -29.448557
-[astats @ 0x7f7b837056c0] Noise floor count: 14.000000
-[astats @ 0x7f7b837056c0] Entropy: 0.581805
-[astats @ 0x7f7b837056c0] Bit depth: 16/16
-[astats @ 0x7f7b837056c0] Number of samples: 1024
-[astats @ 0x7f7b837056c0] Number of NaNs: 0.000000
-[astats @ 0x7f7b837056c0] Number of Infs: 0.000000
-[astats @ 0x7f7b837056c0] Number of denormals: 0.000000
-[wav @ 0x7f7b84d06e40] Estimating duration from bitrate, this may be inaccurate
+[astats @ 0x7fb9ce0055c0] Overall
+[astats @ 0x7fb9ce0055c0] DC offset: -0.001500
+[astats @ 0x7fb9ce0055c0] Min level: -127.000000
+[astats @ 0x7fb9ce0055c0] Max level: 29.000000
+[astats @ 0x7fb9ce0055c0] Min difference: 0.000000
+[astats @ 0x7fb9ce0055c0] Max difference: 25.000000
+[astats @ 0x7fb9ce0055c0] Mean difference: 5.440758
+[astats @ 0x7fb9ce0055c0] RMS difference: 6.979319
+[astats @ 0x7fb9ce0055c0] Peak level dB: -48.232659
+[astats @ 0x7fb9ce0055c0] RMS level dB: -54.819239
+[astats @ 0x7fb9ce0055c0] RMS peak dB: -54.819239
+[astats @ 0x7fb9ce0055c0] RMS trough dB: -54.819239
+[astats @ 0x7fb9ce0055c0] Flat factor: 0.000000
+[astats @ 0x7fb9ce0055c0] Peak count: 2.000000
+[astats @ 0x7fb9ce0055c0] Noise floor dB: nan
+[astats @ 0x7fb9ce0055c0] Noise floor count: 0.000000
+[astats @ 0x7fb9ce0055c0] Entropy: 0.363934
+[astats @ 0x7fb9ce0055c0] Bit depth: 16/16
+[astats @ 0x7fb9ce0055c0] Number of samples: 212
+[astats @ 0x7fb9ce005400] Overall
+[astats @ 0x7fb9ce005400] DC offset: 0.000642
+[astats @ 0x7fb9ce005400] Min level: -0.041168
+[astats @ 0x7fb9ce005400] Max level: 0.035858
+[astats @ 0x7fb9ce005400] Min difference: 0.000000
+[astats @ 0x7fb9ce005400] Max difference: 0.011627
+[astats @ 0x7fb9ce005400] Mean difference: 0.002582
+[astats @ 0x7fb9ce005400] RMS difference: 0.003579
+[astats @ 0x7fb9ce005400] Peak level dB: -27.708760
+[astats @ 0x7fb9ce005400] RMS level dB: -37.041779
+[astats @ 0x7fb9ce005400] RMS peak dB: -36.871273
+[astats @ 0x7fb9ce005400] RMS trough dB: -39.122530
+[astats @ 0x7fb9ce005400] Flat factor: 0.000000
+[astats @ 0x7fb9ce005400] Peak count: 2.000000
+[astats @ 0x7fb9ce005400] Noise floor dB: -29.448557
+[astats @ 0x7fb9ce005400] Noise floor count: 14.000000
+[astats @ 0x7fb9ce005400] Entropy: 0.581805
+[astats @ 0x7fb9ce005400] Bit depth: 16/16
+[astats @ 0x7fb9ce005400] Number of samples: 1024
+[astats @ 0x7fb9ce005400] Number of NaNs: 0.000000
+[astats @ 0x7fb9ce005400] Number of Infs: 0.000000
+[astats @ 0x7fb9ce005400] Number of denormals: 0.000000
+[wav @ 0x7fb9d0805e80] Estimating duration from bitrate, this may be inaccurate
 Input #0, wav, from '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav':
   Metadata:
     encoder         : Lavf59.16.100
@@ -79,5 +79,5 @@ Input #0, wav, from '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/output
   Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 48000 Hz, 1 channels, s16, 768 kb/s
 Output #0, wav, to '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav':
   Stream #0:0: Audio: pcm_s16le, 48000 Hz, 1 channels, s16, 768 kb/s
-[wav @ 0x7f7b84d06e40] Packet corrupt (stream = 0, dts = NOPTS).
+[wav @ 0x7fb9d0805e80] Packet corrupt (stream = 0, dts = NOPTS).
 finished muxing files
