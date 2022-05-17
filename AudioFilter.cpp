@@ -319,6 +319,7 @@ int AudioFilter::initStatFilter(AVFilterContext **afc, const AVFilter **f) {
     if (resp < 0) {
         return resp;
     }
+    //TODO: need to tune these parameters
     //the number of frames after which recalculate stats
     char *val = AV_STRINGIFY(1);
     resp = initByDict(*afc, "reset", val);

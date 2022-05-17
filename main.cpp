@@ -15,6 +15,7 @@ extern "C" {
 
 #include "AudioDecoder.h"
 #include "AudioFilter.h"
+#include "OutputAnalysis.h"
 
 
 int loopOverPacketFrames(bool showFrameData);
@@ -30,11 +31,13 @@ AudioFilter *av;
 const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav";
 const char *tempFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav";
 const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav";
+const char *statOutFP = "/Users/abuynits/CLionProjects/ffmpegTest5/output.txt";
 int totalFrameCount = 0;
-const bool showData =false;
+const bool showData = false;
+
 int main() {
     int resp;
-    freopen("/Users/abuynits/CLionProjects/ffmpegTest5/output.txt", "w", stderr);
+    freopen(statOutFP, "w", stderr);
 //TODO: use: https://www.ffmpeg.org/doxygen/0.6/wav_8c-source.html with parameters from input AVFormat
 //then run the raw data to the outputfile, then open a new file, write the wav header, copy the data
 //write the closing
@@ -86,7 +89,8 @@ int main() {
     ad->closeAllObjects();
     av->closeAllObjects();
 
-    cout << "start from frame "<<ad->startFrame << " to " << ad->endFrame << " of "<<totalFrameCount<<" frames"<<endl;
+    cout << "start from frame " << ad->startFrame << " to " << ad->endFrame << " of " << totalFrameCount << " frames"
+         << endl;
 
     //========================SECOND STAGE: make playable by wav output file==========================
     //TODO: change input file path to output from previous
@@ -121,6 +125,9 @@ int main() {
     av_write_trailer(ad->pOutFormatContext);
     ad->closeAllObjects();
     cout << "finished muxing files" << endl;
+//    //==============RMS PROCESSING===================
+    OutputAnalysis *info = new OutputAnalysis(statOutFP);
+    info->getRMS();
 
     return 0;
 }
