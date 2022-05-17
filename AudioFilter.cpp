@@ -258,10 +258,7 @@ int AudioFilter::initArnndnFilter() {
     if (resp < 0) {
         return resp;
     }
-    /*
-     * model selection: beguiling-drafter bc the file is a recording, and we want to remove both noise and non-speech human sounds
-     * more info can be found here: https://github.com/GregorR/rnnoise-models
-     */
+
     char *val = "/Users/abuynits/CLionProjects/ffmpegTest5/rnnoise-models-master/beguiling-drafter-2018-08-30/bd.rnnn";
 
     resp = initByDict(arnndnContext, "model", val);

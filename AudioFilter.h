@@ -64,6 +64,7 @@ extern "C" {
 #define CHANNEL_NUMBER 1
 //specific parameters to measure:
 #define PARAM_MEASURE none
+
 class AudioFilter {
 public:
     AudioDecoder *ad = nullptr;
@@ -102,41 +103,132 @@ public:
 
     AVFilterContext *aFormatContext = nullptr;
     const AVFilter *aFormatFilter = nullptr;
-/*
- * want to filter out everything between 500hz or 200hz and 3000hz
- */
 
+    /**
+     * initialize the audio filter with the parameters from the codec by the audio decoder object
+     * @param ad the decoder
+     */
     AudioFilter(AudioDecoder *ad);
 
+    /*
+     * creates a filter graph context
+     * initilizes each filter with its parameters
+     * links the filters together in a specific order:
+     * src -> volume -> before Stats -> low pass -> high pass -> arnndn ->
+     * silenceremover -> after stats -> aformat -> sink
+     * configures the filtegraph
+     */
     int initializeAllObjets();
 
+    /**
+     * frees the filtergraph context
+     */
     void closeAllObjects();
 
-    int getAudioRunCommand();
-
 private:
+
+    /*https://ffmpeg.org/ffmpeg-filters.html#abuffer
+     *creates the input filter: used as head node
+     * recieves the frames
+     */
     int initSrcFilter();
 
+    /**https://ffmpeg.org/ffmpeg-filters.html#abuffersink
+     *creates the output filter: used as tail node
+     * outputs the processed frames after they passed thorugh the filtergraph
+     * @return whether have an error during init
+     */
     int initSinkFilter();
 
+    /**
+     *https://ffmpeg.org/ffmpeg-filters.html#volume
+     * sets the output volume
+     * @return whether have an error during init
+     */
     int initVolumeFilter();
 
+    /**
+     *https://ffmpeg.org/ffmpeg-filters.html#lowpass
+     * creates the low pass filter
+     * @return whether have an error during init
+     */
     int initLpFilter();
 
+    /**
+     * https://ffmpeg.org/ffmpeg-filters.html#highpass
+     *creates the high pass filter
+     * @return whether have an error during init
+     */
     int initHpFilter();
 
+    /**
+     *creates the noise remover
+     * model selection: beguiling-drafter bc the file is a recording, and we want to remove both noise and non-speech human sounds
+     * more info can be found here: https://github.com/GregorR/rnnoise-models
+     * need to provide the rnnn node file parameters
+     * @return whether have an error during init
+     */
     int initArnndnFilter();
 
+    /**
+     *https://ffmpeg.org/ffmpeg-filters.html#aformat-1
+     * sets the output format of the filter
+     * NOTE: does not specify the format of the demuxer: need 2nd loop to set header and tail after applying filter
+     * @return whether have an error during init
+     */
     int initFormatFilter();
 
+    /**
+     * https://ffmpeg.org/ffmpeg-filters.html#astat
+     * measures the statistics -> mostly the rms during a specific frame
+     * important: have parameters as need 2 filters: before and after running the filters
+     * same filter, just need 2 different contexts
+     * initialized with before stats and after stats
+     * NOTE: specify parameters at the top of this file
+     * @param afc the specific context of the filter (input context vs output context)
+     * @param f the specific filter
+     * @return whether have an error during init
+     */
     int initStatFilter(AVFilterContext **afc, const AVFilter **f);
 
+    /**
+     *https://ffmpeg.org/ffmpeg-filters.html#silenceremove
+     * initializes the silence remove filter
+     * runs after the lp and hp filters
+     * initializes both removal at the start and removal at the end of an audio file
+     * NOTE: specify parameters at the top of this file
+     * @return whether have an error during init
+     */
     int initSilenceRemoverFilter();
 
+    /**
+     * a general initialization of the filter
+     * gets the filter by name
+     * allocates the filter to the filtergraph
+     * @param af the specific context object of the filter
+     * @param f the specifc filter object
+     * @param name the name of the filter in the ffmpeg filter
+     * @return whether have an error during init
+     */
     int generalFilterInit(AVFilterContext **af, const AVFilter **f, const char *name) const;
 
+    /**
+     * initializes a specific filter parameter with an AVDictionary
+     * give it the key and the value, and it specifies them in the specific filter
+     * @param afc the specific context for which the parameters should be linked to
+     * @param key the varialbe of the parameter
+     * @param val the value that the variable should be set to
+     * NOTE: check filter documentation for the specifc paramters and the acceptable range of keys
+     * NO ERROR CHECK IS DONE - if a value is out of bounds, it will throw an error, but not specify why it was given
+     * @return whether have an error during init
+     */
     static int initByDict(AVFilterContext *afc, const char *key, const char *val);
 
+    /**
+     * initializes a filter based on specific functions
+     * only used to initialize the source filter -> set the metadata (frame rate, bit rate, etc)
+     * @param afc
+     */
     void initByFunctions(AVFilterContext *afc) const;
 };
 
