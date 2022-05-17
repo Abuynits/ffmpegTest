@@ -21,7 +21,7 @@ void OutputAnalysis::getRMS() {
             checkForData(l, rmsTrough);
             checkForData(l, rmsPeak);
         }
-        cout << "Values: " << bPeak << " " << aPeak << " " << aTrough << " " << bTrough << endl;
+        //   cout << "Values: " << bPeak << " " << aPeak << " " << aTrough << " " << bTrough << endl;
     }
 
 
@@ -43,7 +43,7 @@ void OutputAnalysis::checkForData(string line, string key) {
             if (match) {
                 i += key.length();
                 temp = line.substr(i, line.length() - i);
-                cout << "IMPORTANT" << temp << endl;
+                // cout << "IMPORTANT" << temp << endl;
                 if (key == rmsTrough) {
                     if (bTrough == 0) {
                         bTrough = stod(temp);
@@ -61,4 +61,16 @@ void OutputAnalysis::checkForData(string line, string key) {
 
         }
     }
+}
+
+void OutputAnalysis::setFrameVals(int startFrame, int endFrame, int totalFrame) {
+    this->startFrame = startFrame;
+    this->endFrame = endFrame;
+    this->totalFrame = totalFrame;
+}
+
+OutputAnalysis::OutputAnalysis(const char *fp) {
+    filePath = fp;
+    f.open(fp);
+    cerr << "opened stat file!" << endl;
 }

@@ -18,7 +18,7 @@ void AudioDecoder::openFiles() {
     inFile = fopen(inputFP, "rb");
     outFile = fopen(outputFP, "wb");
     if (inFile == nullptr || outFile == nullptr) {
-        cout << stderr << "ERROR: could not open files" << endl;
+        cerr << stderr << "ERROR: could not open files" << endl;
         fclose(inFile);
         fclose(outFile);
         exit(1);
@@ -29,11 +29,11 @@ int AudioDecoder::initCodec(enum AVMediaType mediaType) {
 
     int ret = av_find_best_stream(pInFormatContext, mediaType, -1, -1, nullptr, 0);
     if (ret < 0) {
-        cout << "ERROR: Could not find %s stream in input file: " << av_get_media_type_string(mediaType) << ", "
+        cerr << "ERROR: Could not find %s stream in input file: " << av_get_media_type_string(mediaType) << ", "
              << inputFP << endl;
         return ret;
     }
-    cout << "\tfound audio stream" << endl;
+    cerr << "\tfound audio stream" << endl;
 
     avStreamIndex = ret;
 
@@ -43,34 +43,34 @@ int AudioDecoder::initCodec(enum AVMediaType mediaType) {
     // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga19a0ca553277f019dd5b0fec6e1f9dca
     pCodec = avcodec_find_decoder(audioStream->codecpar->codec_id);
     if (pCodec == nullptr) {
-        cout << stderr << " ERROR unsupported codec: " << av_err2str(AVERROR(EINVAL)) << endl;
+        cerr << stderr << " ERROR unsupported codec: " << av_err2str(AVERROR(EINVAL)) << endl;
         exit(1);
     }
-    cout << "\tfound decoder" << endl;
+    cerr << "\tfound decoder" << endl;
     //HERE
     // https://ffmpeg.org/doxygen/trunk/structAVCodecContext.html
     //get the context of the audio pCodec- hold info for encode/decode process
     pCodecContext = avcodec_alloc_context3(pCodec);
     if (!pCodecContext) {
-        cout << stderr << " ERROR: Could not allocate audio pCodec context: " << av_err2str(AVERROR(ENOMEM))
+        cerr << stderr << " ERROR: Could not allocate audio pCodec context: " << av_err2str(AVERROR(ENOMEM))
              << endl;
         exit(1);
     }
-    cout << "\tallocated context" << endl;
+    cerr << "\tallocated context" << endl;
 
     // Fill the codec context based on the values from the supplied codec parameters
     // https://ffmpeg.org/doxygen/trunk/group__lavc__core.html#gac7b282f51540ca7a99416a3ba6ee0d16
     if (avcodec_parameters_to_context(pCodecContext, audioStream->codecpar) < 0) {
-        cout << stderr << "failed to copy codec params to codec context";
+        cerr << stderr << "failed to copy codec params to codec context";
         exit(1);
     }
-    cout << "\tcopied codec param" << endl;
+    cerr << "\tcopied codec param" << endl;
     //open the actual pCodec:
     if (avcodec_open2(pCodecContext, pCodec, nullptr) < 0) {
-        cout << stderr << "Could not open pCodec" << endl;
+        cerr << stderr << "Could not open pCodec" << endl;
         exit(1);
     }
-    cout << "\topened codec!" << endl;
+    cerr << "\topened codec!" << endl;
     return 0;
 }
 
@@ -87,7 +87,7 @@ void AudioDecoder::initializeAllObjects() {
 
     int resp = avformat_open_input(&pInFormatContext, inputFP, nullptr, nullptr);
     if (resp != 0) {
-        cout << stderr << " ERROR: could not open file: " << av_err2str(resp) << endl;
+        cerr << stderr << " ERROR: could not open file: " << av_err2str(resp) << endl;
         exit(1);
     }
 
@@ -96,7 +96,7 @@ void AudioDecoder::initializeAllObjects() {
     //if the fine does not have a ehader ,read some frames to figure out the information and storage type of the file
     // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#gad42172e27cddafb81096939783b157bb
     if (avformat_find_stream_info(pInFormatContext, nullptr) < 0) {
-        cout << stderr << " ERROR could not get the stream info" << endl;
+        cerr << stderr << " ERROR could not get the stream info" << endl;
         exit(1);
     }
     outputFormat = av_guess_format(nullptr, outputFP, nullptr);
@@ -115,11 +115,11 @@ void AudioDecoder::initializeAllObjects() {
     if (iCodec) {
         resp = initCodec();
         if (resp < 0) {
-            cout << "error: cannot create codec" << endl;
+            cerr << "error: cannot create codec" << endl;
             exit(1);
         }
 
-        cout << "\tcreated codec" << endl;
+        cerr << "\tcreated codec" << endl;
     }
 
     audioStream = pInFormatContext->streams[avStreamIndex];
@@ -131,14 +131,14 @@ void AudioDecoder::initializeAllObjects() {
     // https://ffmpeg.org/doxygen/trunk/structAVPacket.html
     pFrame = av_frame_alloc();
     if (!pFrame) {
-        cout << stderr << "Could not open frame" << endl;
+        cerr << stderr << "Could not open frame" << endl;
         exit(1);
     }
     //allocate memory for packet and frame readings
     // https://ffmpeg.org/doxygen/trunk/structAVFrame.html
     pPacket = av_packet_alloc();
     if (!pPacket) {
-        cout << stderr << "Could not open packet" << endl;
+        cerr << stderr << "Could not open packet" << endl;
         exit(1);
     }
 
@@ -151,7 +151,7 @@ int AudioDecoder::initDemuxer() {
 
     resp = avformat_alloc_output_context2(&pOutFormatContext, nullptr, nullptr, outputFP);
     if (resp < 0) {
-        cout << "error: cannot allocate output context" << endl;
+        cerr << "error: cannot allocate output context" << endl;
         return -1;
     }
     streamMappingSize = pInFormatContext->nb_streams;
@@ -162,7 +162,7 @@ int AudioDecoder::initDemuxer() {
     pOutFormatContext->oformat = outputFormat;
 
     if (!streamMapping) {
-        cout << "Error: cannot get stream map" << endl;
+        cerr << "Error: cannot get stream map" << endl;
         return -1;
     }
 
@@ -183,13 +183,13 @@ int AudioDecoder::initDemuxer() {
 
         outStream = avformat_new_stream(pOutFormatContext, nullptr);
         if (!outStream) {
-            cout << "Error: unable to allocate output stream" << endl;
+            cerr << "Error: unable to allocate output stream" << endl;
             return -1;
         }
 
         resp = avcodec_parameters_copy(outStream->codecpar, inCodecpar);
         if (resp < 0) {
-            cout << "Error: failed to copy codec parameters" << endl;
+            cerr << "Error: failed to copy codec parameters" << endl;
             return -1;
         }
         outStream->codecpar->codec_tag = 0;
