@@ -357,7 +357,7 @@ int main (int argc, char **argv)
             n_channels = 1;
         }
 
-        if ((ret = get_format_from_sample_fmt(&fmt, sfmt)) < 0)
+        if ((ret = getSampleFmtFormat(&fmt, sfmt)) < 0)
             goto end;
 
         printf("Play the output audio file with the command:\n"

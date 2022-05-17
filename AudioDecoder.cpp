@@ -86,13 +86,11 @@ void AudioDecoder::initializeAllObjects() {
     pInFormatContext = avformat_alloc_context();
     pOutFormatContext = avformat_alloc_context();
 
-
     int resp = avformat_open_input(&pInFormatContext, inputFP, nullptr, nullptr);
     if (resp != 0) {
         cerr << stderr << " ERROR: could not open file: " << av_err2str(resp) << endl;
         exit(1);
     }
-
 
     // read Packets from the Format to get stream information
     //if the fine does not have a ehader ,read some frames to figure out the information and storage type of the file
@@ -111,8 +109,6 @@ void AudioDecoder::initializeAllObjects() {
         }
     }
 
-
-
     //take either AVMEDIA_TYPE_AUDIO (Default) or AVMEDIA_TYPE_VIDEO
     if (iCodec) {
         resp = initCodec();
@@ -125,9 +121,6 @@ void AudioDecoder::initializeAllObjects() {
     }
 
     audioStream = pInFormatContext->streams[avStreamIndex];
-
-
-
 
     //allocate memory for frame from readings
     // https://ffmpeg.org/doxygen/trunk/structAVPacket.html
@@ -247,10 +240,10 @@ int AudioDecoder::saveAudioFrame(bool showFrameData) {
     fwrite(pFrame->extended_data[0], 1, lineSize, outFile);
 }
 
-int AudioDecoder::get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat audioFormat) {
+int AudioDecoder::getSampleFmtFormat(const char **fmt, enum AVSampleFormat audioFormat) {
 
     int i;
-    struct sample_fmt_entry {
+    struct sampleFmtEntry {
         enum AVSampleFormat sample_fmt;
         const char *fmt_be, *fmt_le;
     }
@@ -265,7 +258,7 @@ int AudioDecoder::get_format_from_sample_fmt(const char **fmt, enum AVSampleForm
     *fmt = nullptr;
 
     for (i = 0; i < FF_ARRAY_ELEMS(fmtEntries); i++) {
-        struct sample_fmt_entry *entry = &fmtEntries[i];
+        struct sampleFmtEntry *entry = &fmtEntries[i];
         if (audioFormat == entry->sample_fmt) {
             *fmt = AV_NE(entry->fmt_be, entry->fmt_le);
             return 0;
@@ -292,7 +285,7 @@ int AudioDecoder::getAudioRunCommand() {
         channelNum = 1;
     }
 
-    if (AudioDecoder::get_format_from_sample_fmt(&sFormat, sampleFormat) < 0) {
+    if (AudioDecoder::getSampleFmtFormat(&sFormat, sampleFormat) < 0) {
         return -1;
     }
     cerr << "Play the data output File w/" << endl;

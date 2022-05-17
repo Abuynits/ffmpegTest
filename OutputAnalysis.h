@@ -43,19 +43,28 @@ public:
      * @param endFrame the frame where the audio is cut at the end
      * @param totalFrame the total frames in the audio
      */
-     //TODO: add more specific methods: percentages of audio removed, other ideas for processing
-     //TODO: finish documenting the outputanalysis and the audiodecoder file
+    //TODO: add more specific methods: percentages of audio removed, other ideas for processing
     void setFrameVals(int startFrame, int endFrame, int totalFrame);
 
+    //store the RMS values for the peak and troughs before and after processing
     double bPeak = 0, bTrough = 0, aPeak = 0, aTrough = 0;
+    //store the frame # of the start clipped audio, the end clip audio, and the total frames of the original audio
     int startFrame, endFrame, totalFrame;
 private:
     const char *filePath;
+    //the keys for which to look for in the stderr output-> do not change unless ffmpeg changes these keys
     const string rmsTrough = "RMS trough dB: ";
     const string rmsPeak = "RMS peak dB: ";
-
+    //the file which is opened to read over the stderr output
     ifstream f;
 
+    /**
+     * loops over character by character and checks whether there is a sequence of characters in keys that matches lines
+     * then it gets the string of the remaining line, and sets it to the value,
+     * depending on whether it is the before or after loop
+     * @param line the line from the file
+     * @param key the key from the file: either rmsTrough or rmsPeak
+     */
     void checkForData(string line, string key);
 
 
