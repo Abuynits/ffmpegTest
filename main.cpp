@@ -179,6 +179,7 @@ int loopOverPacketFrames(bool showFrameData) {
         /*
          * TODO: need to find the noise level of audio file
          * try to look at astats filter, then at the portions where silence is detected idk
+         * need to get the RMS factor: what kolya talk about
          */
 
         if (showFrameData)

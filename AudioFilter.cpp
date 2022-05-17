@@ -23,7 +23,11 @@ int AudioFilter::initializeAllObjets() {
     if (initHpFilter() < 0) return -1;
     //----------------arnndn FILTER CREATION----------------
     if (initArnndnFilter() < 0) return -1;
-    //----------------arnndn FILTER CREATION----------------
+    //----------------before stats FILTER CREATION----------------
+    if (initStatFilter(&beforeStatsContext, &beforeStatsFilter) < 0) return -1;
+    //----------------after stats FILTER CREATION----------------
+    if (initStatFilter(&afterStatsContext, &afterStatsFilter) < 0) return -1;
+    //----------------silenceremove FILTER CREATION----------------
     if (initSilenceRemoverFilter() < 0) return -1;
     //----------------SINK FILTER CREATION----------------
     if (initSinkFilter() < 0) return -1;
@@ -37,7 +41,10 @@ int AudioFilter::initializeAllObjets() {
     int resp;
     resp = avfilter_link(srcContext, 0, volumeContext, 0);
     if (resp >= 0) {
-        resp = avfilter_link(volumeContext, 0, lpContext, 0);
+        resp = avfilter_link(volumeContext, 0, beforeStatsContext, 0);
+    }
+    if (resp >= 0) {
+        resp = avfilter_link(beforeStatsContext, 0, lpContext, 0);
     }
     if (resp >= 0) {
         resp = avfilter_link(lpContext, 0, hpContext, 0);
@@ -49,7 +56,10 @@ int AudioFilter::initializeAllObjets() {
         resp = avfilter_link(arnndnContext, 0, silenceRemoverContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(silenceRemoverContext, 0, aFormatContext, 0);
+        resp = avfilter_link(silenceRemoverContext, 0, afterStatsContext, 0);
+    }
+    if (resp >= 0) {
+        resp = avfilter_link(afterStatsContext, 0, aFormatContext, 0);
     }
     if (resp >= 0) {
         resp = avfilter_link(aFormatContext, 0, sinkContext, 0);
@@ -309,5 +319,20 @@ int AudioFilter::initStatFilter(AVFilterContext **afc, const AVFilter **f) {
     if (resp < 0) {
         return resp;
     }
+
+    char *val = AV_STRINGIFY(1);
+    resp = initByDict(*afc, "reset", val);
+    if (resp < 0) {
+        return resp;
+    }
+    val = AV_STRINGIFY(5);
+    resp = initByDict(*afc, "length", val);
+    if (resp < 0) {
+        return resp;
+    }
+
+
+
+return 0;
 }
 
