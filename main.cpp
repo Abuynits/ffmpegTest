@@ -73,11 +73,13 @@ AudioFilter *av;
 //audio info about the frames and the rms
 OutputAnalysis *audioInfo;
 //the input file path
-const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording1.wav";
+//TODO: have an error with writing the file headers:
+//TODO: not work when given anything but a wav input
+const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording2.mp3";
 //stores the raw data after applying filters
 const char *tempFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/tempRecording.wav";
 //the output file path
-const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecordings/recordingOut1.wav";
+const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecordings/recordingOut2.wav";
 //stores the stderr output which contains rms stats and other debug info
 const char *statOutFP = "/Users/abuynits/CLionProjects/ffmpegTest5/output.txt";
 
@@ -88,7 +90,7 @@ int main() {
     //used to error return errors
     int resp;
     //create audioInfo
-    audioInfo = new OutputAnalysis(statOutFP);
+    audioInfo = new OutputAnalysis(statOutFP,false);
     //create audio decoder
     ad = new AudioDecoder(inputFP, tempFP, true, true);
     ad->openFiles();

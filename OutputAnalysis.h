@@ -24,7 +24,7 @@ public:
      * sets the stderr output to the provided fp
      * @param fp the fp to which set the stderr
      */
-    OutputAnalysis(const char *fp);
+    OutputAnalysis(const char *fp, bool writeToFile);
 
     /**
      * loops over the stderr output file and looks for key words printed by ffmpeg to find:

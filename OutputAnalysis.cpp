@@ -63,9 +63,14 @@ void OutputAnalysis::setFrameVals(int startFrame, int endFrame, int totalFrame) 
     this->totalFrame = totalFrame;
 }
 
-OutputAnalysis::OutputAnalysis(const char *fp) {
+OutputAnalysis::OutputAnalysis(const char *fp, bool writeToFile) {
     filePath = fp;
-    freopen(filePath, "w", stderr);
-    f.open(fp);
-    cerr << "opened stat file!" << endl;
+    if (writeToFile) {
+        freopen(filePath, "w", stderr);
+        f.open(fp);
+
+        cerr << "opened stat file!" << endl;
+    }else{
+        cerr <<"not opening stat file"<<endl;
+    }
 }
