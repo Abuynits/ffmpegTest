@@ -8,18 +8,18 @@
 		},
 		"paths" : 
 		{
-			"cmake" : "/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/CLion.app/Contents/bin/cmake/mac/bin/cmake",
-			"cpack" : "/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/CLion.app/Contents/bin/cmake/mac/bin/cpack",
-			"ctest" : "/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/CLion.app/Contents/bin/cmake/mac/bin/ctest",
-			"root" : "/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/CLion.app/Contents/bin/cmake/mac/share/cmake-3.21"
+			"cmake" : "/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/221.5591.52/CLion.app/Contents/bin/cmake/mac/bin/cmake",
+			"cpack" : "/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/221.5591.52/CLion.app/Contents/bin/cmake/mac/bin/cpack",
+			"ctest" : "/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/221.5591.52/CLion.app/Contents/bin/cmake/mac/bin/ctest",
+			"root" : "/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/221.5591.52/CLion.app/Contents/bin/cmake/mac/share/cmake-3.22"
 		},
 		"version" : 
 		{
 			"isDirty" : false,
 			"major" : 3,
-			"minor" : 21,
-			"patch" : 1,
-			"string" : "3.21.1",
+			"minor" : 22,
+			"patch" : 3,
+			"string" : "3.22.3",
 			"suffix" : ""
 		}
 	},
@@ -35,7 +35,7 @@
 			}
 		},
 		{
-			"jsonFile" : "cache-v2-67c3a8867f73db6f31cc.json",
+			"jsonFile" : "cache-v2-ea995e5d9eb4e673d44b.json",
 			"kind" : "cache",
 			"version" : 
 			{
@@ -44,7 +44,7 @@
 			}
 		},
 		{
-			"jsonFile" : "cmakeFiles-v1-de3fa6a8940edd859e83.json",
+			"jsonFile" : "cmakeFiles-v1-995ef23e4ccb4bf35ff8.json",
 			"kind" : "cmakeFiles",
 			"version" : 
 			{
@@ -66,7 +66,7 @@
 	{
 		"cache-v2" : 
 		{
-			"jsonFile" : "cache-v2-67c3a8867f73db6f31cc.json",
+			"jsonFile" : "cache-v2-ea995e5d9eb4e673d44b.json",
 			"kind" : "cache",
 			"version" : 
 			{
@@ -76,7 +76,7 @@
 		},
 		"cmakeFiles-v1" : 
 		{
-			"jsonFile" : "cmakeFiles-v1-de3fa6a8940edd859e83.json",
+			"jsonFile" : "cmakeFiles-v1-995ef23e4ccb4bf35ff8.json",
 			"kind" : "cmakeFiles",
 			"version" : 
 			{

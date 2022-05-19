@@ -1,11 +1,11 @@
 opened stat file!
-Input #0, wav, from '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecording.wav':
+Input #0, wav, from '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording1.wav':
   Metadata:
     title           : New Recording 26
     encoder         : Lavf58.76.100
   Duration: 00:00:19.73, bitrate: 768 kb/s
   Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 48000 Hz, 1 channels, s16, 768 kb/s
-Output #0, wav, to '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav':
+Output #0, wav, to '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/tempRecording.wav':
   Stream #0:0: Audio: pcm_s16le, 48000 Hz, 1 channels, s16, 768 kb/s
 	found audio stream
 	found decoder
@@ -28,56 +28,56 @@ initialized AudioFilter
 
 Reached end of file
 Play the data output File w/
-ffplay -f s16le -ac 1 -ar 48000 /Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav
+ffplay -f s16le -ac 1 -ar 48000 /Users/abuynits/CLionProjects/ffmpegTest5/Recordings/tempRecording.wav
 finished processing first loop
-[astats @ 0x7fc398707980] Overall
-[astats @ 0x7fc398707980] DC offset: -0.001500
-[astats @ 0x7fc398707980] Min level: -127.000000
-[astats @ 0x7fc398707980] Max level: 29.000000
-[astats @ 0x7fc398707980] Min difference: 0.000000
-[astats @ 0x7fc398707980] Max difference: 25.000000
-[astats @ 0x7fc398707980] Mean difference: 5.440758
-[astats @ 0x7fc398707980] RMS difference: 6.979319
-[astats @ 0x7fc398707980] Peak level dB: -48.232659
-[astats @ 0x7fc398707980] RMS level dB: -54.819239
-[astats @ 0x7fc398707980] RMS peak dB: -54.819239
-[astats @ 0x7fc398707980] RMS trough dB: -54.819239
-[astats @ 0x7fc398707980] Flat factor: 0.000000
-[astats @ 0x7fc398707980] Peak count: 2.000000
-[astats @ 0x7fc398707980] Noise floor dB: nan
-[astats @ 0x7fc398707980] Noise floor count: 0.000000
-[astats @ 0x7fc398707980] Entropy: 0.363934
-[astats @ 0x7fc398707980] Bit depth: 16/16
-[astats @ 0x7fc398707980] Number of samples: 212
-[astats @ 0x7fc3987078c0] Overall
-[astats @ 0x7fc3987078c0] DC offset: 0.000642
-[astats @ 0x7fc3987078c0] Min level: -0.041168
-[astats @ 0x7fc3987078c0] Max level: 0.035858
-[astats @ 0x7fc3987078c0] Min difference: 0.000000
-[astats @ 0x7fc3987078c0] Max difference: 0.011627
-[astats @ 0x7fc3987078c0] Mean difference: 0.002582
-[astats @ 0x7fc3987078c0] RMS difference: 0.003579
-[astats @ 0x7fc3987078c0] Peak level dB: -27.708760
-[astats @ 0x7fc3987078c0] RMS level dB: -37.041779
-[astats @ 0x7fc3987078c0] RMS peak dB: -36.871273
-[astats @ 0x7fc3987078c0] RMS trough dB: -39.122530
-[astats @ 0x7fc3987078c0] Flat factor: 0.000000
-[astats @ 0x7fc3987078c0] Peak count: 2.000000
-[astats @ 0x7fc3987078c0] Noise floor dB: -29.448557
-[astats @ 0x7fc3987078c0] Noise floor count: 14.000000
-[astats @ 0x7fc3987078c0] Entropy: 0.581805
-[astats @ 0x7fc3987078c0] Bit depth: 16/16
-[astats @ 0x7fc3987078c0] Number of samples: 1024
-[astats @ 0x7fc3987078c0] Number of NaNs: 0.000000
-[astats @ 0x7fc3987078c0] Number of Infs: 0.000000
-[astats @ 0x7fc3987078c0] Number of denormals: 0.000000
-[wav @ 0x7fc399104cc0] Estimating duration from bitrate, this may be inaccurate
-Input #0, wav, from '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecording.wav':
+[astats @ 0x7fc493f09640] Overall
+[astats @ 0x7fc493f09640] DC offset: -0.001500
+[astats @ 0x7fc493f09640] Min level: -127.000000
+[astats @ 0x7fc493f09640] Max level: 29.000000
+[astats @ 0x7fc493f09640] Min difference: 0.000000
+[astats @ 0x7fc493f09640] Max difference: 25.000000
+[astats @ 0x7fc493f09640] Mean difference: 5.440758
+[astats @ 0x7fc493f09640] RMS difference: 6.979319
+[astats @ 0x7fc493f09640] Peak level dB: -48.232659
+[astats @ 0x7fc493f09640] RMS level dB: -54.819239
+[astats @ 0x7fc493f09640] RMS peak dB: -54.819239
+[astats @ 0x7fc493f09640] RMS trough dB: -54.819239
+[astats @ 0x7fc493f09640] Flat factor: 0.000000
+[astats @ 0x7fc493f09640] Peak count: 2.000000
+[astats @ 0x7fc493f09640] Noise floor dB: nan
+[astats @ 0x7fc493f09640] Noise floor count: 0.000000
+[astats @ 0x7fc493f09640] Entropy: 0.363934
+[astats @ 0x7fc493f09640] Bit depth: 16/16
+[astats @ 0x7fc493f09640] Number of samples: 212
+[astats @ 0x7fc493f09400] Overall
+[astats @ 0x7fc493f09400] DC offset: 0.000642
+[astats @ 0x7fc493f09400] Min level: -0.041168
+[astats @ 0x7fc493f09400] Max level: 0.035858
+[astats @ 0x7fc493f09400] Min difference: 0.000000
+[astats @ 0x7fc493f09400] Max difference: 0.011627
+[astats @ 0x7fc493f09400] Mean difference: 0.002582
+[astats @ 0x7fc493f09400] RMS difference: 0.003579
+[astats @ 0x7fc493f09400] Peak level dB: -27.708760
+[astats @ 0x7fc493f09400] RMS level dB: -37.041779
+[astats @ 0x7fc493f09400] RMS peak dB: -36.871273
+[astats @ 0x7fc493f09400] RMS trough dB: -39.122530
+[astats @ 0x7fc493f09400] Flat factor: 0.000000
+[astats @ 0x7fc493f09400] Peak count: 2.000000
+[astats @ 0x7fc493f09400] Noise floor dB: -29.448557
+[astats @ 0x7fc493f09400] Noise floor count: 14.000000
+[astats @ 0x7fc493f09400] Entropy: 0.581805
+[astats @ 0x7fc493f09400] Bit depth: 16/16
+[astats @ 0x7fc493f09400] Number of samples: 1024
+[astats @ 0x7fc493f09400] Number of NaNs: 0.000000
+[astats @ 0x7fc493f09400] Number of Infs: 0.000000
+[astats @ 0x7fc493f09400] Number of denormals: 0.000000
+[wav @ 0x7fc491f07fc0] Estimating duration from bitrate, this may be inaccurate
+Input #0, wav, from '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/tempRecording.wav':
   Metadata:
     encoder         : Lavf59.16.100
   Duration: 00:00:14.77, bitrate: 768 kb/s
   Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 48000 Hz, 1 channels, s16, 768 kb/s
-Output #0, wav, to '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/finalOutput.wav':
+Output #0, wav, to '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecordings/recordingOut1.wav':
   Stream #0:0: Audio: pcm_s16le, 48000 Hz, 1 channels, s16, 768 kb/s
-[wav @ 0x7fc399104cc0] Packet corrupt (stream = 0, dts = NOPTS).
+[wav @ 0x7fc491f07fc0] Packet corrupt (stream = 0, dts = NOPTS).
 finished muxing files
