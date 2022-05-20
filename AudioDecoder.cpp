@@ -154,7 +154,7 @@ int AudioDecoder::initDemuxer() {
 
     //get the output format for this specific audio stream
     // outputFormat = av_guess_format(nullptr, outputFP, nullptr);
-    pOutFormatContext->oformat = outputFormat;
+   // pOutFormatContext->oformat = outputFormat;
 
     if (!streamMapping) {
         cerr << "Error: cannot get stream map" << endl;
