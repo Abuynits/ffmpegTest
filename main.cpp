@@ -49,7 +49,7 @@ int transferStreamData(int *inputPts);
  * writes a header and tail, but they will be fixed in the second loop
  * @return whether an error occured
  */
-int applyFilters();
+int applyFilters(bool writeMetaData);
 
 /**
  * the second loop: fixes the headers and tails of the first loop
@@ -75,24 +75,35 @@ OutputAnalysis *audioInfo;
 //the input file path
 //TODO: have an error with writing the file headers:
 //TODO: not work when given anything but a wav input
-const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording2.mp3";
+const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording.aac";
+
+const char *wavInputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/wavInput.wav";
 //stores the raw data after applying filters
 const char *tempFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/tempRecording.wav";
 //the output file path
 const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecordings/recordingOut2.wav";
 //stores the stderr output which contains rms stats and other debug info
 const char *statOutFP = "/Users/abuynits/CLionProjects/ffmpegTest5/output.txt";
+/*
+ * file path process:
+ * convert .___ to .wav: inputFP -> wavInputFP
+ * strip wavInputFP and get raw wav data, store it in temp FP: wavInput->tempFP
+ * write the correct headers: tempFP -> finalFP
+ */
 
 int totalFrameCount = 0;
 const bool showData = false;
+const bool writeFileHeader = true;
 
 int main() {
     //used to error return errors
     int resp;
     //create audioInfo
-    audioInfo = new OutputAnalysis(statOutFP,false);
+    audioInfo = new OutputAnalysis(statOutFP, false);
+
+    cout << "=====================DONE WITH FIRST LOOP=====================" << endl;
     //create audio decoder
-    ad = new AudioDecoder(inputFP, tempFP, true, true);
+    ad = new AudioDecoder(wavInputFP, tempFP, true, true);
     ad->openFiles();
     ad->initializeAllObjects();
 
@@ -110,20 +121,23 @@ int main() {
     }
     cerr << "initialized AudioFilter\n" << endl;
     //loop over the frames in each packet and apply a chain of filters to each frame
-    resp = applyFilters();
+    resp = applyFilters(writeFileHeader);
     if (resp == 0) {
         cerr << "finished processing first loop" << endl;
     }
+
     //close all of the objects
     ad->closeAllObjects();
     av->closeAllObjects();
     //save the stats from the filter stage into the info object
     audioInfo->setFrameVals(ad->startFrame, ad->endFrame, totalFrameCount);
 
+    cout << "=====================DONE WITH SECOND LOOP=====================" << endl;
     //========================SECOND STAGE: make playable by wav output file==========================
     ad = new AudioDecoder(tempFP, finalFP, false, true);
     ad->openFiles();
     ad->initializeAllObjects();
+
     //loop over the file to get the correct header to be playable
     resp = applyMuxers();
     if (resp == 0) {
@@ -134,6 +148,8 @@ int main() {
 //    //==============RMS PROCESSING===================
 //get the stats and show them
     getAudioInfo();
+
+    cout << "=====================DONE WITH THIRD LOOP=====================" << endl;
     return 0;
 }
 
@@ -166,6 +182,7 @@ int loopOverPacketFrames(bool showFrameData) {
         cerr << "error submitting a packet for decoding: " << av_err2str(resp);
         return resp;
     }
+
     while (resp >= 0) {
         resp = avcodec_receive_frame(ad->pCodecContext, ad->pFrame);
         if (resp == AVERROR(EAGAIN)) {
@@ -242,27 +259,31 @@ int filterAudioFrame() {
     return 0;
 }
 
-int applyFilters() {
+int applyFilters(bool writeMetaData) {
     int resp = 0;
-    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
-    if (resp < 0) {
-        cerr << "Error when writing header" << endl;
-        return -1;
+    if (writeMetaData) {
+        resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+        if (resp < 0) {
+            cerr << "Error when writing header" << endl;
+            return -1;
+        }
+
     }
 
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
+
         resp = loopOverPacketFrames(showData);
         if (resp < 0) {
             break;
         }
     }
-
+    cout << "here" << endl;
     //flush the audio decoder
     ad->pPacket = nullptr;
     loopOverPacketFrames(showData);
-
-    av_write_trailer(ad->pOutFormatContext);
-
+    if (writeMetaData) {
+        av_write_trailer(ad->pOutFormatContext);
+    }
 
     resp = ad->getAudioRunCommand();
     if (resp < 0) {
