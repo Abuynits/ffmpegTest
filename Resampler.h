@@ -26,7 +26,7 @@ public:
     int numSrcChannels, numDstChannels;
     struct SwrContext *resampleCtx;
     AudioDecoder *ad;
-
+    int dstBufferSize;
     uint8_t **srcData = nullptr, **dstData = nullptr;
     int srcLineSize, dstLineSize;
 

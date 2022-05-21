@@ -129,6 +129,11 @@
 				"backtrace" : 3,
 				"fragment" : "-lavfilter",
 				"role" : "libraries"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "-lswresample",
+				"role" : "libraries"
 			}
 		],
 		"language" : "CXX"
