@@ -57,7 +57,7 @@ extern "C" {
 
 //============stat filter===================
 //the length of the audio used to detect silence with rms: 0.01 = 1 millisecond
-#define AUDIO_SAMPLE_LENGTH 0.01
+#define AUDIO_SAMPLE_LENGTH 0.1
 //the number of frames used to process the stats - 1 = reset after first frames
 #define FRAMES_RESET_SAMPLE 1
 //the channel number used for determining samples

@@ -53,13 +53,13 @@ int AudioFilter::initializeAllObjets() {
         resp = avfilter_link(hpContext, 0, arnndnContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(arnndnContext, 0, silenceRemoverContext, 0);
+        resp = avfilter_link(arnndnContext, 0, afterStatsContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(silenceRemoverContext, 0, afterStatsContext, 0);
+        resp = avfilter_link(afterStatsContext, 0, silenceRemoverContext, 0);
     }
     if (resp >= 0) {
-        resp = avfilter_link(afterStatsContext, 0, aFormatContext, 0);
+        resp = avfilter_link(silenceRemoverContext, 0, aFormatContext, 0);
     }
     if (resp >= 0) {
         resp = avfilter_link(aFormatContext, 0, sinkContext, 0);
