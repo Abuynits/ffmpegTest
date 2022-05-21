@@ -57,10 +57,10 @@ void OutputAnalysis::checkForData(string line, string key) {
     }
 }
 
-void OutputAnalysis::setFrameVals(int startFrame, int endFrame, int totalFrame) {
-    this->startFrame = startFrame;
-    this->endFrame = endFrame;
-    this->totalFrame = totalFrame;
+void OutputAnalysis::setFrameVals(int startMs, int endMs, int totalMs) {
+    this->startMs = startMs;
+    this->endMs = totalMs - endMs;
+    this->totalMs = totalMs;
 }
 
 OutputAnalysis::OutputAnalysis(const char *fp) {

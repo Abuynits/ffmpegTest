@@ -223,19 +223,19 @@ void AudioDecoder::closeAllObjects() {
 }
 
 
-int AudioDecoder::saveAudioFrame(bool showFrameData) {
-    char *time = av_ts2timestr(pFrame->pts, &pCodecContext->time_base);
+int AudioDecoder::saveAudioFrame(bool showFrameData, double time) {
+    char *saveTime = av_ts2timestr(pFrame->pts, &pCodecContext->time_base);
     if (startWriting != 0) {
-        startFrame = pCodecContext->frame_number;
+        startTime = time;
         startWriting++;
     }
-    endFrame = pCodecContext->frame_number;
+    endTime = stod(saveTime) * 1000 + startTime;
 
     size_t lineSize = pFrame->nb_samples * av_get_bytes_per_sample(pCodecContext->sample_fmt);
     if (showFrameData)
         printf("audio_frame n:%d nb_samples:%d pts:%s\n",
                audioFrameCount++, pFrame->nb_samples,
-               time);
+               saveTime);
 
     fwrite(pFrame->extended_data[0], 1, lineSize, outFile);
 }

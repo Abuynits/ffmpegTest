@@ -32,7 +32,7 @@ int loopOverPacketFrames(bool showFrameData);
  * writes the raw data to the output file
  * @return whether an error occured
  */
-int filterAudioFrame();
+int filterAudioFrame(double dTime);
 
 /**
  * transfers parameters from input codec to output codec
@@ -81,7 +81,7 @@ const char *finalFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outp
 //stores the stderr output which contains rms stats and other debug info
 const char *statOutFP = "/Users/abuynits/CLionProjects/ffmpegTest5/output.txt";
 
-int totalFrameCount = 0;
+double totalTime = 0;
 const bool showData = false;
 
 int main() {
@@ -116,7 +116,7 @@ int main() {
     ad->closeAllObjects();
     av->closeAllObjects();
     //save the stats from the filter stage into the info object
-    audioInfo->setFrameVals(ad->startFrame, ad->endFrame, totalFrameCount);
+    audioInfo->setFrameVals(ad->startTime, ad->endTime, totalTime * 1000);
 
     //========================SECOND STAGE: make playable by wav output file==========================
     ad = new AudioDecoder(tempFP, finalFP, false, true);
@@ -191,12 +191,16 @@ int loopOverPacketFrames(bool showFrameData) {
          */
 
         if (showFrameData)
-            cerr << "frame number: " << ad->pCodecContext->frame_number
+            cout << "frame number: " << ad->pCodecContext->frame_number
                  << ", Pkt_Size: " << ad->pFrame->pkt_size
                  << ", Pkt_pts: " << ad->pFrame->pts
                  << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
 
-        if (filterAudioFrame() < 0) {
+        string time = av_ts2timestr(ad->pFrame->pts, &ad->pCodecContext->time_base);
+
+        double dTime = stod(time);
+       // cout << "time: " << dTime << endl;
+        if (filterAudioFrame(dTime) < 0) {
             cerr << "error in filtering" << endl;
 
         }
@@ -206,13 +210,13 @@ int loopOverPacketFrames(bool showFrameData) {
         if (resp < 0) {
             return resp;
         }
-        totalFrameCount++;
+        totalTime = dTime;
     }
     return 0;
 
 }
 
-int filterAudioFrame() {
+int filterAudioFrame(double dTime) {
     //add to source frame:
     int resp = av_buffersrc_add_frame(av->srcContext, ad->pFrame);
     //TODO:START
@@ -230,7 +234,7 @@ int filterAudioFrame() {
             goto breakFilter;
         }
 
-        ad->saveAudioFrame(showData);
+        ad->saveAudioFrame(showData, dTime * 1000);
 
         if (resp < 0) {
             cerr << "Error muxing packet" << endl;
@@ -302,9 +306,8 @@ void getAudioInfo() {
     audioInfo->getRMS();
 
     cout << "===============VIDEO DATA===============" << endl;
-    cout << "start frame " << audioInfo->startFrame << " to " << audioInfo->endFrame << " of " << audioInfo->totalFrame
-         << " frames"
-         << endl;
+    cout << audioInfo->startMs << " ms removed from start" << endl;
+    cout << audioInfo->endMs << " ms removed from end" << endl;
     cout << "before trough rms: " << audioInfo->bTrough << " DB after trough rms: " << audioInfo->aTrough << " DB"
          << endl;
     cout << "before peak rms: " << audioInfo->bPeak << " DB after peak rms: " << audioInfo->aPeak << " DB" << endl;

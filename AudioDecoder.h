@@ -62,7 +62,7 @@ public:
     bool iCodec = false;
     bool iDemuxer = false;
     //track the start and end frames: when start and end writing to the output file
-    int startFrame, endFrame;
+    double startTime, endTime;
     //start writing when =0: skip the first frame to prevent writing the bad header in the first loop.
     int startWriting = -1;
 
@@ -99,7 +99,7 @@ public:
      * @param showFrameData boolean specifies whether to show frame data while saving
      * @return whether an error happened while saving
      */
-    int saveAudioFrame(bool showFrameData);
+    int saveAudioFrame(bool showFrameData,double time);
 
     /**
      * creates file objects for the input and output files

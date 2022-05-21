@@ -39,17 +39,17 @@ public:
     void getRMS();
     /**
      * set the frame cutoff values after the first filter loop
-     * @param startFrame the frame where the audio is cut at the start
-     * @param endFrame the frame where the audio is cut at the end
-     * @param totalFrame the total frames in the audio
+     * @param startMs the frame where the audio is cut at the start
+     * @param endMs the frame where the audio is cut at the end
+     * @param totalMs the total frames in the audio
      */
     //TODO: add more specific methods: percentages of audio removed, other ideas for processing
-    void setFrameVals(int startFrame, int endFrame, int totalFrame);
+    void setFrameVals(int startMs, int endMs, int totalMs);
 
     //store the RMS values for the peak and troughs before and after processing
     double bPeak = 0, bTrough = 0, aPeak = 0, aTrough = 0;
     //store the frame # of the start clipped audio, the end clip audio, and the total frames of the original audio
-    int startFrame, endFrame, totalFrame;
+    int startMs, endMs, totalMs;
 private:
     const char *filePath;
     //the keys for which to look for in the stderr output-> do not change unless ffmpeg changes these keys
