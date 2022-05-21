@@ -36,13 +36,25 @@ int Resampler::initObjects() {
     resp = av_samples_alloc_array_and_samples(&srcData, &srcLineSize, numSrcChannels,
                                               numSrcSamples, ad->pCodecContext->sample_fmt, 0);
     if (resp < 0) {
-        cerr << "ERROR: Could allocate contexts" << endl;
+        cerr << "ERROR: Could not allocate source sample" << endl;
         return -1;
     }
     maxDstNumSamples = numDstSamples = av_rescale_rnd(numSrcSamples, ad->pCodecContext->sample_rate,
                                                       ad->pCodecContext->sample_rate, AV_ROUND_UP);
-    numDstChannels=ad->pCodecContext->channel_layout.nb_channels
-    cout << "allocated resampling context!" << endl;
+    numDstChannels=ad->pCodecContext->channels;//TODO: potential bug here: need to probably change dst layout
+
+    dstLineSize=srcLineSize;//TODO: need to check to line size
+
+    numDstChannels = av_get_channel_layout_nb_channels(ad->pCodecContext->channel_layout);//TODO: need to potentially change
+
+    resp = av_samples_alloc_array_and_samples(&dstData, &dstLineSize, numDstChannels,
+                                              numDstSamples, ad->pCodecContext->sample_fmt, 0);
+    if (resp < 0) {
+        cerr << "ERROR: Could not allocate destination samplel" << endl;
+        return -1;
+    }
+
+    cout << "allocated all sampling contexts context!" << endl;
     return 0;
 
 }

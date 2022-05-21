@@ -70,6 +70,8 @@ int applyMuxers();
  */
 void getAudioInfo();
 
+int resampleAudio(bool showFrameData);
+
 using namespace std;
 //info about codecs, and is responsible for processing audio
 AudioDecoder *ad;
@@ -108,7 +110,7 @@ int main() {
     int resp;
     //create audioInfo
     audioInfo = new OutputAnalysis(statOutFP, false);
-    ad = new AudioDecoder(wavInputFP, tempFP, true, true);
+    ad = new AudioDecoder(inputFP, wavInputFP, true, true);
     ad->openFiles();
     ad->initializeAllObjects();
 
@@ -122,7 +124,7 @@ int main() {
     rs->initObjects();
     cerr << "initialized Resampler" << endl;
 
-    resampleAudio();
+    resampleAudio(showData);
 
     ad->closeAllObjects();
 
@@ -360,8 +362,9 @@ void getAudioInfo() {
 }
 
 int resampleAudio(bool showFrameData) {
+    int resp;
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
-        int resp = avcodec_send_packet(ad->pCodecContext, ad->pPacket);
+        resp = avcodec_send_packet(ad->pCodecContext, ad->pPacket);
         if (resp < 0) {
             cerr << "error submitting a packet for decoding: " << av_err2str(resp);
             return resp;
@@ -403,15 +406,40 @@ int resampleAudio(bool showFrameData) {
                                                ad->pCodecContext->sample_rate, ad->pCodecContext->sample_rate,
                                                AV_ROUND_UP);
             if (rs->numDstSamples > rs->maxDstNumSamples) {
-                av_freep(&dst_data[0]);
-                ret = av_samples_alloc(dst_data, &dst_linesize, dst_nb_channels,
-                                       dst_nb_samples, dst_sample_fmt, 1);
-                if (ret < 0)
-                    break;
-                max_dst_nb_samples = dst_nb_samples;
-            }
+                av_freep(&rs->dstData[0]);
+                resp = av_samples_alloc(rs->dstData, &rs->dstLineSize, rs->numDstChannels,
+                                        rs->numDstSamples, ad->pCodecContext->sample_fmt, 1);
+                if (resp < 0)
+                    cout << "cannot allocate samples" << endl;
+                break;
+                rs->maxDstNumSamples = rs->numDstSamples;
 
+            }
+            resp = swr_convert(rs->resampleCtx, rs->dstData, rs->numDstSamples, (const uint8_t **) rs->srcData,
+                               rs->numSrcSamples);
+            if (resp < 0) {
+                cout << "ERRORO: converting samples" << endl;
+                return -1;
+            }
+            rs->dstBufferSize = av_samples_get_buffer_size(&rs->dstLineSize, rs->numDstChannels, resp,
+                                                           ad->pCodecContext->sample_fmt, 1);
+            if (rs->dstBufferSize < 0) {
+                cout << "ERROR: could not get sample buffer size" << endl;
+                return -1;
+            }
+            fwrite(rs->dstData[0], 1, rs->dstBufferSize, ad->outFile);
 
         }
+
     }
+    const char *fmt;
+    if ((resp = ad->getSampleFmtFormat(&fmt, ad->pCodecContext->sample_fmt))) {
+        cout << "Error while getting sample format" << endl;
+        return -1;
+    }
+    // av_channel_layout_describe(&rs->, buf, sizeof(buf));
+//    fprintf(stderr, "Resampling succeeded. Play the output file with the command:\n"
+//                    "ffplay -f %s -channel_layout %s -channels %d -ar %d %s\n");
+    cout << "resampling succeded" << endl;
+    return 0;
 }

@@ -94,7 +94,7 @@ build CMakeFiles/ffmpegTest5.dir/Resampler.cpp.o: CXX_COMPILER__ffmpegTest5_Debu
 
 build ffmpegTest5: CXX_EXECUTABLE_LINKER__ffmpegTest5_Debug CMakeFiles/ffmpegTest5.dir/main.cpp.o CMakeFiles/ffmpegTest5.dir/AudioDecoder.cpp.o CMakeFiles/ffmpegTest5.dir/AudioFilter.cpp.o CMakeFiles/ffmpegTest5.dir/OutputAnalysis.cpp.o CMakeFiles/ffmpegTest5.dir/Resampler.cpp.o
   FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk
-  LINK_LIBRARIES = -Wl,-rpath,/usr/local/Cellar/ffmpeg/5.0.1/lib  -lavformat  -lavcodec  -lavutil  -lavfilter
+  LINK_LIBRARIES = -Wl,-rpath,/usr/local/Cellar/ffmpeg/5.0.1/lib  -lavformat  -lavcodec  -lavutil  -lavfilter  -lswresample
   LINK_PATH = -L/usr/local/Cellar/ffmpeg/5.0.1/lib
   OBJECT_DIR = CMakeFiles/ffmpegTest5.dir
   POST_BUILD = :
