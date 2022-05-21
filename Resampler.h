@@ -20,11 +20,20 @@ public:
         this->ad = ad;
 
     }
-   int initObjects();
 
-private:
+    int initObjects();
+
+    int numSrcChannels, numDstChannels;
     struct SwrContext *resampleCtx;
     AudioDecoder *ad;
+
+    uint8_t **srcData = nullptr, **dstData = nullptr;
+    int srcLineSize, dstLineSize;
+
+    int numSrcSamples = 0, numDstSamples = 0, maxDstNumSamples;
+private:
+
+
 };
 
 

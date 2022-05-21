@@ -8,11 +8,16 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavutil/timestamp.h>
 #include <libavutil/samplefmt.h>
+#include <libavutil/opt.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/samplefmt.h>
+#include <libswresample/swresample.h>
 }
 
 #include "AudioDecoder.h"
 #include "AudioFilter.h"
 #include "OutputAnalysis.h"
+#include "Resampler.h"
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -72,7 +77,10 @@ AudioDecoder *ad;
 AudioFilter *av;
 //audio info about the frames and the rms
 OutputAnalysis *audioInfo;
+//The resampler that converts any input file to a wav for looping and processing
+Resampler *rs;
 //the input file path
+
 //TODO: have an error with writing the file headers:
 //TODO: not work when given anything but a wav input
 const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording.aac";
@@ -100,6 +108,24 @@ int main() {
     int resp;
     //create audioInfo
     audioInfo = new OutputAnalysis(statOutFP, false);
+    ad = new AudioDecoder(wavInputFP, tempFP, true, true);
+    ad->openFiles();
+    ad->initializeAllObjects();
+
+    if (resp < 0) {
+        cerr << "error: could not initialize decoder" << endl;
+        return 1;
+    }
+    cerr << "initialized AudioDecoder" << endl;
+    //create audio filter
+    rs = new Resampler(ad);
+    rs->initObjects();
+    cerr << "initialized Resampler" << endl;
+
+    resampleAudio();
+
+    ad->closeAllObjects();
+
 
     cout << "=====================DONE WITH FIRST LOOP=====================" << endl;
     //create audio decoder
@@ -331,4 +357,61 @@ void getAudioInfo() {
     cout << "before trough rms: " << audioInfo->bTrough << " DB after trough rms: " << audioInfo->aTrough << " DB"
          << endl;
     cout << "before peak rms: " << audioInfo->bPeak << " DB after peak rms: " << audioInfo->aPeak << " DB" << endl;
+}
+
+int resampleAudio(bool showFrameData) {
+    while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
+        int resp = avcodec_send_packet(ad->pCodecContext, ad->pPacket);
+        if (resp < 0) {
+            cerr << "error submitting a packet for decoding: " << av_err2str(resp);
+            return resp;
+        }
+
+        while (resp >= 0) {
+            resp = avcodec_receive_frame(ad->pCodecContext, ad->pFrame);
+            if (resp == AVERROR(EAGAIN)) {
+                if (showFrameData) cerr << "Not enough data in frame, skipping to next packet" << endl;
+                //decoded not have enough data to process frame
+                //not error unless reached end of the stream - pass more packets untill have enough to produce frame
+                clearFrames:
+                av_frame_unref(ad->pFrame);
+                av_freep(ad->pFrame);
+                break;
+            } else if (resp == AVERROR_EOF) {
+                cerr << "Reached end of file" << endl;
+                goto clearFrames;
+            } else if (resp < 0) {
+                cerr << "Error while receiving a frame from the decoder: " << av_err2str(resp) << endl;
+                // Failed to get a frame from the decoder
+                av_frame_unref(ad->pFrame);
+                av_freep(ad->pFrame);
+                return resp;
+            }
+            /*
+             * TODO: need to find the noise level of audio file
+             * try to look at astats filter, then at the portions where silence is detected idk
+             * need to get the RMS factor: what kolya talk about
+             */
+
+            if (showFrameData)
+                cerr << "frame number: " << ad->pCodecContext->frame_number
+                     << ", Pkt_Size: " << ad->pFrame->pkt_size
+                     << ", Pkt_pts: " << ad->pFrame->pts
+                     << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
+
+            rs->numDstSamples = av_rescale_rnd(swr_get_delay(rs->resampleCtx, rs->numSrcSamples) + rs->numSrcSamples,
+                                               ad->pCodecContext->sample_rate, ad->pCodecContext->sample_rate,
+                                               AV_ROUND_UP);
+            if (rs->numDstSamples > rs->maxDstNumSamples) {
+                av_freep(&dst_data[0]);
+                ret = av_samples_alloc(dst_data, &dst_linesize, dst_nb_channels,
+                                       dst_nb_samples, dst_sample_fmt, 1);
+                if (ret < 0)
+                    break;
+                max_dst_nb_samples = dst_nb_samples;
+            }
+
+
+        }
+    }
 }
