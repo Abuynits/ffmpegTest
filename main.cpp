@@ -369,6 +369,7 @@ int resampleAudio(bool showFrameData) {
             cerr << "error submitting a packet for decoding: " << av_err2str(resp);
             return resp;
         }
+        cout<<"getting another packet"<<endl;
 
         while (resp >= 0) {
             resp = avcodec_receive_frame(ad->pCodecContext, ad->pFrame);
@@ -395,6 +396,9 @@ int resampleAudio(bool showFrameData) {
              * try to look at astats filter, then at the portions where silence is detected idk
              * need to get the RMS factor: what kolya talk about
              */
+
+            //TODO: use this link for converting audio types: https://ffmpeg.org/doxygen/2.2/transcode_aac_8c-example.html
+
 
             if (showFrameData)
                 cerr << "frame number: " << ad->pCodecContext->frame_number
@@ -432,11 +436,11 @@ int resampleAudio(bool showFrameData) {
         }
 
     }
-    const char *fmt;
-    if ((resp = ad->getSampleFmtFormat(&fmt, ad->pCodecContext->sample_fmt))) {
-        cout << "Error while getting sample format" << endl;
-        return -1;
-    }
+//    const char *fmt;
+//    if ((resp = ad->getSampleFmtFormat(&fmt, ad->pCodecContext->sample_fmt))) {
+//        cout << "Error while getting sample format" << endl;
+//        return -1;
+//    }
     // av_channel_layout_describe(&rs->, buf, sizeof(buf));
 //    fprintf(stderr, "Resampling succeeded. Play the output file with the command:\n"
 //                    "ffplay -f %s -channel_layout %s -channels %d -ar %d %s\n");
