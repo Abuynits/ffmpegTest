@@ -85,7 +85,7 @@ Resampler *rs;
 
 //TODO: have an error with writing the file headers:
 //TODO: not work when given anything but a wav input
-const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording.aac";
+const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording.wav";
 
 //const char *wavInputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/wavInput.wav";
 //stores the raw data after applying filters
@@ -185,14 +185,14 @@ int transferStreamData(int *inputPts) {
 }
 
 int loopOverPacketFrames(bool showFrameData) {
-    int resp = avcodec_send_packet(ad->pCodecContext, ad->pPacket);
+    int resp = avcodec_send_packet(ad->pInCodecContext, ad->pPacket);
     if (resp < 0) {
         cerr << "error submitting a packet for decoding: " << av_err2str(resp);
         return resp;
     }
 
     while (resp >= 0) {
-        resp = avcodec_receive_frame(ad->pCodecContext, ad->pFrame);
+        resp = avcodec_receive_frame(ad->pInCodecContext, ad->pFrame);
         if (resp == AVERROR(EAGAIN)) {
             if (showFrameData) cerr << "Not enough data in frame, skipping to next packet" << endl;
             //decoded not have enough data to process frame
@@ -218,7 +218,7 @@ int loopOverPacketFrames(bool showFrameData) {
          */
 
         if (showFrameData)
-            cerr << "frame number: " << ad->pCodecContext->frame_number
+            cerr << "frame number: " << ad->pInCodecContext->frame_number
                  << ", Pkt_Size: " << ad->pFrame->pkt_size
                  << ", Pkt_pts: " << ad->pFrame->pts
                  << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
@@ -344,7 +344,7 @@ void getAudioInfo() {
 int resampleAudio(bool showFrameData) {
     int resp;
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
-        resp = avcodec_send_packet(ad->pCodecContext, ad->pPacket);
+        resp = avcodec_send_packet(ad->pInCodecContext, ad->pPacket);
         if (resp < 0) {
             cerr << "error submitting a packet for decoding: " << av_err2str(resp);
             return resp;
@@ -352,7 +352,7 @@ int resampleAudio(bool showFrameData) {
         cout<<"getting another packet"<<endl;
 
         while (resp >= 0) {
-            resp = avcodec_receive_frame(ad->pCodecContext, ad->pFrame);
+            resp = avcodec_receive_frame(ad->pInCodecContext, ad->pFrame);
             if (resp == AVERROR(EAGAIN)) {
                 if (showFrameData) cerr << "Not enough data in frame, skipping to next packet" << endl;
                 //decoded not have enough data to process frame
@@ -381,18 +381,18 @@ int resampleAudio(bool showFrameData) {
 
 
             if (showFrameData)
-                cerr << "frame number: " << ad->pCodecContext->frame_number
+                cerr << "frame number: " << ad->pInCodecContext->frame_number
                      << ", Pkt_Size: " << ad->pFrame->pkt_size
                      << ", Pkt_pts: " << ad->pFrame->pts
                      << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
 
             rs->numDstSamples = av_rescale_rnd(swr_get_delay(rs->resampleCtx, rs->numSrcSamples) + rs->numSrcSamples,
-                                               ad->pCodecContext->sample_rate, ad->pCodecContext->sample_rate,
+                                               ad->pInCodecContext->sample_rate, ad->pInCodecContext->sample_rate,
                                                AV_ROUND_UP);
             if (rs->numDstSamples > rs->maxDstNumSamples) {
                 av_freep(&rs->dstData[0]);
                 resp = av_samples_alloc(rs->dstData, &rs->dstLineSize, rs->numDstChannels,
-                                        rs->numDstSamples, ad->pCodecContext->sample_fmt, 1);
+                                        rs->numDstSamples, ad->pInCodecContext->sample_fmt, 1);
                 if (resp < 0)
                     cout << "cannot allocate samples" << endl;
                 break;
@@ -406,7 +406,7 @@ int resampleAudio(bool showFrameData) {
                 return -1;
             }
             rs->dstBufferSize = av_samples_get_buffer_size(&rs->dstLineSize, rs->numDstChannels, resp,
-                                                           ad->pCodecContext->sample_fmt, 1);
+                                                           ad->pInCodecContext->sample_fmt, 1);
             if (rs->dstBufferSize < 0) {
                 cout << "ERROR: could not get sample buffer size" << endl;
                 return -1;
@@ -417,7 +417,7 @@ int resampleAudio(bool showFrameData) {
 
     }
 //    const char *fmt;
-//    if ((resp = ad->getSampleFmtFormat(&fmt, ad->pCodecContext->sample_fmt))) {
+//    if ((resp = ad->getSampleFmtFormat(&fmt, ad->pInCodecContext->sample_fmt))) {
 //        cout << "Error while getting sample format" << endl;
 //        return -1;
 //    }

@@ -12,7 +12,6 @@ AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath, bool
     this->iDemuxer = initDemuxer;
 
 
-
 }
 
 
@@ -27,7 +26,7 @@ void AudioDecoder::openFiles() {
     }
 }
 
-int AudioDecoder::initCodec(enum AVMediaType mediaType) {
+int AudioDecoder::openInputFile(enum AVMediaType mediaType) {
 
     int ret = av_find_best_stream(pInFormatContext, mediaType, -1, -1, nullptr, 0);
     if (ret < 0) {
@@ -52,8 +51,8 @@ int AudioDecoder::initCodec(enum AVMediaType mediaType) {
     //HERE
     // https://ffmpeg.org/doxygen/trunk/structAVCodecContext.html
     //get the context of the audio pCodec- hold info for encode/decode process
-    pCodecContext = avcodec_alloc_context3(pCodec);
-    if (!pCodecContext) {
+    pInCodecContext = avcodec_alloc_context3(pCodec);
+    if (!pInCodecContext) {
         cerr << stderr << " ERROR: Could not allocate audio pCodec context: " << av_err2str(AVERROR(ENOMEM))
              << endl;
         exit(1);
@@ -62,16 +61,18 @@ int AudioDecoder::initCodec(enum AVMediaType mediaType) {
 
     // Fill the codec context based on the values from the supplied codec parameters
     // https://ffmpeg.org/doxygen/trunk/group__lavc__core.html#gac7b282f51540ca7a99416a3ba6ee0d16
-    if (avcodec_parameters_to_context(pCodecContext, audioStream->codecpar) < 0) {
+    if (avcodec_parameters_to_context(pInCodecContext, audioStream->codecpar) < 0) {
         cerr << stderr << "failed to copy codec params to codec context";
         exit(1);
     }
     cerr << "\tcopied codec param" << endl;
     //open the actual pCodec:
-    if (avcodec_open2(pCodecContext, pCodec, nullptr) < 0) {
+    if (avcodec_open2(pInCodecContext, pCodec, nullptr) < 0) {
         cerr << stderr << "Could not open pCodec" << endl;
         exit(1);
     }
+
+    av_dump_format(pInFormatContext, 0, inputFP, 0);
     cerr << "\topened codec!" << endl;
     return 0;
 }
@@ -103,7 +104,7 @@ void AudioDecoder::initializeAllObjects() {
     pInFormatContext->oformat = outputFormat;
     //TODO: need to transfer parameters from input Format context to output
     if (iDemuxer) {
-        resp = initDemuxer();
+        resp = openOutputFile();
         if (resp < 0) {
             exit(1);
         }
@@ -111,7 +112,7 @@ void AudioDecoder::initializeAllObjects() {
 
     //take either AVMEDIA_TYPE_AUDIO (Default) or AVMEDIA_TYPE_VIDEO
     if (iCodec) {
-        resp = initCodec();
+        resp = openInputFile();
         if (resp < 0) {
             cerr << "error: cannot create codec" << endl;
             exit(1);
@@ -139,10 +140,10 @@ void AudioDecoder::initializeAllObjects() {
 
 }
 
-int AudioDecoder::initDemuxer() {
+int AudioDecoder::openOutputFile() {
     int resp;
-    //dump input information to stderr
-    av_dump_format(pInFormatContext, 0, inputFP, 0);
+    AVCodecContext *inCodec, *outCodec;
+    AVCodec *encoder;
 
     resp = avformat_alloc_output_context2(&pOutFormatContext, nullptr, nullptr, outputFP);
     if (resp < 0) {
@@ -154,15 +155,21 @@ int AudioDecoder::initDemuxer() {
 
     //get the output format for this specific audio stream
     // outputFormat = av_guess_format(nullptr, outputFP, nullptr);
-   // pOutFormatContext->oformat = outputFormat;
+    // pOutFormatContext->oformat = outputFormat;
 
     if (!streamMapping) {
         cerr << "Error: cannot get stream map" << endl;
         return -1;
     }
 
+    cout<<"Stream mapping size: "<<streamMappingSize<<endl;
+    for (int i = 0; i < streamMappingSize; i++) {
 
-    for (int i = 0; i < pInFormatContext->nb_streams; i++) {
+        outStream = avformat_new_stream(pOutFormatContext, nullptr);
+        if (!outStream) {
+            cerr << "Error: unable to allocate output stream" << endl;
+            return -1;
+        }
 
         inStream = pInFormatContext->streams[i];
         AVCodecParameters *inCodecpar = inStream->codecpar;
@@ -174,13 +181,6 @@ int AudioDecoder::initDemuxer() {
             continue;
         }
 
-        streamMapping[i] = demuxerStreamIndex++;
-
-        outStream = avformat_new_stream(pOutFormatContext, nullptr);
-        if (!outStream) {
-            cerr << "Error: unable to allocate output stream" << endl;
-            return -1;
-        }
 
         resp = avcodec_parameters_copy(outStream->codecpar, inCodecpar);
         if (resp < 0) {
@@ -216,7 +216,7 @@ void AudioDecoder::closeAllObjects() {
     avformat_free_context(pOutFormatContext);
     avformat_free_context(pInFormatContext);
 
-    avcodec_free_context(&pCodecContext);
+    avcodec_free_context(&pInCodecContext);
     av_frame_free(&pFrame);
     av_packet_free(&pPacket);
 
@@ -224,14 +224,14 @@ void AudioDecoder::closeAllObjects() {
 
 
 int AudioDecoder::saveAudioFrame(bool showFrameData) {
-    char *time = av_ts2timestr(pFrame->pts, &pCodecContext->time_base);
+    char *time = av_ts2timestr(pFrame->pts, &pInCodecContext->time_base);
     if (startWriting != 0) {
-        startFrame = pCodecContext->frame_number;
+        startFrame = pInCodecContext->frame_number;
         startWriting++;
     }
-    endFrame = pCodecContext->frame_number;
+    endFrame = pInCodecContext->frame_number;
 
-    size_t lineSize = pFrame->nb_samples * av_get_bytes_per_sample(pCodecContext->sample_fmt);
+    size_t lineSize = pFrame->nb_samples * av_get_bytes_per_sample(pInCodecContext->sample_fmt);
     if (showFrameData)
         printf("audio_frame n:%d nb_samples:%d pts:%s\n",
                audioFrameCount++, pFrame->nb_samples,
@@ -272,8 +272,8 @@ int AudioDecoder::getSampleFmtFormat(const char **fmt, enum AVSampleFormat audio
 }
 
 int AudioDecoder::getAudioRunCommand() {
-    enum AVSampleFormat sampleFormat = pCodecContext->sample_fmt;
-    int channelNum = pCodecContext->channels;
+    enum AVSampleFormat sampleFormat = pInCodecContext->sample_fmt;
+    int channelNum = pInCodecContext->channels;
     const char *sFormat;
 
     if (av_sample_fmt_is_planar(sampleFormat)) {
@@ -289,7 +289,7 @@ int AudioDecoder::getAudioRunCommand() {
         return -1;
     }
     cerr << "Play the data output File w/" << endl;
-    cerr << "ffplay -f " << sFormat << " -ac " << channelNum << " -ar " << pCodecContext->sample_rate << " " << outputFP
+    cerr << "ffplay -f " << sFormat << " -ac " << channelNum << " -ar " << pInCodecContext->sample_rate << " " << outputFP
          << endl;
 
     return 0;

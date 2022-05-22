@@ -85,9 +85,9 @@ int AudioFilter::initSrcFilter() {
         return resp;
     }
 //check if have channel layout:
-    if (!ad->pCodecContext->channel_layout) {
+    if (!ad->pInCodecContext->channel_layout) {
         cerr << "\twarning: channel context not initialized... initializing" << endl;
-        ad->pCodecContext->channel_layout = av_get_default_channel_layout(ad->pCodecContext->channels);
+        ad->pInCodecContext->channel_layout = av_get_default_channel_layout(ad->pInCodecContext->channels);
     }
 
     initByFunctions(srcContext);
@@ -144,8 +144,8 @@ int AudioFilter::initFormatFilter() {
     char args[1024];
     snprintf(args, sizeof(args),
              "sample_fmts=%s:sample_rates=%d:channel_layouts=0x%" PRIx64,
-             av_get_sample_fmt_name(ad->pCodecContext->sample_fmt), ad->pCodecContext->sample_rate,
-             (uint64_t) (ad->pCodecContext->channel_layout));
+             av_get_sample_fmt_name(ad->pInCodecContext->sample_fmt), ad->pInCodecContext->sample_rate,
+             (uint64_t) (ad->pInCodecContext->channel_layout));
     resp = avfilter_init_str(aFormatContext, args);
     if (resp < 0) {
         cerr << "Could not initialize format filter context: " << av_err2str(AV_LOG_ERROR) << endl;
@@ -287,13 +287,13 @@ int AudioFilter::initByDict(AVFilterContext *afc, const char *key, const char *v
 
 void AudioFilter::initByFunctions(AVFilterContext *afc) const {
     char ch_layout[64];
-    av_get_channel_layout_string(ch_layout, sizeof(ch_layout), 0, ad->pCodecContext->channel_layout);
+    av_get_channel_layout_string(ch_layout, sizeof(ch_layout), 0, ad->pInCodecContext->channel_layout);
     av_opt_set(afc, "channel_layout", ch_layout, AV_OPT_SEARCH_CHILDREN);
-    av_opt_set(afc, "sample_fmt", av_get_sample_fmt_name(ad->pCodecContext->sample_fmt),
+    av_opt_set(afc, "sample_fmt", av_get_sample_fmt_name(ad->pInCodecContext->sample_fmt),
                AV_OPT_SEARCH_CHILDREN);
-    av_opt_set_q(afc, "time_base", (AVRational) {1, ad->pCodecContext->sample_rate},
+    av_opt_set_q(afc, "time_base", (AVRational) {1, ad->pInCodecContext->sample_rate},
                  AV_OPT_SEARCH_CHILDREN);
-    av_opt_set_int(afc, "sample_rate", ad->pCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
+    av_opt_set_int(afc, "sample_rate", ad->pInCodecContext->sample_rate, AV_OPT_SEARCH_CHILDREN);
 }
 
 int AudioFilter::generalFilterInit(AVFilterContext **af, const AVFilter **f, const char *name) const {

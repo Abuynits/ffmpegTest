@@ -36,7 +36,7 @@ public:
     //the codec used for decoding the input file
     const AVCodec *pCodec = nullptr;
     //the context of the codec: set from the format context and parameters
-    AVCodecContext *pCodecContext = nullptr;
+    AVCodecContext *pInCodecContext = nullptr;
     //the packet object used for looping over a audio file
     AVPacket *pPacket = nullptr;
     //the frames of the audio packet taht will be loped over
@@ -121,14 +121,14 @@ public:
         wh.fmt_chunk_size = 16;
         wh.audio_format = 1;
         wh.num_channels = 1;
-        wh.sample_rate = pCodecContext->sample_rate;
+        wh.sample_rate = pInCodecContext->sample_rate;
         wh.sample_alignment = 2;
         wh.bit_depth = 16;
         wh.byte_rate = wh.sample_rate * wh.sample_alignment;
         memcpy(&wh.data_header, "data", 4);
         wh.data_bytes = size;
 
-        write(fd, &wh, sizeof(struct waveHeader));
+        //write(fd, &wh, sizeof(struct waveHeader));
     }
     /**
      * init the format contexts
@@ -136,7 +136,7 @@ public:
      * set the output format for the input context
      * set the input context's stream info
      * set the output formats stream info
-     * initCodec and/or initDemuxer is called
+     * openInputFile and/or openOutputFile is called
      * allocate memory to packet and frame objects
      */
     void initializeAllObjects();
@@ -186,7 +186,7 @@ private:
      * @param mediaType default = audiotype- the media for which get codec
      * @return whether error happened
      */
-    int initCodec(enum AVMediaType mediaType = AVMEDIA_TYPE_AUDIO);
+    int openInputFile(enum AVMediaType mediaType = AVMEDIA_TYPE_AUDIO);
 
     /**
      * sets a different input parameters to the input format context
@@ -196,7 +196,7 @@ private:
      * opens the streams for writing during looping
      * @return whether error happened
      */
-    int initDemuxer();
+    int openOutputFile();
 };
 
 #endif //FFMPEGTEST5_AUDIODECODER_H
