@@ -11,16 +11,16 @@ int Resampler::initObjects() {
         cerr << "ERROR: Could not allocate resample context" << endl;
         return -1;
     }
+
     //set channels for conversions:
-    //TODO: potential probelm as set all of this from 1 parameter which remains the same
     av_opt_set_sample_fmt(resampleCtx, "in_sample_fmt", ad->pInCodecContext->sample_fmt, 0);
-    av_opt_set_sample_fmt(resampleCtx, "out_sample_fmt", ad->pInCodecContext->sample_fmt, 0);
+    av_opt_set_sample_fmt(resampleCtx, "out_sample_fmt", ad->pOutCodecContext->sample_fmt, 0);
 
     av_opt_set_int(resampleCtx, "in_sample_rate", ad->pInCodecContext->sample_rate, 0);
-    av_opt_set_int(resampleCtx, "out_sample_rate", ad->pInCodecContext->sample_rate, 0);
+    av_opt_set_int(resampleCtx, "out_sample_rate", ad->pOutCodecContext->sample_rate, 0);
 
     av_opt_set_channel_layout(resampleCtx, "in_channel_layout", ad->pInCodecContext->channel_layout, 0);
-    av_opt_set_channel_layout(resampleCtx, "out_channel_layout", ad->pInCodecContext->channel_layout, 0);
+    av_opt_set_channel_layout(resampleCtx, "out_channel_layout", ad->pOutCodecContext->channel_layout, 0);
     //channel count and layout are not set
 
 

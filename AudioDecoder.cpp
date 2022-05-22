@@ -38,22 +38,22 @@ int AudioDecoder::openInputFile(enum AVMediaType mediaType) {
 
     avStreamIndex = ret;
 
-    audioStream = pInFormatContext->streams[avStreamIndex];
+    inAudioStream = pInFormatContext->streams[avStreamIndex];
 
     // finds the registered decoder for a codec ID
     // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga19a0ca553277f019dd5b0fec6e1f9dca
-    pCodec = avcodec_find_decoder(audioStream->codecpar->codec_id);
-    if (pCodec == nullptr) {
+    pInCodec = avcodec_find_decoder(inAudioStream->codecpar->codec_id);
+    if (pInCodec == nullptr) {
         cerr << stderr << " ERROR unsupported codec: " << av_err2str(AVERROR(EINVAL)) << endl;
         exit(1);
     }
     cerr << "\tfound decoder" << endl;
     //HERE
     // https://ffmpeg.org/doxygen/trunk/structAVCodecContext.html
-    //get the context of the audio pCodec- hold info for encode/decode process
-    pInCodecContext = avcodec_alloc_context3(pCodec);
+    //get the context of the audio pInCodec- hold info for encode/decode process
+    pInCodecContext = avcodec_alloc_context3(pInCodec);
     if (!pInCodecContext) {
-        cerr << stderr << " ERROR: Could not allocate audio pCodec context: " << av_err2str(AVERROR(ENOMEM))
+        cerr << stderr << " ERROR: Could not allocate audio pInCodec context: " << av_err2str(AVERROR(ENOMEM))
              << endl;
         exit(1);
     }
@@ -61,14 +61,14 @@ int AudioDecoder::openInputFile(enum AVMediaType mediaType) {
 
     // Fill the codec context based on the values from the supplied codec parameters
     // https://ffmpeg.org/doxygen/trunk/group__lavc__core.html#gac7b282f51540ca7a99416a3ba6ee0d16
-    if (avcodec_parameters_to_context(pInCodecContext, audioStream->codecpar) < 0) {
+    if (avcodec_parameters_to_context(pInCodecContext, inAudioStream->codecpar) < 0) {
         cerr << stderr << "failed to copy codec params to codec context";
         exit(1);
     }
     cerr << "\tcopied codec param" << endl;
-    //open the actual pCodec:
-    if (avcodec_open2(pInCodecContext, pCodec, nullptr) < 0) {
-        cerr << stderr << "Could not open pCodec" << endl;
+    //open the actual pInCodec:
+    if (avcodec_open2(pInCodecContext, pInCodec, nullptr) < 0) {
+        cerr << stderr << "Could not open pInCodec" << endl;
         exit(1);
     }
 
@@ -121,7 +121,7 @@ void AudioDecoder::initializeAllObjects() {
         cerr << "\tcreated codec" << endl;
     }
 
-    audioStream = pInFormatContext->streams[avStreamIndex];
+    inAudioStream = pInFormatContext->streams[avStreamIndex];
 
     //allocate memory for frame from readings
     // https://ffmpeg.org/doxygen/trunk/structAVPacket.html
@@ -140,10 +140,62 @@ void AudioDecoder::initializeAllObjects() {
 
 }
 
+int AudioDecoder::openOutConverterFile() {
+    int resp = avio_open(&outIoContext, outputFP, AVIO_FLAG_WRITE);
+    if (resp < 0) {
+        cout << "ERROR: could not open output file" << endl;
+    }
+    //Assiciate output fiele with container format context
+    pOutFormatContext->pb = outIoContext;
+    //guess output format based on file extension:
+    pOutFormatContext->oformat = av_guess_format(nullptr, outputFP, nullptr);
+    if (pOutFormatContext->oformat == nullptr) {
+        cout << "Error: Could not guess output format from file" << endl;
+        exit(1);
+    }
+    //  av_strlcpy(pOutFormatContext->filename, filename, sizeof((*output_format_context)->filename));
+    //TODO: need to determine codec id by file extension name:IMPORTANT +++++++++++++++++
+    pOutCodec = avcodec_find_decoder(AV_CODEC_ID_AAC);
+
+    if (pOutCodec == nullptr) {
+        cout << "Error: Could not find codec" << endl;
+        exit(1);
+    }
+    outAudioStream = avformat_new_stream(pOutFormatContext, pOutCodec);
+    if (outAudioStream == nullptr) {
+        cout << "Error: Could not find outAudioStream" << endl;
+        exit(1);
+    }
+    pOutCodecContext = avcodec_alloc_context3(pOutCodec);
+    if (!pOutCodecContext) {
+        cerr << stderr << " ERROR: Could not allocate audio pOutCodec context: " << av_err2str(AVERROR(ENOMEM))
+             << endl;
+        exit(1);
+    }
+    // ad->pInCodecContext->channel_layout = av_get_default_channel_layout(ad->pInCodecContext->channels);
+    pOutCodecContext->channels = pInCodecContext->channels;
+    pOutCodecContext->channel_layout = av_get_default_channel_layout(pInCodecContext->channels);
+    pOutCodecContext->sample_rate = pInCodecContext->sample_rate;
+    pOutCodecContext->sample_rate = pInCodecContext->sample_fmt;
+    pOutCodecContext->bit_rate = pInCodecContext->bit_rate;
+    //some containers like mp4 need global headers to be present: mark encoder so that it works like we want it to
+
+    if (pOutFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
+        pOutFormatContext->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+    }
+
+    resp = avcodec_open2(pOutCodecContext, pOutCodec, nullptr);
+    if (resp < 0) {
+        cerr << stderr << " ERROR: Could not open codec and its context " << endl;
+        exit(1);
+    }
+
+    return resp;
+
+}
+
 int AudioDecoder::openOutputFile() {
     int resp;
-    AVCodecContext *inCodec, *outCodec;
-    AVCodec *encoder;
 
     resp = avformat_alloc_output_context2(&pOutFormatContext, nullptr, nullptr, outputFP);
     if (resp < 0) {
@@ -162,7 +214,7 @@ int AudioDecoder::openOutputFile() {
         return -1;
     }
 
-    cout<<"Stream mapping size: "<<streamMappingSize<<endl;
+    cout << "Stream mapping size: " << streamMappingSize << endl;
     for (int i = 0; i < streamMappingSize; i++) {
 
         outStream = avformat_new_stream(pOutFormatContext, nullptr);
@@ -289,7 +341,8 @@ int AudioDecoder::getAudioRunCommand() {
         return -1;
     }
     cerr << "Play the data output File w/" << endl;
-    cerr << "ffplay -f " << sFormat << " -ac " << channelNum << " -ar " << pInCodecContext->sample_rate << " " << outputFP
+    cerr << "ffplay -f " << sFormat << " -ac " << channelNum << " -ar " << pInCodecContext->sample_rate << " "
+         << outputFP
          << endl;
 
     return 0;

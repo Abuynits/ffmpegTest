@@ -18,6 +18,12 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavutil/timestamp.h>
 #include <libavutil/samplefmt.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/opt.h>
 
 }
 class AudioDecoder {
@@ -34,15 +40,22 @@ public:
     //used to set the specific output format for the input format context when do 1st loop
     const AVOutputFormat *outputFormat = nullptr;
     //the codec used for decoding the input file
-    const AVCodec *pCodec = nullptr;
+    const AVCodec *pInCodec = nullptr;
+
+    const AVCodec *pOutCodec = nullptr;
     //the context of the codec: set from the format context and parameters
     AVCodecContext *pInCodecContext = nullptr;
+
+    AVCodecContext *pOutCodecContext = nullptr;
+
+    AVIOContext *outIoContext = nullptr;
     //the packet object used for looping over a audio file
     AVPacket *pPacket = nullptr;
     //the frames of the audio packet taht will be loped over
     AVFrame *pFrame = nullptr;
     //trasnfer the specific input stream between the in and out format context
-    AVStream *audioStream = nullptr;
+    AVStream *inAudioStream = nullptr;
+    AVStream *outAudioStream = nullptr;
     //the specific index of the audio stream within a packet
     int avStreamIndex = -1;
     //the count of all audio frames that loop over
@@ -65,42 +78,6 @@ public:
     //start writing when =0: skip the first frame to prevent writing the bad header in the first loop.
     int startWriting = -1;
 
-    struct waveHeader {
-        /* RIFF Header: "RIFF" */
-        char riff_header[4];
-        /* size of audio data + sizeof(struct wave_hdr) - 8 */
-        int wav_size;
-        /* "WAVE" */
-        char wav_header[4];
-
-        /* Format Header */
-        /* "fmt " (includes trailing space) */
-        char fmt_header[4];
-        /* Should be 16 for PCM */
-        int fmt_chunk_size;
-        /* Should be 1 for PCM. 3 for IEEE Float */
-        short audio_format;
-        short num_channels;
-        int sample_rate;
-        /*
-         * Number of bytes per second
-         * sample_rate * num_channels * bit_depth/8
-         */
-        int byte_rate;
-        /* num_channels * bytes per sample */
-        short sample_alignment;
-        /* bits per sample */
-        short bit_depth;
-
-        /* Data Header */
-        /* "data" */
-        char data_header[4];
-        /*
-         * size of audio
-         * number of samples * num_channels * bit_depth/8
-         */
-        int data_bytes;
-    } __attribute__((__packed__));
 
     /**
      * init audiodecoder
@@ -110,26 +87,7 @@ public:
      * @param initDemuxer  boolean specify whether init demuxers
      */
     AudioDecoder(const char *inFilePath, const char *ptrOutFilePath, bool initCodecs, bool initDemuxer);
-     void write_wave_hdr(int fd, size_t size)
-    {
-        struct waveHeader wh;
 
-        memcpy(&wh.riff_header, "RIFF", 4);
-        wh.wav_size = size + sizeof(struct waveHeader) - 8;
-        memcpy(&wh.wav_header, "WAVE", 4);
-        memcpy(&wh.fmt_header, "fmt ", 4);
-        wh.fmt_chunk_size = 16;
-        wh.audio_format = 1;
-        wh.num_channels = 1;
-        wh.sample_rate = pInCodecContext->sample_rate;
-        wh.sample_alignment = 2;
-        wh.bit_depth = 16;
-        wh.byte_rate = wh.sample_rate * wh.sample_alignment;
-        memcpy(&wh.data_header, "data", 4);
-        wh.data_bytes = size;
-
-        //write(fd, &wh, sizeof(struct waveHeader));
-    }
     /**
      * init the format contexts
      * get the input format for the input context
@@ -174,6 +132,8 @@ public:
      * @return int say whether run the audio or not
      */
     int getAudioRunCommand();
+
+    int openOutConverterFile();
 
 private:
 
