@@ -20,7 +20,6 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 
 }
-
 class AudioDecoder {
 public:
     //the input and output filepaths /file objects
@@ -66,6 +65,43 @@ public:
     //start writing when =0: skip the first frame to prevent writing the bad header in the first loop.
     int startWriting = -1;
 
+    struct waveHeader {
+        /* RIFF Header: "RIFF" */
+        char riff_header[4];
+        /* size of audio data + sizeof(struct wave_hdr) - 8 */
+        int wav_size;
+        /* "WAVE" */
+        char wav_header[4];
+
+        /* Format Header */
+        /* "fmt " (includes trailing space) */
+        char fmt_header[4];
+        /* Should be 16 for PCM */
+        int fmt_chunk_size;
+        /* Should be 1 for PCM. 3 for IEEE Float */
+        short audio_format;
+        short num_channels;
+        int sample_rate;
+        /*
+         * Number of bytes per second
+         * sample_rate * num_channels * bit_depth/8
+         */
+        int byte_rate;
+        /* num_channels * bytes per sample */
+        short sample_alignment;
+        /* bits per sample */
+        short bit_depth;
+
+        /* Data Header */
+        /* "data" */
+        char data_header[4];
+        /*
+         * size of audio
+         * number of samples * num_channels * bit_depth/8
+         */
+        int data_bytes;
+    } __attribute__((__packed__));
+
     /**
      * init audiodecoder
      * @param inFilePath input file path
@@ -74,7 +110,26 @@ public:
      * @param initDemuxer  boolean specify whether init demuxers
      */
     AudioDecoder(const char *inFilePath, const char *ptrOutFilePath, bool initCodecs, bool initDemuxer);
+     void write_wave_hdr(int fd, size_t size)
+    {
+        struct waveHeader wh;
 
+        memcpy(&wh.riff_header, "RIFF", 4);
+        wh.wav_size = size + sizeof(struct waveHeader) - 8;
+        memcpy(&wh.wav_header, "WAVE", 4);
+        memcpy(&wh.fmt_header, "fmt ", 4);
+        wh.fmt_chunk_size = 16;
+        wh.audio_format = 1;
+        wh.num_channels = 1;
+        wh.sample_rate = pCodecContext->sample_rate;
+        wh.sample_alignment = 2;
+        wh.bit_depth = 16;
+        wh.byte_rate = wh.sample_rate * wh.sample_alignment;
+        memcpy(&wh.data_header, "data", 4);
+        wh.data_bytes = size;
+
+        write(fd, &wh, sizeof(struct waveHeader));
+    }
     /**
      * init the format contexts
      * get the input format for the input context

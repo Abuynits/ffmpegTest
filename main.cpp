@@ -87,7 +87,7 @@ Resampler *rs;
 //TODO: not work when given anything but a wav input
 const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording.aac";
 
-const char *wavInputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/wavInput.wav";
+//const char *wavInputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/wavInput.wav";
 //stores the raw data after applying filters
 const char *tempFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/tempRecording.wav";
 //the output file path
@@ -110,28 +110,8 @@ int main() {
     int resp;
     //create audioInfo
     audioInfo = new OutputAnalysis(statOutFP, false);
-    ad = new AudioDecoder(inputFP, wavInputFP, true, true);
-    ad->openFiles();
-    ad->initializeAllObjects();
-
-    if (resp < 0) {
-        cerr << "error: could not initialize decoder" << endl;
-        return 1;
-    }
-    cerr << "initialized AudioDecoder" << endl;
-    //create audio filter
-    rs = new Resampler(ad);
-    rs->initObjects();
-    cerr << "initialized Resampler" << endl;
-
-    resampleAudio(showData);
-
-    ad->closeAllObjects();
-
-
-    cout << "=====================DONE WITH FIRST LOOP=====================" << endl;
     //create audio decoder
-    ad = new AudioDecoder(wavInputFP, tempFP, true, true);
+    ad = new AudioDecoder(inputFP, tempFP, true, true);
     ad->openFiles();
     ad->initializeAllObjects();
 
