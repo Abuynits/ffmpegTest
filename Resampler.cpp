@@ -19,8 +19,10 @@ int Resampler::initObjects() {
     av_opt_set_int(resampleCtx, "in_sample_rate", ad->pCodecContext->sample_rate, 0);
     av_opt_set_int(resampleCtx, "out_sample_rate", ad->pCodecContext->sample_rate, 0);
 
-    av_opt_set_channel_layout(resampleCtx, "in_chlayout", ad->pCodecContext->channel_layout, 0);
-    av_opt_set_channel_layout(resampleCtx, "out_chlayout", ad->pCodecContext->channel_layout, 0);
+    av_opt_set_channel_layout(resampleCtx, "in_channel_layout", ad->pCodecContext->channel_layout, 0);
+    av_opt_set_channel_layout(resampleCtx, "out_channel_layout", ad->pCodecContext->channel_layout, 0);
+    //channel count and layout are not set
+
 
     //init sample context:
     resp = swr_init(resampleCtx);
