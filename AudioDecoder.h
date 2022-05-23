@@ -24,6 +24,7 @@ extern "C" {
 #include <libavfilter/buffersrc.h>
 #include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
+#include <libavutil/audio_fifo.h>
 
 }
 class AudioDecoder {
@@ -78,6 +79,7 @@ public:
     //start writing when =0: skip the first frame to prevent writing the bad header in the first loop.
     int startWriting = -1;
 
+    AVAudioFifo *avBuffer;
 
     /**
      * init audiodecoder
@@ -134,6 +136,8 @@ public:
     int getAudioRunCommand();
 
     int openOutConverterFile();
+
+    int initFifo();
 
 private:
 

@@ -72,6 +72,8 @@ void getAudioInfo();
 
 int resampleAudio(bool showFrameData);
 
+int processAudioStack(int *pInt);
+
 using namespace std;
 //info about codecs, and is responsible for processing audio
 AudioDecoder *ad;
@@ -105,6 +107,7 @@ int totalFrameCount = 0;
 const bool showData = false;
 const bool writeFileHeader = true;
 
+
 int main() {
     //used to error return errors
     int resp;
@@ -128,6 +131,14 @@ int main() {
         return 1;
     }
     cerr << "initialized AudioFilter\n" << endl;
+    rs = new Resampler(ad);
+    rs->initObjects();
+    cerr << "initialized Resampler\n" << endl;
+    resp = resampleAudio(showData);
+    if (resp == 0) {
+        cerr << "finished processing first loop" << endl;
+    }
+
     //loop over the frames in each packet and apply a chain of filters to each frame
     resp = applyFilters(writeFileHeader);
     if (resp == 0) {
@@ -343,87 +354,86 @@ void getAudioInfo() {
 
 int resampleAudio(bool showFrameData) {
     int resp;
-    while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
-        resp = avcodec_send_packet(ad->pInCodecContext, ad->pPacket);
-        if (resp < 0) {
-            cerr << "error submitting a packet for decoding: " << av_err2str(resp);
-            return resp;
-        }
-        cout<<"getting another packet"<<endl;
 
-        while (resp >= 0) {
-            resp = avcodec_receive_frame(ad->pInCodecContext, ad->pFrame);
-            if (resp == AVERROR(EAGAIN)) {
-                if (showFrameData) cerr << "Not enough data in frame, skipping to next packet" << endl;
-                //decoded not have enough data to process frame
-                //not error unless reached end of the stream - pass more packets untill have enough to produce frame
-                clearFrames:
-                av_frame_unref(ad->pFrame);
-                av_freep(ad->pFrame);
-                break;
-            } else if (resp == AVERROR_EOF) {
-                cerr << "Reached end of file" << endl;
-                goto clearFrames;
-            } else if (resp < 0) {
-                cerr << "Error while receiving a frame from the decoder: " << av_err2str(resp) << endl;
-                // Failed to get a frame from the decoder
-                av_frame_unref(ad->pFrame);
-                av_freep(ad->pFrame);
-                return resp;
-            }
-            /*
-             * TODO: need to find the noise level of audio file
-             * try to look at astats filter, then at the portions where silence is detected idk
-             * need to get the RMS factor: what kolya talk about
+    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+    if (resp < 0) {
+        cerr << "Error when writing header" << endl;
+        return -1;
+    }
+    while (1) {
+        const int outputFrameSize = ad->pOutCodecContext->frame_size;
+        int finished = 0;
+        while (av_audio_fifo_size(ad->avBuffer) < outputFrameSize) {
+            /* Decode one frame worth of audio samples, convert it to the
+             * output sample format and put it into the FIFO buffer.
              */
+            if (processAudioStack(&finished)) {
 
-            //TODO: use this link for converting audio types: https://ffmpeg.org/doxygen/2.2/transcode_aac_8c-example.html
+            }
 
 
-            if (showFrameData)
-                cerr << "frame number: " << ad->pInCodecContext->frame_number
-                     << ", Pkt_Size: " << ad->pFrame->pkt_size
-                     << ", Pkt_pts: " << ad->pFrame->pts
-                     << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
-
-            rs->numDstSamples = av_rescale_rnd(swr_get_delay(rs->resampleCtx, rs->numSrcSamples) + rs->numSrcSamples,
-                                               ad->pInCodecContext->sample_rate, ad->pInCodecContext->sample_rate,
-                                               AV_ROUND_UP);
-            if (rs->numDstSamples > rs->maxDstNumSamples) {
-                av_freep(&rs->dstData[0]);
-                resp = av_samples_alloc(rs->dstData, &rs->dstLineSize, rs->numDstChannels,
-                                        rs->numDstSamples, ad->pInCodecContext->sample_fmt, 1);
-                if (resp < 0)
-                    cout << "cannot allocate samples" << endl;
+            /**
+   * If we are at the end of the input file, we continue
+   * encoding the remaining audio samples to the output file.
+   */
+            if (finished)
                 break;
-                rs->maxDstNumSamples = rs->numDstSamples;
-
-            }
-            resp = swr_convert(rs->resampleCtx, rs->dstData, rs->numDstSamples, (const uint8_t **) rs->srcData,
-                               rs->numSrcSamples);
-            if (resp < 0) {
-                cout << "ERRORO: converting samples" << endl;
-                return -1;
-            }
-            rs->dstBufferSize = av_samples_get_buffer_size(&rs->dstLineSize, rs->numDstChannels, resp,
-                                                           ad->pInCodecContext->sample_fmt, 1);
-            if (rs->dstBufferSize < 0) {
-                cout << "ERROR: could not get sample buffer size" << endl;
-                return -1;
-            }
-            fwrite(rs->dstData[0], 1, rs->dstBufferSize, ad->outFile);
-
         }
+        while (av_audio_fifo_size(ad->avBuffer) >= outputFrameSize ||
+               (finished && av_audio_fifo_size(ad->avBuffer) > 0))
+            /**
+   * Take one frame worth of audio samples from the FIFO buffer,
+   * encode it and write it to the output file.
+   */
+            if (load_encode_and_write(ad->avBuffer, ad->pOutFormatContext, ad->pCodecContext))
+                goto end;
+
+        /**
+   * If we are at the end of the input file and have encoded
+   * all remaining samples, we can exit this loop and finish.
+   */
+        if (finished) {
+            int data_written;
+            /** Flush the encoder as it may have delayed frames. */
+            do {
+                if (encodeAudioframe(nullptr, ad->pOutFormatContext,
+                                     ad->pOutCodecContext, &data_written))
+                    goto end;
+            } while (data_written);
+            break;
+        }
+
 
     }
-//    const char *fmt;
-//    if ((resp = ad->getSampleFmtFormat(&fmt, ad->pInCodecContext->sample_fmt))) {
-//        cout << "Error while getting sample format" << endl;
-//        return -1;
-//    }
-    // av_channel_layout_describe(&rs->, buf, sizeof(buf));
-//    fprintf(stderr, "Resampling succeeded. Play the output file with the command:\n"
-//                    "ffplay -f %s -channel_layout %s -channels %d -ar %d %s\n");
+    /** Write the trailer of the output file container. */
+    resp =av_write_trailer(ad->pOutFormatContext);
+    if (resp<0) {
+        cout<<"error writing trailer"<<endl;
+        goto end;
+    }
     cout << "resampling succeded" << endl;
     return 0;
+    end:
+    if (ad->avBuffer)
+        av_audio_fifo_free(ad->avBuffer);
+    swr_free(&rs->resampleCtx);
+    if (ad->pOutCodecContext)
+        avcodec_close(ad->pOutCodecContext);
+    if (ad->pOutFormatContext) {
+        avio_close(ad->pOutFormatContext->pb);
+        avformat_free_context(ad->pOutFormatContext);
+    }
+    if (ad->pInCodecContext)
+        avcodec_close(ad->pInCodecContext);
+    if (ad->pInFormatContext)
+        avformat_close_input(&ad->pInFormatContext);
+    return -1;
+}
+
+int processAudioStack(int *pInt) {
+
+}
+
+int decodeAudioFrame() {
+
 }

@@ -347,3 +347,13 @@ int AudioDecoder::getAudioRunCommand() {
 
     return 0;
 }
+
+int AudioDecoder::initFifo() {
+    avBuffer = av_audio_fifo_alloc(pOutCodecContext->sample_fmt, pOutCodecContext->channels, 1);
+    if(avBuffer== nullptr) {
+        cout << "ERROR: allocated av fifo stack" << endl;
+        exit(1);
+    }
+
+}
+
