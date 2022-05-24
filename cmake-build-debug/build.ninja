@@ -84,6 +84,13 @@ build CMakeFiles/ffmpegTest5.dir/Resampler.cpp.o: CXX_COMPILER__ffmpegTest5_Debu
   OBJECT_DIR = CMakeFiles/ffmpegTest5.dir
   OBJECT_FILE_DIR = CMakeFiles/ffmpegTest5.dir
 
+build CMakeFiles/ffmpegTest5.dir/main2.cpp.o: CXX_COMPILER__ffmpegTest5_Debug /Users/abuynits/CLionProjects/ffmpegTest5/main2.cpp || cmake_object_order_depends_target_ffmpegTest5
+  DEP_FILE = CMakeFiles/ffmpegTest5.dir/main2.cpp.o.d
+  FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -std=gnu++14
+  INCLUDES = -I/usr/local/Cellar/ffmpeg/5.0.1/include
+  OBJECT_DIR = CMakeFiles/ffmpegTest5.dir
+  OBJECT_FILE_DIR = CMakeFiles/ffmpegTest5.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target ffmpegTest5
@@ -92,7 +99,7 @@ build CMakeFiles/ffmpegTest5.dir/Resampler.cpp.o: CXX_COMPILER__ffmpegTest5_Debu
 #############################################
 # Link the executable ffmpegTest5
 
-build ffmpegTest5: CXX_EXECUTABLE_LINKER__ffmpegTest5_Debug CMakeFiles/ffmpegTest5.dir/main.cpp.o CMakeFiles/ffmpegTest5.dir/AudioDecoder.cpp.o CMakeFiles/ffmpegTest5.dir/AudioFilter.cpp.o CMakeFiles/ffmpegTest5.dir/OutputAnalysis.cpp.o CMakeFiles/ffmpegTest5.dir/Resampler.cpp.o
+build ffmpegTest5: CXX_EXECUTABLE_LINKER__ffmpegTest5_Debug CMakeFiles/ffmpegTest5.dir/main.cpp.o CMakeFiles/ffmpegTest5.dir/AudioDecoder.cpp.o CMakeFiles/ffmpegTest5.dir/AudioFilter.cpp.o CMakeFiles/ffmpegTest5.dir/OutputAnalysis.cpp.o CMakeFiles/ffmpegTest5.dir/Resampler.cpp.o CMakeFiles/ffmpegTest5.dir/main2.cpp.o
   FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk
   LINK_LIBRARIES = -Wl,-rpath,/usr/local/Cellar/ffmpeg/5.0.1/lib  -lavformat  -lavcodec  -lavutil  -lavfilter  -lswresample
   LINK_PATH = -L/usr/local/Cellar/ffmpeg/5.0.1/lib
