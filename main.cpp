@@ -73,6 +73,7 @@ void getAudioInfo();
 int resampleAudio(bool showFrameData);
 
 int read_decode_convert_and_store(int *finished);
+int decode_audio_frame(int *dataPresent, int *finished);
 
 using namespace std;
 //info about codecs, and is responsible for processing audio
@@ -378,18 +379,19 @@ int resampleAudio(bool showFrameData) {
                 break;
         }
         while (av_audio_fifo_size(ad->avBuffer) >= outputFrameSize ||
-               (finished && av_audio_fifo_size(ad->avBuffer) > 0))
+               (finished && av_audio_fifo_size(ad->avBuffer) > 0)) {
             /**
-   * Take one frame worth of audio samples from the FIFO buffer,
-   * encode it and write it to the output file.
-   */
+              * Take one frame worth of audio samples from the FIFO buffer,
+              * encode it and write it to the output file.
+              */
             if (load_encode_and_write() != 0)
                 goto end;
+        }
 
         /**
-   * If we are at the end of the input file and have encoded
-   * all remaining samples, we can exit this loop and finish.
-   */
+          * If we are at the end of the input file and have encoded
+          * all remaining samples, we can exit this loop and finish.
+          */
         if (finished) {
             int data_written;
             /** Flush the encoder as it may have delayed frames. */
@@ -427,7 +429,7 @@ int resampleAudio(bool showFrameData) {
     return -1;
 }
 
-int read_decode_convert_and_store(int *finished) {
+int     read_decode_convert_and_store(int *finished) {
 
     /** Temporary storage for the converted input samples. */
     int **convertedInputSamples = nullptr;
@@ -449,13 +451,15 @@ int read_decode_convert_and_store(int *finished) {
     /** If there is decoded data, convert and store it */
     if (dataPresent) {
         /** Initialize the temporary storage for the converted input samples. */
-        if (init_converted_samples(&convertedInputSamples, ad->pOutCodecContext, ad->pInFrame->nb_samples)) { goto end; }
+        if (init_converted_samples(&convertedInputSamples, ad->pOutCodecContext,
+                                   ad->pInFrame->nb_samples)) { goto end; }
 
         /**
    * Convert the input samples to the desired output sample format.
    * This requires a temporary storage provided by converted_input_samples.
    */
-        if (convert_samples((const uint8_t **) ad->pInFrame->extended_data, convertedInputSamples, ad->pInFrame->nb_samples,
+        if (convert_samples((const uint8_t **) ad->pInFrame->extended_data, convertedInputSamples,
+                            ad->pInFrame->nb_samples,
                             rs->resampleCtx)) { goto end; }
 
 
@@ -524,7 +528,7 @@ static int load_encode_and_write() {
      * buffer use this number. Otherwise, use the maximum possible frame size
      */
     const int frame_size = FFMIN(av_audio_fifo_size(ad->avBuffer),
-                        ad->pOutCodecContext->frame_size);
+                                 ad->pOutCodecContext->frame_size);
     int data_written;
 
     /**
