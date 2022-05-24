@@ -69,3 +69,15 @@ OutputAnalysis::OutputAnalysis(const char *fp) {
     f.open(fp);
     cerr << "opened stat file!" << endl;
 }
+
+void OutputAnalysis::displayAudioData() {
+    cerr.flush();
+    getRMS();
+
+    cout << "===============VIDEO DATA===============" << endl;
+    cout << startMs << " ms removed from start" << endl;
+    cout << endMs << " ms removed from end" << endl;
+    cout << "before trough rms: " << bTrough << " DB after trough rms: " << aTrough << " DB"
+         << endl;
+    cout << "before peak rms: " << bPeak << " DB after peak rms: " << aPeak << " DB" << endl;
+}

@@ -58,12 +58,7 @@ int applyFilters();
  */
 int applyMuxers();
 
-/**
- * displays the audio information
- * this includes the start and end frames, the total frame
- * the before and after RMS of the trough and peak of a silent frame
- */
-void getAudioInfo();
+
 
 using namespace std;
 //info about codecs, and is responsible for processing audio
@@ -131,7 +126,7 @@ int main() {
     ad->closeAllObjects();
 //    //==============RMS PROCESSING===================
 //get the stats and show them
-    getAudioInfo();
+    audioInfo->displayAudioData();
     return 0;
 }
 
@@ -301,14 +296,3 @@ int applyMuxers() {
     return 0;
 }
 
-void getAudioInfo() {
-    cerr.flush();
-    audioInfo->getRMS();
-
-    cout << "===============VIDEO DATA===============" << endl;
-    cout << audioInfo->startMs << " ms removed from start" << endl;
-    cout << audioInfo->endMs << " ms removed from end" << endl;
-    cout << "before trough rms: " << audioInfo->bTrough << " DB after trough rms: " << audioInfo->aTrough << " DB"
-         << endl;
-    cout << "before peak rms: " << audioInfo->bPeak << " DB after peak rms: " << audioInfo->aPeak << " DB" << endl;
-}

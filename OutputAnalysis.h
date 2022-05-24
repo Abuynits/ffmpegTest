@@ -50,6 +50,14 @@ public:
     double bPeak = 0, bTrough = 0, aPeak = 0, aTrough = 0;
     //store the frame # of the start clipped audio, the end clip audio, and the total frames of the original audio
     int startMs, endMs, totalMs;
+
+    /**
+      * displays the audio information
+      * this includes the start and end frames, the total frame
+      * the before and after RMS of the trough and peak of a silent frame
+      */
+    void displayAudioData();
+
 private:
     const char *filePath;
     //the keys for which to look for in the stderr output-> do not change unless ffmpeg changes these keys
@@ -66,7 +74,6 @@ private:
      * @param key the key from the file: either rmsTrough or rmsPeak
      */
     void checkForData(string line, string key);
-
 
 };
 
