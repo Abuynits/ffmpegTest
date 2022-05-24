@@ -125,8 +125,13 @@ void AudioDecoder::initializeAllObjects() {
 
     //allocate memory for frame from readings
     // https://ffmpeg.org/doxygen/trunk/structAVPacket.html
-    pFrame = av_frame_alloc();
-    if (!pFrame) {
+    pInFrame = av_frame_alloc();
+    if (!pInFrame) {
+        cerr << stderr << "Could not open frame" << endl;
+        exit(1);
+    }
+    pOutFrame = av_frame_alloc();
+    if (!pOutFrame) {
         cerr << stderr << "Could not open frame" << endl;
         exit(1);
     }
@@ -269,27 +274,27 @@ void AudioDecoder::closeAllObjects() {
     avformat_free_context(pInFormatContext);
 
     avcodec_free_context(&pInCodecContext);
-    av_frame_free(&pFrame);
+    av_frame_free(&pInFrame);
     av_packet_free(&pPacket);
 
 }
 
 
 int AudioDecoder::saveAudioFrame(bool showFrameData) {
-    char *time = av_ts2timestr(pFrame->pts, &pInCodecContext->time_base);
+    char *time = av_ts2timestr(pInFrame->pts, &pInCodecContext->time_base);
     if (startWriting != 0) {
         startFrame = pInCodecContext->frame_number;
         startWriting++;
     }
     endFrame = pInCodecContext->frame_number;
 
-    size_t lineSize = pFrame->nb_samples * av_get_bytes_per_sample(pInCodecContext->sample_fmt);
+    size_t lineSize = pInFrame->nb_samples * av_get_bytes_per_sample(pInCodecContext->sample_fmt);
     if (showFrameData)
         printf("audio_frame n:%d nb_samples:%d pts:%s\n",
-               audioFrameCount++, pFrame->nb_samples,
+               audioFrameCount++, pInFrame->nb_samples,
                time);
 
-    fwrite(pFrame->extended_data[0], 1, lineSize, outFile);
+    fwrite(pInFrame->extended_data[0], 1, lineSize, outFile);
 }
 
 int AudioDecoder::getSampleFmtFormat(const char **fmt, enum AVSampleFormat audioFormat) {

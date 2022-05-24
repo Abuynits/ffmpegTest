@@ -41,7 +41,7 @@ int Resampler::initObjects() {
 //    numSrcChannels = av_get_channel_layout_nb_channels(ad->pInCodecContext->channel_layout);
 //
 //    numSrcSamples = ad->pInCodecContext->sample_rate;//TODO: chekc whether this is the right parameter
-//    srcLineSize = 8; //TODO:NOTE: line size is from ad->pFrame->linesize (default is 8)
+//    srcLineSize = 8; //TODO:NOTE: line size is from ad->pInFrame->linesize (default is 8)
 //
 //    resp = av_samples_alloc_array_and_samples(&srcData, &srcLineSize, numSrcChannels,
 //                                              numSrcSamples, ad->pInCodecContext->sample_fmt, 0);

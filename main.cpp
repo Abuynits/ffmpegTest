@@ -72,7 +72,7 @@ void getAudioInfo();
 
 int resampleAudio(bool showFrameData);
 
-int processAudioStack(int *pInt);
+int read_decode_convert_and_store(int *finished);
 
 using namespace std;
 //info about codecs, and is responsible for processing audio
@@ -140,35 +140,35 @@ int main() {
     }
     //TODO: this is part of the second loop: need to add another initialization
     //loop over the frames in each packet and apply a chain of filters to each frame
-    resp = applyFilters(writeFileHeader);
-    if (resp == 0) {
-        cerr << "finished processing first loop" << endl;
-    }
-
-    //close all of the objects
-    ad->closeAllObjects();
-    av->closeAllObjects();
-    //save the stats from the filter stage into the info object
-    audioInfo->setFrameVals(ad->startFrame, ad->endFrame, totalFrameCount);
-
-    cout << "=====================DONE WITH SECOND LOOP=====================" << endl;
-    //========================SECOND STAGE: make playable by wav output file==========================
-    ad = new AudioDecoder(tempFP, finalFP, false, true);
-    ad->openFiles();
-    ad->initializeAllObjects();
-
-    //loop over the file to get the correct header to be playable
-    resp = applyMuxers();
-    if (resp == 0) {
-        cerr << "finished muxing files" << endl;
-    }
-
-    ad->closeAllObjects();
-//    //==============RMS PROCESSING===================
-//get the stats and show them
-    getAudioInfo();
-
-    cout << "=====================DONE WITH THIRD LOOP=====================" << endl;
+//    resp = applyFilters(writeFileHeader);
+//    if (resp == 0) {
+//        cerr << "finished processing first loop" << endl;
+//    }
+//
+//    //close all of the objects
+//    ad->closeAllObjects();
+//    av->closeAllObjects();
+//    //save the stats from the filter stage into the info object
+//    audioInfo->setFrameVals(ad->startFrame, ad->endFrame, totalFrameCount);
+//
+//    cout << "=====================DONE WITH SECOND LOOP=====================" << endl;
+//    //========================SECOND STAGE: make playable by wav output file==========================
+//    ad = new AudioDecoder(tempFP, finalFP, false, true);
+//    ad->openFiles();
+//    ad->initializeAllObjects();
+//
+//    //loop over the file to get the correct header to be playable
+//    resp = applyMuxers();
+//    if (resp == 0) {
+//        cerr << "finished muxing files" << endl;
+//    }
+//
+//    ad->closeAllObjects();
+////    //==============RMS PROCESSING===================
+////get the stats and show them
+//    getAudioInfo();
+//
+//    cout << "=====================DONE WITH THIRD LOOP=====================" << endl;
     return 0;
 }
 
@@ -203,14 +203,14 @@ int loopOverPacketFrames(bool showFrameData) {
     }
 
     while (resp >= 0) {
-        resp = avcodec_receive_frame(ad->pInCodecContext, ad->pFrame);
+        resp = avcodec_receive_frame(ad->pInCodecContext, ad->pInFrame);
         if (resp == AVERROR(EAGAIN)) {
             if (showFrameData) cerr << "Not enough data in frame, skipping to next packet" << endl;
             //decoded not have enough data to process frame
             //not error unless reached end of the stream - pass more packets untill have enough to produce frame
             clearFrames:
-            av_frame_unref(ad->pFrame);
-            av_freep(ad->pFrame);
+            av_frame_unref(ad->pInFrame);
+            av_freep(ad->pInFrame);
             break;
         } else if (resp == AVERROR_EOF) {
             cerr << "Reached end of file" << endl;
@@ -218,8 +218,8 @@ int loopOverPacketFrames(bool showFrameData) {
         } else if (resp < 0) {
             cerr << "Error while receiving a frame from the decoder: " << av_err2str(resp) << endl;
             // Failed to get a frame from the decoder
-            av_frame_unref(ad->pFrame);
-            av_freep(ad->pFrame);
+            av_frame_unref(ad->pInFrame);
+            av_freep(ad->pInFrame);
             return resp;
         }
         /*
@@ -230,17 +230,17 @@ int loopOverPacketFrames(bool showFrameData) {
 
         if (showFrameData)
             cerr << "frame number: " << ad->pInCodecContext->frame_number
-                 << ", Pkt_Size: " << ad->pFrame->pkt_size
-                 << ", Pkt_pts: " << ad->pFrame->pts
-                 << ", Pkt_keyFrame: " << ad->pFrame->key_frame << endl;
+                 << ", Pkt_Size: " << ad->pInFrame->pkt_size
+                 << ", Pkt_pts: " << ad->pInFrame->pts
+                 << ", Pkt_keyFrame: " << ad->pInFrame->key_frame << endl;
 
         if (filterAudioFrame() < 0) {
             cerr << "error in filtering" << endl;
 
         }
 
-        av_frame_unref(ad->pFrame);
-        av_freep(ad->pFrame);
+        av_frame_unref(ad->pInFrame);
+        av_freep(ad->pInFrame);
         if (resp < 0) {
             return resp;
         }
@@ -252,16 +252,16 @@ int loopOverPacketFrames(bool showFrameData) {
 
 int filterAudioFrame() {
     //add to source frame:
-    int resp = av_buffersrc_add_frame(av->srcContext, ad->pFrame);
+    int resp = av_buffersrc_add_frame(av->srcContext, ad->pInFrame);
     //TODO:START
     if (resp < 0) {
         cerr << "Error: cannot send to graph: " << av_err2str(resp) << endl;
         breakFilter:
-        av_frame_unref(ad->pFrame);
+        av_frame_unref(ad->pInFrame);
         return resp;
     }
     //get back the filtered data:
-    while ((resp = av_buffersink_get_frame(av->sinkContext, ad->pFrame)) >= 0) {
+    while ((resp = av_buffersink_get_frame(av->sinkContext, ad->pInFrame)) >= 0) {
 
         if (resp < 0) {
             cerr << "Error filtering data " << av_err2str(resp) << endl;
@@ -273,7 +273,7 @@ int filterAudioFrame() {
         if (resp < 0) {
             cerr << "Error muxing packet" << endl;
         }
-        av_frame_unref(ad->pFrame);
+        av_frame_unref(ad->pInFrame);
     }
     return 0;
 }
@@ -367,7 +367,7 @@ int resampleAudio(bool showFrameData) {
             /* Decode one frame worth of audio samples, convert it to the
              * output sample format and put it into the FIFO buffer.d
              */
-            if (processAudioStack(&finished)) {
+            if (read_decode_convert_and_store(&finished)) {
                 goto end;
             }
             /**
@@ -383,7 +383,7 @@ int resampleAudio(bool showFrameData) {
    * Take one frame worth of audio samples from the FIFO buffer,
    * encode it and write it to the output file.
    */
-            if (load_encode_and_write(ad->avBuffer, ad->pOutFormatContext, ad->pInCodecContext))
+            if (load_encode_and_write() != 0)
                 goto end;
 
         /**
@@ -394,8 +394,7 @@ int resampleAudio(bool showFrameData) {
             int data_written;
             /** Flush the encoder as it may have delayed frames. */
             do {
-                if (encodeAudioframe(nullptr, ad->pOutFormatContext,
-                                     ad->pOutCodecContext, &data_written))
+                if (encode_audio_frame(&data_written))
                     goto end;
             } while (data_written);
             break;
@@ -428,14 +427,14 @@ int resampleAudio(bool showFrameData) {
     return -1;
 }
 
-int processAudioStack(int *finished) {
+int read_decode_convert_and_store(int *finished) {
 
     /** Temporary storage for the converted input samples. */
     int **convertedInputSamples = nullptr;
     int dataPresent;
     int ret = AVERROR_EXIT;
     /** Decode one frame worth of audio samples. */
-    if (decodeAudioFrame(finished)) {
+    if (decode_audio_frame(&dataPresent, finished)) {
         goto end;
     }
     /**
@@ -450,22 +449,20 @@ int processAudioStack(int *finished) {
     /** If there is decoded data, convert and store it */
     if (dataPresent) {
         /** Initialize the temporary storage for the converted input samples. */
-        if (init_converted_samples(&convertedInputSamples, ad->pOutCodecContext, ad->pFrame->nb_samples)) { goto end; }
+        if (init_converted_samples(&convertedInputSamples, ad->pOutCodecContext, ad->pInFrame->nb_samples)) { goto end; }
 
         /**
    * Convert the input samples to the desired output sample format.
    * This requires a temporary storage provided by converted_input_samples.
    */
-        if (convert_samples((const uint8_t **) ad->pFrame->extended_data, convertedInputSamples, ad->pFrame->nb_samples,
-                            rs->resampleCtx))
+        if (convert_samples((const uint8_t **) ad->pInFrame->extended_data, convertedInputSamples, ad->pInFrame->nb_samples,
+                            rs->resampleCtx)) { goto end; }
 
-            goto end;
+
 
         /** Add the converted input samples to the FIFO buffer for later processing. */
-        if (add_samples_to_fifo(ad->avBuffer, convertedInputSamples,
+        if (add_samples_to_fifo(ad->avBuffer, convertedInputSamples, ad->pInFrame->nb_samples)) { goto end; }
 
-                                ad->pFrame->nb_samples))
-            goto end;
         ret = 0;
     }
     ret = 0;
@@ -475,24 +472,22 @@ int processAudioStack(int *finished) {
         av_freep(&convertedInputSamples[0]);
         free(convertedInputSamples);
     }
-    av_frame_free(&ad->pFrame);
+    av_frame_free(&ad->pInFrame);
 
     return ret;
 
 }
 
-int decodeAudioFrame(int *finished) {
-     int error;
+int decode_audio_frame(int *dataPresent, int *finished) {
+    int error;
     /** Read one audio frame from the input file into a temporary packet. */
-    if ((error = av_read_frame(ad->pInFormatContext, &ad->pPacket)) < 0) {
+    if ((error = av_read_frame(ad->pInFormatContext, ad->pPacket)) < 0) {
         /** If we are the the end of the file, flush the decoder below. */
         if (error == AVERROR_EOF)
-             *finished = 1;
+            *finished = 1;
         else {
 
-            fprintf(stderr, "Could not read frame (error '%s')\n",
-
-            get_error_text(error));
+            fprintf(stderr, "Could not read frame (error '%s')\n");
 
             return error;
 
@@ -505,13 +500,9 @@ int decodeAudioFrame(int *finished) {
    * If we are at the end of the file, pass an empty packet to the decoder
    * to flush it.
    */
-    if ((error = avcodec_decode_audio4(input_codec_context, frame,
-
-        data_present, &input_packet)) < 0) {
-        fprintf(stderr, "Could not decode frame (error '%s')\n",
-
-        get_error_text(error));
-        av_free_packet(&input_packet);
+    if ((error = avcodec_decode_audio4(ad->pInCodecContext, ad->pInFrame, dataPresent, &ad->pPacket)) < 0) {
+        fprintf(stderr, "Could not decode frame (error '%s')\n");
+        // av_free_packet(ad->pPacket);
         return error;
     }
 
@@ -519,9 +510,39 @@ int decodeAudioFrame(int *finished) {
    * If the decoder has not been flushed completely, we are not finished,
    * so that this function has to be called again.
    */
-    if (*finished && *data_present)
+    if (*finished && *dataPresent)
         *finished = 0;
-    av_free_packet(&input_packet);
+    av_free_packet(ad->pPacket);
     return 0;
 }
 
+static int load_encode_and_write() {
+
+    /**
+     * Use the maximum number of possible samples per frame.
+     * If there is less than the maximum possible frame size in the FIFO
+     * buffer use this number. Otherwise, use the maximum possible frame size
+     */
+    const int frame_size = FFMIN(av_audio_fifo_size(ad->avBuffer),
+                        ad->pOutCodecContext->frame_size);
+    int data_written;
+
+    /**
+       * Read as many samples from the FIFO buffer as required to fill the frame.
+       * The samples are stored in the frame temporarily.
+       */
+    if (av_audio_fifo_read(ad->avBuffer, (void **) ad->pInFrame->data, frame_size) < frame_size) {
+        fprintf(stderr, "Could not read data from FIFO\n");
+        av_frame_free(&ad->pInFrame);
+        return AVERROR_EXIT;
+    }
+
+    /** Encode one frame worth of audio samples. */
+    if (encode_audio_frame(ad->pInFrame, ad->pOutFormatContext,
+                           ad->pOutCodecContext, &data_written)) {
+        av_frame_free(&ad->pInFrame);
+        return AVERROR_EXIT;
+    }
+    av_frame_free(&ad->pInFrame);
+    return 0;
+}

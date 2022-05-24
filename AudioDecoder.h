@@ -53,7 +53,8 @@ public:
     //the packet object used for looping over a audio file
     AVPacket *pPacket = nullptr;
     //the frames of the audio packet taht will be loped over
-    AVFrame *pFrame = nullptr;
+    AVFrame *pInFrame = nullptr;
+    AVFrame *pOutFrame = nullptr;
     //trasnfer the specific input stream between the in and out format context
     AVStream *inAudioStream = nullptr;
     AVStream *outAudioStream = nullptr;

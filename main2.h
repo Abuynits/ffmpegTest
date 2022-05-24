@@ -233,7 +233,7 @@ static int read_decode_convert_and_store(int *finished) {
     int ret = AVERROR_EXIT;
 
     /** Decode one frame worth of audio samples. */
-    if (decode_audio_frame(ad->pFrame, ad->pInFormatContext,
+    if (decode_audio_frame(ad->pInFrame, ad->pInFormatContext,
                            ad->pInCodecContext, &data_present, finished))
         goto cleanup;
     /**
@@ -249,20 +249,20 @@ static int read_decode_convert_and_store(int *finished) {
     if (data_present) {
         /** Initialize the temporary storage for the converted input samples. */
         if (init_converted_samples(&converted_input_samples, ad->pOutCodecContext,
-                                   ad->pFrame->nb_samples))
+                                   ad->pInFrame->nb_samples))
             goto cleanup;
 
         /**
            * Convert the input samples to the desired output sample format.
            * This requires a temporary storage provided by converted_input_samples.
            */
-        if (convert_samples((const uint8_t **) ad->pFrame->extended_data, converted_input_samples,
-                            ad->pFrame->nb_samples, rs->resampleCtx))
+        if (convert_samples((const uint8_t **) ad->pInFrame->extended_data, converted_input_samples,
+                            ad->pInFrame->nb_samples, rs->resampleCtx))
             goto cleanup;
 
         /** Add the converted input samples to the FIFO buffer for later processing. */
         if (add_samples_to_fifo(ad->avBuffer, converted_input_samples,
-                                ad->pFrame->nb_samples))
+                                ad->pInFrame->nb_samples))
             goto cleanup;
         ret = 0;
     }
@@ -273,7 +273,7 @@ static int read_decode_convert_and_store(int *finished) {
         av_freep(&converted_input_samples[0]);
         free(converted_input_samples);
     }
-    av_frame_free(&ad->pFrame);
+    av_frame_free(&ad->pInFrame);
 
     return ret;
 }
