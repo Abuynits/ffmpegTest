@@ -73,6 +73,7 @@ void getAudioInfo();
 int resampleAudio(bool showFrameData);
 
 int read_decode_convert_and_store(int *finished);
+
 int decode_audio_frame(int *dataPresent, int *finished);
 
 using namespace std;

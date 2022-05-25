@@ -117,10 +117,10 @@ void AudioDecoder::initializeAllObjects() {
         cerr << "\tcreated codec" << endl;
     }
     if (iDemuxer) {
-//        resp = openOutputFile();
-//        if (resp < 0) {
-//            exit(1);
-//        }
+        resp = openOutputFile();
+        if (resp < 0) {
+            exit(1);
+        }
         resp = openOutConverterFile();
         if (resp < 0) {
             exit(1);
@@ -165,6 +165,7 @@ int AudioDecoder::openOutConverterFile() {
     }
     //  av_strlcpy(pOutFormatContext->filename, filename, sizeof((*output_format_context)->filename));
     //TODO: need to determine codec id by file extension name:IMPORTANT +++++++++++++++++
+    //wave file: AV_CODEC_ID_PCM_S16LE
     pOutCodec = avcodec_find_decoder(AV_CODEC_ID_PCM_S16LE);
 
     if (pOutCodec == nullptr) {
@@ -186,8 +187,9 @@ int AudioDecoder::openOutConverterFile() {
     pOutCodecContext->channels = pInCodecContext->channels;
     pOutCodecContext->channel_layout = av_get_default_channel_layout(pInCodecContext->channels);
     pOutCodecContext->sample_rate = pInCodecContext->sample_rate;
-    pOutCodecContext->sample_fmt= pInCodecContext->sample_fmt;
+    pOutCodecContext->sample_fmt = pInCodecContext->sample_fmt;
     pOutCodecContext->bit_rate = pInCodecContext->bit_rate;
+
     //some containers like mp4 need global headers to be present: mark encoder so that it works like we want it to
 
     if (pOutFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
@@ -360,7 +362,7 @@ int AudioDecoder::getAudioRunCommand() {
 
 int AudioDecoder::initFifo() {
     avBuffer = av_audio_fifo_alloc(pOutCodecContext->sample_fmt, pOutCodecContext->channels, 1);
-    if(avBuffer== nullptr) {
+    if (avBuffer == nullptr) {
         cout << "ERROR: allocated av fifo stack" << endl;
         exit(1);
     }
