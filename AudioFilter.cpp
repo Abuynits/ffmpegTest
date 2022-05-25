@@ -144,8 +144,8 @@ int AudioFilter::initFormatFilter() {
     char args[1024];
     snprintf(args, sizeof(args),
              "sample_fmts=%s:sample_rates=%d:channel_layouts=0x%" PRIx64,
-             av_get_sample_fmt_name(ad->pInCodecContext->sample_fmt), ad->pInCodecContext->sample_rate,
-             (uint64_t) (ad->pInCodecContext->channel_layout));
+             av_get_sample_fmt_name(ad->pOutCodecContext->sample_fmt), ad->pOutCodecContext->sample_rate,
+             (uint64_t) (ad->pOutCodecContext->channel_layout));
     resp = avfilter_init_str(aFormatContext, args);
     if (resp < 0) {
         cerr << "Could not initialize format filter context: " << av_err2str(AV_LOG_ERROR) << endl;

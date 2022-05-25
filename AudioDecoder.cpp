@@ -77,6 +77,7 @@ int AudioDecoder::openInputFile(enum AVMediaType mediaType) {
     return 0;
 }
 
+
 void AudioDecoder::initializeAllObjects() {
     //open the file and read header - codecs not opened
     //AVFormatContext (what allocate memory for)
@@ -103,12 +104,7 @@ void AudioDecoder::initializeAllObjects() {
     outputFormat = av_guess_format(nullptr, outputFP, nullptr);
     pInFormatContext->oformat = outputFormat;
     //TODO: need to transfer parameters from input Format context to output
-    if (iDemuxer) {
-        resp = openOutputFile();
-        if (resp < 0) {
-            exit(1);
-        }
-    }
+
 
     //take either AVMEDIA_TYPE_AUDIO (Default) or AVMEDIA_TYPE_VIDEO
     if (iCodec) {
@@ -120,7 +116,16 @@ void AudioDecoder::initializeAllObjects() {
 
         cerr << "\tcreated codec" << endl;
     }
-
+    if (iDemuxer) {
+//        resp = openOutputFile();
+//        if (resp < 0) {
+//            exit(1);
+//        }
+        resp = openOutConverterFile();
+        if (resp < 0) {
+            exit(1);
+        }
+    }
     inAudioStream = pInFormatContext->streams[avStreamIndex];
 
     //allocate memory for frame from readings
@@ -160,7 +165,7 @@ int AudioDecoder::openOutConverterFile() {
     }
     //  av_strlcpy(pOutFormatContext->filename, filename, sizeof((*output_format_context)->filename));
     //TODO: need to determine codec id by file extension name:IMPORTANT +++++++++++++++++
-    pOutCodec = avcodec_find_decoder(AV_CODEC_ID_AAC);
+    pOutCodec = avcodec_find_decoder(AV_CODEC_ID_PCM_S16LE);
 
     if (pOutCodec == nullptr) {
         cout << "Error: Could not find codec" << endl;
@@ -181,7 +186,7 @@ int AudioDecoder::openOutConverterFile() {
     pOutCodecContext->channels = pInCodecContext->channels;
     pOutCodecContext->channel_layout = av_get_default_channel_layout(pInCodecContext->channels);
     pOutCodecContext->sample_rate = pInCodecContext->sample_rate;
-    pOutCodecContext->sample_rate = pInCodecContext->sample_fmt;
+    pOutCodecContext->sample_fmt= pInCodecContext->sample_fmt;
     pOutCodecContext->bit_rate = pInCodecContext->bit_rate;
     //some containers like mp4 need global headers to be present: mark encoder so that it works like we want it to
 

@@ -69,5 +69,3 @@ int Resampler::initObjects() {
     return 0;
 
 }
-
-stati initFifo
