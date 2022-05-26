@@ -30,6 +30,7 @@ public:
     uint8_t **srcData = nullptr, **dstData = nullptr;
     int srcLineSize, dstLineSize;
 
+
     int numSrcSamples = 0, numDstSamples = 0, maxDstNumSamples;
 private:
 

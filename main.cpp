@@ -140,7 +140,7 @@ int main() {
 //    if (resp == 0) {
 //        cerr << "finished processing first loop" << endl;
 //    }
-    //TODO: this is part of the second loop: need to add another initialization
+    // TODO: this is part of the second loop: need to add another initialization
 //    loop over the frames in each packet and apply a chain of filters to each frame
     resp = applyFilters(writeFileHeader);
     if (resp == 0) {
@@ -552,69 +552,3 @@ void getAudioInfo() {
 //    av_frame_free(&ad->pInFrame);
 //    return 0;
 //}
-int resampleAudio(bool showData) {
-    int ret;
-    int gotFrame;
-    int streamIndex;
-    while (1) {
-        if ((ret = av_read_frame(ad->pInFormatContext, ad->pPacket)) < 0)
-            break;
-        streamIndex = ad->pPacket->stream_index;
-       AVMediaType type = ad->pInCodecContext->codec_type;
-        av_log(nullptr, AV_LOG_DEBUG, "Demuxer gave frame of stream_index %u\n",
-               streamIndex);
-
-        if (ad->pInFormatContext[streamIndex].filter_graph) {
-            av_log(nullptr, AV_LOG_DEBUG, "Going to reencode&filter the frame\n");
-            ad->pInFrame = av_frame_alloc();
-            if (!ad->pInFrame) {
-                ret = AVERROR(ENOMEM);
-                break;
-            }
-            ad->pPacket->dts = av_rescale_q_rnd(ad->pPacket->dts,
-                                                ad->pInFormatContext->streams[streamIndex]->time_base,
-                                                ad->pInCodecContext->time_base,
-                                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-            ad->pPacket->pts = av_rescale_q_rnd(ad->pPacket->pts,
-                                                ad->pInFormatContext->streams[streamIndex]->time_base,
-                                                ad->pInCodecContext->time_base,
-                                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-            dec_func = (type == AVMEDIA_TYPE_VIDEO) ? avcodec_decode_video2 :
-                       avcodec_decode_audio4;
-
-            ret = dec_func(ad->pInCodec, ad->pInFrame,&gotFrame, ad->pPacket);
-
-            if (ret < 0) {
-                av_frame_free(&ad->pInFrame);
-                av_log(NULL, AV_LOG_ERROR, "Decoding failed\n");
-                break;
-            }
-
-            if (gotFrame) {
-                ad->pInFrame->pts = av_frame_get_best_effort_timestamp(ad->pInFrame);
-                ret = filter_encode_write_frame(ad->pInFrame, streamIndex);
-                av_frame_free(&ad->pInFrame);
-                if (ret < 0)
-                    goto end;
-            } else {
-                av_frame_free(&ad->pInFrame);
-            }
-        } else {
-            /* remux this frame without reencoding */
-            ad->pPacket->dts = av_rescale_q_rnd(ad->pPacket->dts,
-                                                ad->pInFormatContext->streams[streamIndex]->time_base,
-                                                ad->pOutFormatContext->streams[streamIndex]->time_base,
-                                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-            ad->pPacket->pts = av_rescale_q_rnd(ad->pPacket->pts,
-                                                ad->pInFormatContext->streams[streamIndex]->time_base,
-                                                ad->pOutFormatContext->streams[streamIndex]->time_base,
-                                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-
-            ret = av_interleaved_write_frame(ad->pOutFormatContext, ad->pPacket);
-            if (ret < 0)
-                goto end;
-        }
-        end:
-        av_packet_free(ad->pPacket);
-    }
-}
