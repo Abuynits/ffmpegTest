@@ -40,6 +40,21 @@ int Resampler::initObjects() {
     }
     //TODO: continue to try to make resampling work through resampling context
     //use the following guide;https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/resampling_audio.c
+    srcNumChannels = ad->pInCodecContext->channels;
+    resp = av_samples_alloc_array_and_samples(&srcData, &srcLineSize, srcNumChannels,srcNumSamples, ad->pInCodecContext->sample_fmt,0);
+    if(resp<0){
+        cout<<"error: could not allocate source samples:"<<endl;
+        exit(1);
+    }
+    maxDstNumSamples = dstNumSamples = av_rescale_rnd(srcNumSamples, ad->pInCodecContext->sample_rate, ad->pOutCodecContext->sample_rate, AV_ROUND_UP);
+
+    dstNumChannels  =  ad->pOutCodecContext->channels;
+    resp = av_samples_alloc_array_and_samples(&dstData, &dstLineSize, dstNumChannels,dstNumSamples, ad->pInCodecContext->sample_fmt,0);
+    if(resp<0) {
+        cout << "error: could not allocate destination samples:" << endl;
+        exit(1);
+    }
+
 
 
     return 0;
