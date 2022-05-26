@@ -191,8 +191,8 @@ int AudioDecoder::openOutConverterFile() {
     pOutCodecContext->bit_rate = pInCodecContext->bit_rate;
 
     pOutFormatContext->nb_streams=pInFormatContext->nb_streams;
-    pOutFormatContext->start_time=pInFormatContext->start_time;
-    pOutFormatContext->duration=pInFormatContext->duration;
+//    pOutFormatContext->start_time=pInFormatContext->start_time;
+//    pOutFormatContext->duration=pInFormatContext->duration;
     //some containers like mp4 need global headers to be present: mark encoder so that it works like we want it to
 
     if (pOutFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {

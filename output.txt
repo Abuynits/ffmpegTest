@@ -1,83 +1,59 @@
-opened stat file!
-[aac @ 0x7f78cd304080] Estimating duration from bitrate, this may be inaccurate
-Input #0, aac, from '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording3.aac':
-  Duration: 00:00:18.94, bitrate: 76 kb/s
-  Stream #0:0: Audio: aac (LC), 48000 Hz, mono, fltp, 76 kb/s
-Output #0, wav, to '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/tempRecording.wav':
-  Stream #0:0: Audio: aac (LC), 48000 Hz, mono, fltp, 76 kb/s
-	found audio stream
-	found decoder
-	allocated context
-	copied codec param
-	opened codec!
-	created codec
-initialized AudioDecoder
-	created srcFilter!
-	created volume Filter!
-	Created format Filter!
-	Created lp Filter!
-	Created hp Filter!
-	Created arnndn Filter!
-	Created silenceremove Filter!
-	Created sink Filter!
-configured graph!
-initialized AudioFilter
+  while (1) {
+       if ((ret = av_read_frame(ifmt_ctx, &packet)) < 0)
+           break;
+       stream_index = packet.stream_index;
+       type = ifmt_ctx->streams[packet.stream_index]->codec->codec_type;
+       av_log(NULL, AV_LOG_DEBUG, "Demuxer gave frame of stream_index %u\n",
+               stream_index);
 
-Reached end of file
-Play the data output File w/
-ffplay -f f32le -ac 1 -ar 48000 /Users/abuynits/CLionProjects/ffmpegTest5/Recordings/tempRecording.wav
-finished processing first loop
-[astats @ 0x7f78cd404900] Overall
-[astats @ 0x7f78cd404900] DC offset: 0.001916
-[astats @ 0x7f78cd404900] Min level: 0.000334
-[astats @ 0x7f78cd404900] Max level: 0.003873
-[astats @ 0x7f78cd404900] Min difference: 0.000001
-[astats @ 0x7f78cd404900] Max difference: 0.000502
-[astats @ 0x7f78cd404900] Mean difference: 0.000193
-[astats @ 0x7f78cd404900] RMS difference: 0.000230
-[astats @ 0x7f78cd404900] Peak level dB: -48.239497
-[astats @ 0x7f78cd404900] RMS level dB: -53.482727
-[astats @ 0x7f78cd404900] RMS peak dB: -53.482727
-[astats @ 0x7f78cd404900] RMS trough dB: -53.482727
-[astats @ 0x7f78cd404900] Flat factor: 0.000000
-[astats @ 0x7f78cd404900] Peak count: 2.000000
-[astats @ 0x7f78cd404900] Noise floor dB: nan
-[astats @ 0x7f78cd404900] Noise floor count: 0.000000
-[astats @ 0x7f78cd404900] Entropy: 0.322818
-[astats @ 0x7f78cd404900] Bit depth: 23/32
-[astats @ 0x7f78cd404900] Number of samples: 53
-[astats @ 0x7f78cd404900] Number of NaNs: 0.000000
-[astats @ 0x7f78cd404900] Number of Infs: 0.000000
-[astats @ 0x7f78cd404900] Number of denormals: 0.000000
-[astats @ 0x7f78cd004bc0] Overall
-[astats @ 0x7f78cd004bc0] DC offset: 0.000729
-[astats @ 0x7f78cd004bc0] Min level: -0.040698
-[astats @ 0x7f78cd004bc0] Max level: 0.037564
-[astats @ 0x7f78cd004bc0] Min difference: 0.000001
-[astats @ 0x7f78cd004bc0] Max difference: 0.013270
-[astats @ 0x7f78cd004bc0] Mean difference: 0.002709
-[astats @ 0x7f78cd004bc0] RMS difference: 0.003689
-[astats @ 0x7f78cd004bc0] Peak level dB: -27.808623
-[astats @ 0x7f78cd004bc0] RMS level dB: -36.917684
-[astats @ 0x7f78cd004bc0] RMS peak dB: -36.787280
-[astats @ 0x7f78cd004bc0] RMS trough dB: -38.969503
-[astats @ 0x7f78cd004bc0] Flat factor: 0.000000
-[astats @ 0x7f78cd004bc0] Peak count: 2.000000
-[astats @ 0x7f78cd004bc0] Noise floor dB: -28.495724
-[astats @ 0x7f78cd004bc0] Noise floor count: 207.000000
-[astats @ 0x7f78cd004bc0] Entropy: 0.586832
-[astats @ 0x7f78cd004bc0] Bit depth: 32/32
-[astats @ 0x7f78cd004bc0] Number of samples: 1024
-[astats @ 0x7f78cd004bc0] Number of NaNs: 0.000000
-[astats @ 0x7f78cd004bc0] Number of Infs: 0.000000
-[astats @ 0x7f78cd004bc0] Number of denormals: 0.000000
-[aac @ 0x7f78cc71e640] invalid band type
-Input #0, wav, from '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/tempRecording.wav':
-  Metadata:
-    encoder         : Lavf59.16.100
-  Duration: 00:00:00.00, bitrate: 1080839619 kb/s
-  Stream #0:0: Audio: aac ([255][0][0][0] / 0x00FF), 48000 Hz, mono, fltp, 494 kb/s
-Output #0, wav, to '/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/outputRecordings/recordingOut2.wav':
-  Stream #0:0: Audio: aac, 48000 Hz, mono, fltp, 494 kb/s
-[wav @ 0x7f78cc70c400] Packet corrupt (stream = 0, dts = NOPTS).
-finished muxing files
+       if (filter_ctx[stream_index].filter_graph) {
+           av_log(NULL, AV_LOG_DEBUG, "Going to reencode&filter the frame\n");
+           frame = av_frame_alloc();
+           if (!frame) {
+               ret = AVERROR(ENOMEM);
+               break;
+           }
+           packet.dts = av_rescale_q_rnd(packet.dts,
+                   ifmt_ctx->streams[stream_index]->time_base,
+                   ifmt_ctx->streams[stream_index]->codec->time_base,
+                   AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+           packet.pts = av_rescale_q_rnd(packet.pts,
+                   ifmt_ctx->streams[stream_index]->time_base,
+                   ifmt_ctx->streams[stream_index]->codec->time_base,
+                   AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+           dec_func = (type == AVMEDIA_TYPE_VIDEO) ? avcodec_decode_video2 :
+               avcodec_decode_audio4;
+           ret = dec_func(ifmt_ctx->streams[stream_index]->codec, frame,
+                   &got_frame, &packet);
+           if (ret < 0) {
+               av_frame_free(&frame);
+               av_log(NULL, AV_LOG_ERROR, "Decoding failed\n");
+               break;
+           }
+
+           if (got_frame) {
+               frame->pts = av_frame_get_best_effort_timestamp(frame);
+               ret = filter_encode_write_frame(frame, stream_index);
+               av_frame_free(&frame);
+               if (ret < 0)
+                   goto end;
+           } else {
+               av_frame_free(&frame);
+           }
+       } else {
+           /* remux this frame without reencoding */
+           packet.dts = av_rescale_q_rnd(packet.dts,
+                   ifmt_ctx->streams[stream_index]->time_base,
+                   ofmt_ctx->streams[stream_index]->time_base,
+                   AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+           packet.pts = av_rescale_q_rnd(packet.pts,
+                   ifmt_ctx->streams[stream_index]->time_base,
+                   ofmt_ctx->streams[stream_index]->time_base,
+                   AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+
+           ret = av_interleaved_write_frame(ofmt_ctx, &packet);
+           if (ret < 0)
+               goto end;
+       }
+       av_free_packet(&packet);
+   }
