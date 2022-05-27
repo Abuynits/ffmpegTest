@@ -8,8 +8,8 @@ AudioDecoder::AudioDecoder(const char *inFilePath, const char *outFilePath, bool
 
     this->inputFP = inFilePath;
     this->outputFP = outFilePath;
-    this->iCodec = initCodecs;
-    this->iDemuxer = initDemuxer;
+    this->initInputParam = initCodecs;
+    this->initOutputParam = initDemuxer;
 
 
 }
@@ -27,7 +27,30 @@ void AudioDecoder::openFiles() {
 }
 
 int AudioDecoder::openInputFile(enum AVMediaType mediaType) {
+    //open the file and read header - codecs not opened
+    //AVFormatContext (what allocate memory for)
+    //url to file
+    //AVINputFormat -give Null and it will do auto detect
+    //try to get some information of the file vis
+    // http://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga31d601155e9035d5b0e7efedc894ee49
+    pInFormatContext = avformat_alloc_context();
 
+    int resp = avformat_open_input(&pInFormatContext, inputFP, nullptr, nullptr);
+    if (resp != 0) {
+        cerr << stderr << " ERROR: could not open file: " << av_err2str(resp) << endl;
+        exit(1);
+    }
+
+    // read Packets from the Format to get stream information
+    //if the fine does not have a ehader ,read some frames to figure out the information and storage type of the file
+    // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#gad42172e27cddafb81096939783b157bb
+    if (avformat_find_stream_info(pInFormatContext, nullptr) < 0) {
+        cerr << stderr << " ERROR could not get the stream info" << endl;
+        exit(1);
+    }
+    outputFormat = av_guess_format(nullptr, outputFP, nullptr);
+    pInFormatContext->oformat = outputFormat;
+    //TODO: need to transfer parameters from input Format context to output
     int ret = av_find_best_stream(pInFormatContext, mediaType, -1, -1, nullptr, 0);
     if (ret < 0) {
         cerr << "ERROR: Could not find %s stream in input file: " << av_get_media_type_string(mediaType) << ", "
@@ -79,35 +102,10 @@ int AudioDecoder::openInputFile(enum AVMediaType mediaType) {
 
 
 void AudioDecoder::initializeAllObjects() {
-    //open the file and read header - codecs not opened
-    //AVFormatContext (what allocate memory for)
-    //url to file
-    //AVINputFormat -give Null and it will do auto detect
-    //try to get some information of the file vis
-    // http://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#ga31d601155e9035d5b0e7efedc894ee49
-    pInFormatContext = avformat_alloc_context();
-    pOutFormatContext = avformat_alloc_context();
-
-    int resp = avformat_open_input(&pInFormatContext, inputFP, nullptr, nullptr);
-    if (resp != 0) {
-        cerr << stderr << " ERROR: could not open file: " << av_err2str(resp) << endl;
-        exit(1);
-    }
-
-    // read Packets from the Format to get stream information
-    //if the fine does not have a ehader ,read some frames to figure out the information and storage type of the file
-    // https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html#gad42172e27cddafb81096939783b157bb
-    if (avformat_find_stream_info(pInFormatContext, nullptr) < 0) {
-        cerr << stderr << " ERROR could not get the stream info" << endl;
-        exit(1);
-    }
-    outputFormat = av_guess_format(nullptr, outputFP, nullptr);
-    pInFormatContext->oformat = outputFormat;
-    //TODO: need to transfer parameters from input Format context to output
-
+    int resp;
 
     //take either AVMEDIA_TYPE_AUDIO (Default) or AVMEDIA_TYPE_VIDEO
-    if (iCodec) {
+    if (initInputParam) {
         resp = openInputFile();
         if (resp < 0) {
             cerr << "error: cannot create codec" << endl;
@@ -116,7 +114,8 @@ void AudioDecoder::initializeAllObjects() {
 
         cerr << "\tcreated codec" << endl;
     }
-    if (iDemuxer) {
+
+    if (initOutputParam) {
         resp = openOutputFile();
         if (resp < 0) {
             exit(1);
@@ -166,6 +165,7 @@ int AudioDecoder::openOutConverterFile() {
     //  av_strlcpy(pOutFormatContext->filename, filename, sizeof((*output_format_context)->filename));
     //TODO: need to determine codec id by file extension name:IMPORTANT +++++++++++++++++
     //wave file: AV_CODEC_ID_PCM_S16LE
+
     pOutCodec = avcodec_find_decoder(AV_CODEC_ID_PCM_S16LE);
 
     if (pOutCodec == nullptr) {
@@ -189,8 +189,9 @@ int AudioDecoder::openOutConverterFile() {
     pOutCodecContext->sample_rate = pInCodecContext->sample_rate;
     pOutCodecContext->sample_fmt = pInCodecContext->sample_fmt;
     pOutCodecContext->bit_rate = pInCodecContext->bit_rate;
+    pOutCodecContext->codec_id = AV_CODEC_ID_PCM_S16LE;
 
-    pOutFormatContext->nb_streams=pInFormatContext->nb_streams;
+    pOutFormatContext->nb_streams = pInFormatContext->nb_streams;
 //    pOutFormatContext->start_time=pInFormatContext->start_time;
 //    pOutFormatContext->duration=pInFormatContext->duration;
     //some containers like mp4 need global headers to be present: mark encoder so that it works like we want it to
@@ -211,6 +212,9 @@ int AudioDecoder::openOutConverterFile() {
 
 int AudioDecoder::openOutputFile() {
     int resp;
+
+    pOutFormatContext = avformat_alloc_context();
+
 
     resp = avformat_alloc_output_context2(&pOutFormatContext, nullptr, nullptr, outputFP);
     if (resp < 0) {
@@ -272,7 +276,7 @@ int AudioDecoder::openOutputFile() {
 
 
 void AudioDecoder::closeAllObjects() {
-    if (iDemuxer) {
+    if (initOutputParam) {
         if (pOutFormatContext && !(pOutFormatContext->flags & AVFMT_NOFILE)) {
             avio_closep(&pOutFormatContext->pb);
         }

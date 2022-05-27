@@ -158,9 +158,9 @@ int main() {
     ad->closeAllObjects();
     av->closeAllObjects();
     //save the stats from the filter stage into the info object
-    audioInfo->setFrameVals(ad->startFrame, ad->endFrame, totalFrameCount);
+//    audioInfo->setFrameVals(ad->startFrame, ad->endFrame, totalFrameCount);
 
-    cout << "=====================DONE WITH SECOND LOOP=====================" << endl;
+//    cout << "=====================DONE WITH SECOND LOOP=====================" << endl;
     //========================SECOND STAGE: make playable by wav output file==========================
 //    ad = new AudioDecoder(tempFP, finalFP, false, true);
 //    ad->openFiles();
@@ -371,17 +371,18 @@ int transformAudioFrame(bool showFrameData) {
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
         while (resp >= 0) {
             resp = avcodec_receive_frame(ad->pInCodecContext, ad->pInFrame);
-            if (resp == AVERROR(EAGAIN)) {
-                if (showFrameData) cerr << "Not enough data in frame, skipping to next packet" << endl;
-                //decoded not have enough data to process frame
-                //not error unless reached end of the stream - pass more packets untill have enough to produce frame
-                clearFrames:
-                av_frame_unref(ad->pInFrame);
-                av_freep(ad->pInFrame);
-                break;
-            } else if (resp == AVERROR_EOF) {
+//            if (resp == AVERROR(EAGAIN)) {
+//                if (showFrameData) cerr << "Not enough data in frame, skipping to next packet" << endl;
+//                //decoded not have enough data to process frame
+//                //not error unless reached end of the stream - pass more packets untill have enough to produce frame
+//                clearFrames:
+//                av_frame_unref(ad->pInFrame);
+//                av_freep(ad->pInFrame);
+//                break;
+            // } else
+            if (resp == AVERROR_EOF) {
                 cerr << "Reached end of file" << endl;
-                goto clearFrames;
+                goto end;
             } else if (resp < 0) {
                 cerr << "Error while receiving a frame from the decoder: " << av_err2str(resp) << endl;
                 // Failed to get a frame from the decoder

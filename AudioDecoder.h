@@ -73,8 +73,8 @@ public:
     AVStream *inStream = nullptr;
     //set the booleans depending on the function that you want to perform
     //first loop = both true, second loop = only demuxer is true
-    bool iCodec = false;
-    bool iDemuxer = false;
+    bool initInputParam = false;
+    bool initOutputParam = false;
     //track the start and end frames: when start and end writing to the output file
     int startFrame, endFrame;
     //start writing when =0: skip the first frame to prevent writing the bad header in the first loop.

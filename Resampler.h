@@ -33,7 +33,7 @@ public:
     int dstBufferSize = 0;
 
     //TODO: find the number of src samples
-    int srcNumSamples = 1024, dstNumSamples = 0, maxDstNumSamples;
+    int srcNumSamples = 4096, dstNumSamples = 0, maxDstNumSamples;
 private:
 
 
