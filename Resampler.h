@@ -26,10 +26,11 @@ public:
     int numSrcChannels, dstNumChannels;
     struct SwrContext *resampleCtx;
     AudioDecoder *ad;
-    int dstBufferSize;
+
     uint8_t **srcData = nullptr, **dstData = nullptr;
     int srcLineSize, dstLineSize;
-    int srcNumChannels =0;
+    int srcNumChannels = 0;
+    int dstBufferSize = 0;
 
     //TODO: find the number of src samples
     int srcNumSamples = 1024, dstNumSamples = 0, maxDstNumSamples;

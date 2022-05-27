@@ -76,7 +76,7 @@ int read_decode_convert_and_store(int *finished);
 
 int decode_audio_frame(int *dataPresent, int *finished);
 
-int transformAudioFrame();
+int transformAudioFrame(bool showFrameData);
 
 using namespace std;
 //info about codecs, and is responsible for processing audio
@@ -144,10 +144,15 @@ int main() {
 //    }
     // TODO: this is part of the second loop: need to add another initialization
 //    loop over the frames in each packet and apply a chain of filters to each frame
-    resp = applyFilters(writeFileHeader);
+    resp = transformAudioFrame(showData);
     if (resp == 0) {
         cerr << "finished processing first loop" << endl;
     }
+
+//    resp = applyFilters(writeFileHeader);
+//    if (resp == 0) {
+//        cerr << "finished processing first loop" << endl;
+//    }
 
     //close all of the objects
     ad->closeAllObjects();
@@ -355,8 +360,14 @@ void getAudioInfo() {
          << endl;
     cout << "before peak rms: " << audioInfo->bPeak << " DB after peak rms: " << audioInfo->aPeak << " DB" << endl;
 }
-int transformAudioFrame(bool showFrameData){
-    int resp =0;
+
+int transformAudioFrame(bool showFrameData) {
+    int resp = 0;
+    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+    if (resp < 0) {
+        cerr << "Error when writing header" << endl;
+        return -1;
+    }
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
         while (resp >= 0) {
             resp = avcodec_receive_frame(ad->pInCodecContext, ad->pInFrame);
@@ -391,7 +402,33 @@ int transformAudioFrame(bool showFrameData){
                      << ", Pkt_keyFrame: " << ad->pInFrame->key_frame << endl;
 
             //TODO: add the rescale of samples and conversion and writing.
+            rs->dstNumSamples = av_rescale_rnd(swr_get_delay(rs->resampleCtx, ad->pInCodecContext->sample_rate) +
+                                               rs->srcNumSamples, ad->pOutCodecContext->sample_rate,
+                                               ad->pInCodecContext->sample_rate, AV_ROUND_UP);
 
+            if (rs->dstNumSamples > rs->maxDstNumSamples) {
+                av_freep(&(rs->dstData[0]));
+                resp = av_samples_alloc(rs->dstData, &rs->dstLineSize, rs->dstNumChannels,
+                                        rs->dstNumSamples, ad->pOutCodecContext->sample_fmt, 1);
+                if (resp < 0)
+                    break;
+                rs->maxDstNumSamples = rs->dstNumSamples;
+            }
+            /* convert to destination format */
+            resp = swr_convert(rs->resampleCtx, rs->dstData, rs->dstNumSamples, (const uint8_t **) rs->srcData,
+                               rs->srcNumSamples);
+            if (resp < 0) {
+                fprintf(stderr, "Error while converting\n");
+                goto end;
+            }
+            rs->dstBufferSize = av_samples_get_buffer_size(&rs->dstLineSize, rs->dstNumChannels,
+                                                           resp, ad->pOutCodecContext->sample_fmt, 1);
+            if (rs->dstBufferSize < 0) {
+                fprintf(stderr, "Could not get sample buffer size\n");
+                goto end;
+            }
+            printf("in:%d out:%d\n", rs->srcNumSamples, resp);
+            fwrite(rs->dstData[0], 1, rs->dstBufferSize, ad->outFile);
             av_frame_unref(ad->pInFrame);
             av_freep(ad->pInFrame);
             if (resp < 0) {
@@ -399,11 +436,26 @@ int transformAudioFrame(bool showFrameData){
             }
             totalFrameCount++;
         }
-
-        if (resp < 0) {
-            break;
-        }
+//
+//        if (resp < 0) {
+//            break;
+//        }
     }
+    av_write_trailer(ad->pOutFormatContext);
+
+    end:
+    fclose(ad->outFile);
+
+    if (rs->srcData)
+        av_freep(&rs->srcData[0]);
+    av_freep(&rs->srcData);
+
+    if (rs->srcData)
+        av_freep(&rs->srcData[0]);
+    av_freep(&rs->srcData);
+
+    swr_free(&rs->resampleCtx);
+    return resp < 0;
 }
 //
 //int resampleAudio(bool showFrameData) {
