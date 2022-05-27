@@ -76,6 +76,8 @@ int read_decode_convert_and_store(int *finished);
 
 int decode_audio_frame(int *dataPresent, int *finished);
 
+int transformAudioFrame();
+
 using namespace std;
 //info about codecs, and is responsible for processing audio
 AudioDecoder *ad;
@@ -353,7 +355,56 @@ void getAudioInfo() {
          << endl;
     cout << "before peak rms: " << audioInfo->bPeak << " DB after peak rms: " << audioInfo->aPeak << " DB" << endl;
 }
+int transformAudioFrame(bool showFrameData){
+    int resp =0;
+    while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
+        while (resp >= 0) {
+            resp = avcodec_receive_frame(ad->pInCodecContext, ad->pInFrame);
+            if (resp == AVERROR(EAGAIN)) {
+                if (showFrameData) cerr << "Not enough data in frame, skipping to next packet" << endl;
+                //decoded not have enough data to process frame
+                //not error unless reached end of the stream - pass more packets untill have enough to produce frame
+                clearFrames:
+                av_frame_unref(ad->pInFrame);
+                av_freep(ad->pInFrame);
+                break;
+            } else if (resp == AVERROR_EOF) {
+                cerr << "Reached end of file" << endl;
+                goto clearFrames;
+            } else if (resp < 0) {
+                cerr << "Error while receiving a frame from the decoder: " << av_err2str(resp) << endl;
+                // Failed to get a frame from the decoder
+                av_frame_unref(ad->pInFrame);
+                av_freep(ad->pInFrame);
+                return resp;
+            }
+            /*
+             * TODO: need to find the noise level of audio file
+             * try to look at astats filter, then at the portions where silence is detected idk
+             * need to get the RMS factor: what kolya talk about
+             */
 
+            if (showFrameData)
+                cerr << "frame number: " << ad->pInCodecContext->frame_number
+                     << ", Pkt_Size: " << ad->pInFrame->pkt_size
+                     << ", Pkt_pts: " << ad->pInFrame->pts
+                     << ", Pkt_keyFrame: " << ad->pInFrame->key_frame << endl;
+
+            //TODO: add the rescale of samples and conversion and writing.
+
+            av_frame_unref(ad->pInFrame);
+            av_freep(ad->pInFrame);
+            if (resp < 0) {
+                return resp;
+            }
+            totalFrameCount++;
+        }
+
+        if (resp < 0) {
+            break;
+        }
+    }
+}
 //
 //int resampleAudio(bool showFrameData) {
 //    int resp;
