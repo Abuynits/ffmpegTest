@@ -23,7 +23,7 @@ public:
 
     int initObjects();
 
-<<<<<<< HEAD
+
     int numSrcChannels, dstNumChannels;
     struct SwrContext *resampleCtx;
     AudioDecoder *ad;
@@ -35,16 +35,7 @@ public:
 
     //TODO: find the number of src samples
     int srcNumSamples = 4096, dstNumSamples = 0, maxDstNumSamples;
-=======
-    int numSrcChannels, numDstChannels;
-    struct SwrContext *resampleCtx;
-    AudioDecoder *ad;
-    int dstBufferSize;
-    uint8_t **srcData = nullptr, **dstData = nullptr;
-    int srcLineSize, dstLineSize;
 
-    int numSrcSamples = 0, numDstSamples = 0, maxDstNumSamples;
->>>>>>> ea6eb83e5879537ab8d025fbb8bf0e3b79bd9d61
 private:
 
 

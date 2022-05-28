@@ -88,8 +88,6 @@ OutputAnalysis *audioInfo;
 //The resampler that converts any input file to a wav for looping and processing
 Resampler *rs;
 //the input file path
-//TODO: have an error with writing the file headers:
-//TODO: not work when given anything but a wav input
 const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording.aac";
 
 //const char *wavInputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/wavInput.wav";
@@ -369,15 +367,15 @@ int transformAudioFrame(bool showFrameData) {
     while (av_read_frame(ad->pInFormatContext, ad->pPacket) >= 0) {
         while (resp >= 0) {
             resp = avcodec_receive_frame(ad->pInCodecContext, ad->pInFrame);
-//            if (resp == AVERROR(EAGAIN)) {
-//                if (showFrameData) cerr << "Not enough data in frame, skipping to next packet" << endl;
-//                //decoded not have enough data to process frame
-//                //not error unless reached end of the stream - pass more packets untill have enough to produce frame
-//                clearFrames:
-//                av_frame_unref(ad->pInFrame);
-//                av_freep(ad->pInFrame);
-//                break;
-            // } else
+            if (resp == AVERROR(EAGAIN)) {
+                if (showFrameData) cerr << "Not enough data in frame, skipping to next packet" << endl;
+                //decoded not have enough data to process frame
+                //not error unless reached end of the stream - pass more packets untill have enough to produce frame
+                clearFrames:
+                av_frame_unref(ad->pInFrame);
+                av_freep(ad->pInFrame);
+                break;
+             } else
             if (resp == AVERROR_EOF) {
                 cerr << "Reached end of file" << endl;
                 goto end;

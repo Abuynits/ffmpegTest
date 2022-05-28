@@ -7,3 +7,7 @@
 5	2374	1653713312816252601	CMakeFiles/ffmpegTest5.dir/main.cpp.o	282a848fbae0e329
 7	566	1653455914198325840	CMakeFiles/ffmpegTest5.dir/main2.cpp.o	331eef6bd9a6cdbc
 4	1065	1653667910325236434	CMakeFiles/ffmpegTest5.dir/Resampler.cpp.o	c68c1f32da4d9e8e
+7	1438	1653745512170320526	CMakeFiles/ffmpegTest5.dir/AudioDecoder.cpp.o	5e838e10b00413dd
+5	1391	1653745538385758845	CMakeFiles/ffmpegTest5.dir/Resampler.cpp.o	c68c1f32da4d9e8e
+5	1648	1653745538639630933	CMakeFiles/ffmpegTest5.dir/main.cpp.o	282a848fbae0e329
+1648	1788	1653745538788123008	ffmpegTest5	3b99c738c3b984f6
