@@ -88,7 +88,6 @@ OutputAnalysis *audioInfo;
 //The resampler that converts any input file to a wav for looping and processing
 Resampler *rs;
 //the input file path
-
 //TODO: have an error with writing the file headers:
 //TODO: not work when given anything but a wav input
 const char *inputFP = "/Users/abuynits/CLionProjects/ffmpegTest5/Recordings/inputRecordings/recording.aac";
