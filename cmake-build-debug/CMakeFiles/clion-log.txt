@@ -2,3 +2,4 @@
 -- Configuring done
 -- Generating done
 -- Build files have been written to: /Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug
+CMake File API: /Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug: failed to load from '/Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug/.cmake/api/v1/reply/codemodel-v2-067852010181176384b6.json'
