@@ -110,7 +110,6 @@ int totalFrameCount = 0;
 const bool showData = false;
 const bool writeFileHeader = true;
 
-
 int main() {
     //used to error return errors
     int resp;
