@@ -28,6 +28,7 @@ extern "C" {
 #include <libavutil/audio_fifo.h>
 
 }
+
 class AudioDecoder {
 public:
     //the input and output filepaths /file objects
@@ -83,6 +84,7 @@ public:
 
     AVIOContext *outputIOContext = nullptr;
     AVAudioFifo *fifo = nullptr;
+
     /**
      * init audiodecoder
      * @param inFilePath input file path
@@ -140,6 +142,14 @@ public:
     int openOutConverterFile();
 
     int initFifo();
+
+    int initPacket(AVPacket **packet);
+
+    int initFrame(AVPacket **packet);
+
+    int initOutFrame(AVFrame **frame,
+                     AVCodecContext *output_codec_context,
+                     int frame_size)
 
 private:
 
