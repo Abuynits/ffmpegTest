@@ -145,11 +145,11 @@ public:
 
     int initPacket(AVPacket **packet);
 
-    int initFrame(AVPacket **packet);
+    int initInFrame(AVFrame **frame);
 
     int initOutFrame(AVFrame **frame,
                      AVCodecContext *output_codec_context,
-                     int frame_size)
+                     int frame_size);
 
 private:
 

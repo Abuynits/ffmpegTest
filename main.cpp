@@ -75,10 +75,17 @@ int resampleAudio(bool showFrameData);
 int read_decode_convert_and_store(int *finished);
 
 int decode_audio_frame(int *dataPresent, int *finished);
+
 int encode_audio_frame(int *dataWritten);
 
 int transformAudioFrame(bool showFrameData);
+
+static int init_converted_samples(uint8_t ***converted_input_samples,
+                                  AVCodecContext *output_codec_context,
+                                  int frame_size);
+
 static int load_encode_and_write();
+
 using namespace std;
 //info about codecs, and is responsible for processing audio
 AudioDecoder *ad;
@@ -533,11 +540,17 @@ int transformAudioFrame(bool showFrameData) {
 }
 
 int read_decode_convert_and_store(int *finished) {
+    AVFrame *inputFrame = nullptr;
     uint8_t **convertedInSamples = nullptr;
     int dataPresent;
     int resp = AVERROR_EXIT;
+
+    /* Initialize temporary storage for one input frame. */
+    if (ad->initInFrame(&inputFrame))
+        goto cleanup;
     /* Decode one frame worth of audio samples. */
-    if (decode_audio_frame(&dataPresent, finished))
+    if (decode_audio_frame(inputFrame, ad->pInFormatContext,
+                           ad->pInCodecContext, &dataPresent, finished))
         goto cleanup;
     /* If we are at the end of the file and there are no more samples
      * in the decoder which are delayed, we are actually finished.
@@ -549,36 +562,66 @@ int read_decode_convert_and_store(int *finished) {
     /* If there is decoded data, convert and store it. */
     if (dataPresent) {
         /* Initialize the temporary storage for the converted input samples. */
-        if (init_converted_samples(&convertedInSamples, ad->pInFrame->nb_samples))
+        if (init_converted_samples(&convertedInSamples, ad->pOutCodecContext,
+                                   inputFrame->nb_samples))
             goto cleanup;
 
         /* Convert the input samples to the desired output sample format.
          * This requires a temporary storage provided by converted_input_samples. */
-        if (convert_samples((const uint8_t **) ad->pInFrame->extended_data, convertedInSamples,
-                            ad->pInFrame->nb_samples))
+        if (convert_samples((const uint8_t **) inputFrame->extended_data, convertedInSamples,
+                            inputFrame->nb_samples, rs->resampleCtx))
             goto cleanup;
 
         /* Add the converted input samples to the FIFO buffer for later processing. */
-        if (add_samples_to_fifo(convertedInSamples,
-                                ad->pInFrame->nb_samples))
+        if (add_samples_to_fifo(ad->fifo, convertedInSamples,
+                                inputFrame->nb_samples))
             goto cleanup;
-        resp= 0;
+        resp = 0;
     }
-    resp= 0;
+    resp = 0;
 
     cleanup:
     if (convertedInSamples) {
         av_freep(&convertedInSamples[0]);
         free(convertedInSamples);
     }
-    av_frame_free(&ad->pInFrame);
+    av_frame_free(&inputFrame);
 
     return resp;
 }
-static int load_encode_and_write(){
 
+static int init_converted_samples(uint8_t ***converted_input_samples,
+                                  AVCodecContext *output_codec_context,
+                                  int frame_size) {
+    int error;
+
+    /* Allocate as many pointers as there are audio channels.
+     * Each pointer will later point to the audio samples of the corresponding
+     * channels (although it may be NULL for interleaved formats).
+     */
+    if (!(*converted_input_samples = static_cast<uint8_t **>(calloc(output_codec_context->channels,
+                                                                    sizeof(**converted_input_samples))))) {
+        fprintf(stderr, "Could not allocate converted input sample pointers\n");
+        return AVERROR(ENOMEM);
+    }
+
+    /* Allocate memory for the samples of all channels in one consecutive
+     * block for convenience. */
+    if ((error = av_samples_alloc(*converted_input_samples, NULL,
+                                  output_codec_context->channels,
+                                  frame_size,
+                                  output_codec_context->sample_fmt, 0)) < 0) {
+        fprintf(stderr,
+                "Could not allocate converted input samples (error '%s')\n",
+                av_err2str(error));
+        av_freep(&(*converted_input_samples)[0]);
+        free(*converted_input_samples);
+        return error;
+    }
+    return 0;
 }
-int encode_audio_frame(int *dataWritten){
+
+int encode_audio_frame(int *dataWritten) {
     /* Packet used for temporary storage. */
     AVPacket *output_packet;
     int error;
@@ -587,7 +630,7 @@ int encode_audio_frame(int *dataWritten){
         return error;
 
     /* Set a timestamp based on the sample rate for the container. */
-    if (ad->pOutFrame!= nullptr) {
+    if (ad->pOutFrame != nullptr) {
         ad->pOutFrame->pts = pts;
         pts += ad->pOutFrame->nb_samples;
     }

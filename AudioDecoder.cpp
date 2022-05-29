@@ -495,7 +495,7 @@ int AudioDecoder::initOutFrame(AVFrame **frame,
     return 0;
 }
 
-int initInFrame(AVFrame **frame) {
+int AudioDecoder::initInFrame(AVFrame **frame) {
     if (!(*frame = av_frame_alloc())) {
         fprintf(stderr, "Could not allocate input frame\n");
         return AVERROR(ENOMEM);
