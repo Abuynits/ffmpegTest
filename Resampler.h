@@ -12,6 +12,19 @@ extern "C" {
 #include <libavutil/channel_layout.h>
 #include <libavutil/samplefmt.h>
 #include <libswresample/swresample.h>
+#include <stdio.h>
+
+#include "libavformat/avformat.h"
+#include "libavformat/avio.h"
+
+#include "libavcodec/avcodec.h"
+
+#include "libavutil/audio_fifo.h"
+#include "libavutil/avassert.h"
+#include "libavutil/avstring.h"
+#include "libavutil/channel_layout.h"
+#include "libavutil/frame.h"
+#include "libavutil/opt.h"
 };
 
 class Resampler {
