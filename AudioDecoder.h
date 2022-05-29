@@ -4,7 +4,8 @@
 
 #ifndef FFMPEGTEST5_AUDIODECODER_H
 #define FFMPEGTEST5_AUDIODECODER_H
-
+#define  OUTPUT_CHANNELS 1
+#define OUTPUT_AUDIO_TYPE AV_CODEC_ID_PCM_S16LE
 
 #include <cstdio>
 #include <iostream>
@@ -80,8 +81,8 @@ public:
     //start writing when =0: skip the first frame to prevent writing the bad header in the first loop.
     int startWriting = -1;
 
-    AVAudioFifo *avBuffer;
-
+    AVAudioFifo *fifo=nullptr;
+    AVIOContext *outputIOContext = nullptr;
     /**
      * init audiodecoder
      * @param inFilePath input file path
