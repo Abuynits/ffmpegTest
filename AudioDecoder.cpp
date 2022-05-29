@@ -156,6 +156,14 @@ void AudioDecoder::initializeAllObjects() {
         exit(1);
     }
 
+    /* Create the FIFO buffer based on the specified output sample format. */
+    fifo = av_audio_fifo_alloc(pOutCodecContext->sample_fmt,
+                               pOutCodecContext->channels, 1);
+    if (fifo== nullptr) {
+        fprintf(stderr, "Could not allocate FIFO\n");
+    }
+
+
 }
 
 int AudioDecoder::openOutConverterFile() {
@@ -443,14 +451,5 @@ int AudioDecoder::getAudioRunCommand() {
          << endl;
 
     return 0;
-}
-
-int AudioDecoder::initFifo() {
-    avBuffer = av_audio_fifo_alloc(pOutCodecContext->sample_fmt, pOutCodecContext->channels, 1);
-    if (avBuffer == nullptr) {
-        cout << "ERROR: allocated av fifo stack" << endl;
-        exit(1);
-    }
-
 }
 

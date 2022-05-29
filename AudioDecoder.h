@@ -81,8 +81,8 @@ public:
     //start writing when =0: skip the first frame to prevent writing the bad header in the first loop.
     int startWriting = -1;
 
-    AVAudioFifo *fifo=nullptr;
     AVIOContext *outputIOContext = nullptr;
+    AVAudioFifo *fifo = nullptr;
     /**
      * init audiodecoder
      * @param inFilePath input file path

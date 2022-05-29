@@ -176,7 +176,82 @@ int main() {
 //    cout << "=====================DONE WITH THIRD LOOP=====================" << endl;
     return 0;
 }
+int transformAudio(){
+    int resp = 0;
+    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+    if (resp < 0) {
+        cerr << "Error when writing header" << endl;
+        return -1;
+    }
+    while(1){
+        const int outputFrameSize = ad->pOutCodecContext->frame_size;
+        int finished =0;
 
+        /* Make sure that there is one frame worth of samples in the FIFO
+       * buffer so that the encoder can do its work.
+       * Since the decoder's and the encoder's frame size may differ, we
+       * need to FIFO buffer to store as many frames worth of input samples
+       * that they make up at least one frame worth of output samples. */
+        while (av_audio_fifo_size(ad->fifo) < outputFrameSize) {
+            /* Decode one frame worth of audio samples, convert it to the
+             * output sample format and put it into the FIFO buffer. */
+            if (read_decode_convert_and_store( &finished))
+                goto cleanup;
+
+            /* If we are at the end of the input file, we continue
+             * encoding the remaining audio samples to the output file. */
+            if (finished)
+                break;
+        }
+
+        /* If we have enough samples for the encoder, we encode them.
+         * At the end of the file, we pass the remaining samples to
+         * the encoder. */
+        while (av_audio_fifo_size(ad->fifo) >= outputFrameSize ||
+               (finished && av_audio_fifo_size(ad->fifo) > 0))
+            /* Take one frame worth of audio samples from the FIFO buffer,
+             * encode it and write it to the output file. */
+            if (load_encode_and_write())
+                goto cleanup;
+
+        /* If we are at the end of the input file and have encoded
+         * all remaining samples, we can exit this loop and finish. */
+        if (finished) {
+            int data_written;
+            /* Flush the encoder as it may have delayed frames. */
+            do {
+                if (encode_audio_frame( &data_written))
+                    goto cleanup;
+            } while (data_written);
+            break;
+        }
+    }
+
+    /* Write the trailer of the output file container. */
+    resp = av_write_trailer(ad->pOutFormatContext);
+    if (resp < 0) {
+        cout << "error writing trailer" << endl;
+        goto cleanup;
+    }
+    resp = 0;
+
+    cleanup:
+    if (ad->fifo)
+        av_audio_fifo_free(ad->fifo);
+    swr_free(&rs->resampleCtx);
+    if (ad->pOutCodecContext)
+        avcodec_free_context(&ad->pOutCodecContext);
+    if (ad->pOutFormatContext) {
+        avio_closep(&ad->pOutFormatContext->pb);
+        avformat_free_context(ad->pOutFormatContext);
+    }
+    if (ad->pInFormatContext)
+        avcodec_free_context(&ad->pInCodecContext);
+    if (ad->pInFormatContext)
+        avformat_close_input(&ad->pInFormatContext);
+
+    return resp;
+}
 int transferStreamData(int *inputPts) {
     AVStream *inStream, *outStream;
     inStream = ad->pInFormatContext->streams[ad->pPacket->stream_index];
