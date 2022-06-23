@@ -5,11 +5,11 @@ project(ffmpegTest5)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(FFMPEG_DIR /usr/local/Cellar/ffmpeg/5.0.1)
+set(FFMPEG_DIR /usr/local/Cellar/ffmpeg/5.0.1_2)
 include_directories(${FFMPEG_DIR}/include/)
 link_directories(${FFMPEG_DIR}/lib/)
 
-add_executable(ffmpegTest5 main.cpp AudioDecoder.cpp AudioDecoder.h AudioFilter.cpp AudioFilter.h OutputAnalysis.cpp OutputAnalysis.h)
+add_executable(ffmpegTest5 TestForC.c)
 target_link_libraries(ffmpegTest5 avformat avcodec avutil avfilter)
 # libbar.so is found in ${CMAKE_SOURCE_DIR}/lib
 #

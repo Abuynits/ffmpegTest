@@ -107,12 +107,13 @@ int main() {
     if (resp == 0) {
         cerr << "finished processing first loop" << endl;
     }
+    cerr<<"here1"<<endl;
     //close all of the objects
     ad->closeAllObjects();
     av->closeAllObjects();
     //save the stats from the filter stage into the info object
+    cerr<<"here2"<<endl;
     audioInfo->setFrameVals(ad->startTime, ad->endTime, totalTime * 1000);
-
     //========================SECOND STAGE: make playable by wav output file==========================
     ad = new AudioDecoder(tempFP, finalFP, false, true);
     ad->openFiles();
@@ -241,7 +242,7 @@ int filterAudioFrame(double dTime) {
 
 int applyFilters() {
     int resp = 0;
-    resp = avformat_write_header(ad->pOutFormatContext, nullptr);
+    resp = avformat_write_header(ad->pOutFormatContext, NULL);
     if (resp < 0) {
         cerr << "Error when writing header" << endl;
         return -1;

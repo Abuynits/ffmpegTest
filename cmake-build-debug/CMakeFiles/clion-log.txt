@@ -1,4 +1,0 @@
-"/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/221.5591.52/CLion.app/Contents/bin/cmake/mac/bin/cmake" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=/Users/abuynits/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/221.5591.52/CLion.app/Contents/bin/ninja/mac/ninja" -G Ninja -S /Users/abuynits/CLionProjects/ffmpegTest5 -B /Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug
--- Configuring done
--- Generating done
--- Build files have been written to: /Users/abuynits/CLionProjects/ffmpegTest5/cmake-build-debug
